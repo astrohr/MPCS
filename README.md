@@ -29,5 +29,5 @@ There are 3 variables that are user changeable
 - window width
 - telescope field of view
 All variables can be changed in the variables.txt file
-> Telescope FOV is expressed in arcseconds
+Telescope FOV is expressed in arcseconds
 > It is suggested that you have width and height using equal values
