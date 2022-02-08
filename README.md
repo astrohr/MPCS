@@ -22,3 +22,12 @@ The program will download all the data needed, and display an uncertainty map. T
 - You can zoom in and out with the scroll wheel
 
 After you have selected all observation areas, just close the uncertainty map window, and on the console you will see the coordinates of your targets. Also, the targets will automatically be copied to your clipboard.
+
+## Variables
+There are 3 variables that are user changeable
+- window height
+- window width
+- telescope field of view
+All variables can be changed in the variables.txt file
+> Telescope FOV is expressed in arcseconds
+> It is suggested that you have width and height using equal values
