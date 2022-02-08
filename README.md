@@ -5,6 +5,7 @@ MPCS stands for "Minor Planet Center Solver"
 
 ## Requirements
 A Windows machine
+
 Curl https://curl.se/ (comes preinstalled with most Windows 10 machines)
 > you can check if you have curl by typing "curl --version" into your cmd, without quotations of course
 
@@ -12,6 +13,7 @@ Curl https://curl.se/ (comes preinstalled with most Windows 10 machines)
 Download the latest release, unzip it, and run the exe file
 
 First, you will have to provide an offsets link to the program. To get the link go to https://www.minorplanetcenter.net/iau/NEO/toconfirm_tabular.html, manage the settings on the bottom of the site, select the objects, and click on "get ephemerides". After this, find the object you want to observe, and click on one of its "Offsets" links, at the time you want to observe it.
+
 The program will download all the data needed, and display an uncertainty map. The controls are:
 - Left Click to add an observation target
 - Right Click to remove an observation target
