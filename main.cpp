@@ -1,504 +1,490 @@
 #include <SFML/Graphics.hpp>
-#include <windows.h>
+#include <curl/curl.h>
 #include <iostream>
 #include <fstream>
 #include <sstream>
-#include <utility>
 #include <vector>
 #include <cfloat>
 #include <string>
 #include <tuple>
 #include <cmath>
-#include <set>
 
-int telescope_FOV;                                  //telescope_FOV in arcseconds
-int W, H;                                           //window width and height
-double centx, centy;                                //window observation center
-double zoomFactor;                                  //window zoom factor
-float sqdim;                                        //square and padding size in pixels
+int telescope_FOV;   //telescope_FOV in arcseconds
 
-std::vector<std::pair<int, int> > db;               //database
-std::vector<int> cate;                              //categorises offset types for assigning color
-int minx, miny, maxx, maxy;                         //database max/min for x and y 
-std::vector<std::pair<double, double> > squares;    //locations of observation targets
-double zero_r, zero_d;                              //declination and right anscension of coordinates 0,0
-std::string obj_context;                            //data about the observed object
-std::string obj_name;                               //object name
+//------------------------CURL STUFF------------------------
 
+size_t read_curl_data(char* ptr, size_t size, size_t nmemb, std::vector<std::string>* userdata){
+    size_t bytes = size*nmemb;
 
-//-----------------------CURL/PARSER STUFF-----------------------
-
-//GenData creates a database of offsets
-void GenData()
-{
-    using namespace std;
-
-    //extract website data
-    printf("Insert the website URL: ");
-    string lynk;
-    getline(cin, lynk);
-
-    //using inbuilt windows curl command to dump website data to a text file (simpler than alternatives)
-    string exec = "curl \"" + lynk + "\" --output zdb.txt";
-    system(exec.c_str());
-
-    //read the created txt file
-    ifstream MyReadFile("zdb.txt");
-    string linije, contxt;
-    while(getline(MyReadFile, linije))
-    {
-        if (linije.size()){
-            if (linije[0] == ' ')
-            {
-                if (db.empty()) contxt = linije;
-                int len = 0;
-                //isolate numbers from a string
-                while(linije[len] != '<') len++;
-                string linja = linije.substr(0, len);
-                int stringResize = linja.length() - count(linja.begin(), linja.end(), ' ');
-                remove(linja.begin(), linja.end(), ' ');
-                linja.resize(stringResize);
-
-                //insert numbers into the database
-                bool frst = true;
-                int x=0, y=0, negativ;
-                for(int i = 0; i < linja.size(); i++)
-                {
-                    if (linja[i] == '+')
-                    {
-                        if (i!=0)
-                        {
-                            frst = false;
-                            x*=negativ;
-                        }
-                        negativ = 1;
-                    }
-                    else if (linja[i] == '-')
-                    {
-                        if (i!=0)
-                        {
-                            frst = false;
-                            x*=negativ;
-                        }
-                        negativ = -1;
-                    }
-                    else
-                    {
-                        if (frst) x=10*x+(linja[i]-'0');
-                        else y=10*y+(linja[i]-'0');
-                    }
-                } y*=negativ;
-                db.emplace_back(make_pair(x,y));
-
-                //read offset type
-                len = linije.size()-1;
-                string tipe = "";
-                while(linije[len] != '>')
-                {
-                    if (linije[len] != 'N')
-                        tipe.push_back(linije[len]);
-                    len--;
-                }
-                cate.emplace_back(tipe.length());
-            }
-            else if (linije.substr(0,4) == "<h1>")
-            {
-                int loc = 28;
-                while (linije[loc] != ' ') loc++;
-                obj_name = linije.substr(28, loc-28);
-            }
+    for(char *i = ptr; i-ptr < bytes; i++){
+        (*userdata)[0] += *i;
+        if(*i == '\n'){
+            (*userdata).emplace_back((*userdata)[0]);
+            (*userdata)[0] = "";
         }
     }
-    printf("\n");
-    if(db.empty())
-        printf("Link error: No data found, check if the link is right\n\n");
+    return bytes; // returns the number of bytes passed to the function
+}
 
-    //find max/min values for x and y
-    minx = INT_MAX; miny = INT_MAX; maxx = INT_MIN; maxy = INT_MIN;
-    for(int i = 0; i < db.size(); i++)
-    {
-        if (db[i].first > maxx) maxx = db[i].first;
-        else if (db[i].first < minx) minx = db[i].first;
-        if (db[i].second > maxy) maxy = db[i].second;
-        else if (db[i].second < miny) miny = db[i].second;
-    }
+void get_html(std::string link, std::vector<std::string>* userdata){
+    CURL *curl = curl_easy_init();
+    (*userdata).emplace_back("");
+    curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, read_curl_data);
+    curl_easy_setopt(curl, CURLOPT_WRITEDATA, userdata);
+    curl_easy_setopt(curl, CURLOPT_URL, link.c_str());
 
-    //get object data from the +0 +0 orbit Ephemeris#1 link
-    int p1=1, p2=contxt.length()-1;
-    while(contxt[p1] != '"' && p1 < contxt.length()-1) p1++;
-    while(contxt[p2] != '"' && p2 > 0) p2--;
-
-    if (!contxt.length())
-        printf("Link error: No object context found\n\n");
-
-    lynk = contxt.substr(p1+1, p2-p1-2);
-    exec = "curl \"" + lynk + "\" --output zcal.txt";
-    system(exec.c_str());
-    ifstream ReadFile("zcal.txt");
-    bool fnd = false;
-    while(getline(ReadFile, linije))
-    {
-        if (linije.size()){
-        if (linije[0] == '2'){
-            obj_context = linije;
-            string rec = linije.substr(18, 10);
-            string dec = linije.substr(29, 9);
-
-            //convert coordinates to an int number
-            int neg = 1; if (dec[0] == '-') neg = -1;
-            zero_d = (((dec[1]-'0')*10+(dec[2]-'0'))*3600+((dec[4]-'0')*10+(dec[5]-'0'))*60+(dec[7]-'0')*10+(dec[8]-'0'))*neg;
-            zero_r = (((rec[0]-'0')*10+(rec[1]-'0'))*3600+((rec[3]-'0')*10+(rec[4]-'0'))*60+(rec[6]-'0')*10+(rec[7]-'0')+(double)(rec[9]-'0')/10)*15;
-
-            fnd = true;
-            break;
-        }
-        }
-    }
-    if (!fnd)
-        printf("Link error: No coordinate data found for the object\n\n");
+    std::cout << "Downloading data...\t\t";
+    CURLcode res = curl_easy_perform(curl);
+    if (res != CURLE_OK) std::cout<< curl_easy_strerror(res) << std::endl;
+    else std::cout << "Download success\n" << std::endl;
     
+    curl_easy_cleanup(curl);
     return;
 }
 
 
-//-----------------------CALC STUFF-----------------------
+//--------------------------CLASSES-------------------------
 
-//function for converting db numbers to coordinates
-std::tuple<double, double> db2Coords(int x, int y)
-{
-    using namespace std;
+class Ephemeris{
+private:
+    float m_ra, m_dec;
+    int m_offsetRa, m_offsetDec;
+    int m_category;
+    int m_ephemerisNumber;
+    std::string m_link;
+public:
+    //context is a temporary variable that gives an example of what a ephemeris looks like
+    std::string m_context;
+    const std::tuple<float, float> coords() const { return {m_ra, m_dec}; }
+    const std::tuple<float, float> offsets() const { return {m_offsetRa, m_offsetDec}; }
+    const int category() const { return m_category; }
 
-    double d = (double) max(maxx-minx, maxy-miny) / min(W, H);
+    void approx_coords(float centerRa, float centerDec){
+        m_ra = centerRa + (float)m_offsetRa/3600.f/15.f;
+        m_dec = centerDec + (float)m_offsetDec/3600.f;
+    }
 
-    double x2c = (x-minx)/d;
-    double y2c = (y-miny)/d;
+    void follow_link(){
+        std::vector<std::string> downloaded;
+        get_html(m_link, &downloaded);
 
-    return make_tuple(x2c, y2c);
-}
+        //for now it just looks at the first ephemeris, but that will be changed
+        for (int i = 0; i < downloaded.size(); i++){
+            if (downloaded[i][0] == '2'){
+                //here we use the fact that on the website all data is always equaly spaced
+                std::string ra = downloaded[i].substr(18, 10);
+                std::string dec = downloaded[i].substr(29, 9);
+                
+                std::stringstream streamRa(ra), streamDec(dec);
+                
+                float ra_whole, ra_min, ra_sec;
+                float dec_whole, dec_min, dec_sec;
+                
+                streamRa >> ra_whole >> ra_min >> ra_sec;
+                streamDec >> dec_whole >> dec_min >> dec_sec;
 
-//coordinates on window, to absolute coordinates
-std::tuple<double, double> Coords2Loc(double x, double y)
-{
-    using namespace std;
+                m_ra = ra_whole + ra_min/60.f + ra_sec/3600.f;
+                m_dec = (abs(dec_whole) + dec_min/60.f + dec_sec/3600.f) * (abs(dec_whole)/dec_whole);
 
-    x = W - x;
-    y = H - y;
-
-    double x2l = (x-(double)W/2)*zoomFactor + centx;
-    double y2l = (y-(double)H/2)*zoomFactor + centy;
-
-    return make_tuple(x2l, y2l);
-}
-
-//absolute coordinates to database numbers
-std::tuple<double, double> Loc2db(double x, double y)
-{
-    using namespace std;
-    double d = (double) max(maxx-minx, maxy-miny) / min(W, H);
-
-    double x2d = d*x+minx;
-    double y2d = d*y+miny;
-
-    return make_tuple(x2d, y2d);
-}
-
-//square dimension fixer
-void FixSqdim()
-{
-    using namespace std;
-
-    float x1, y1;
-    tie(x1, y1) = db2Coords(telescope_FOV, 0);
-    float x2, y2;
-    tie(x2, y2) = db2Coords(0, 0);
-    
-    sqdim = x1 - x2;
-}
-
-//recieves a db coordinate pair and returns the index of the closest square to it
-int findClosest(double x, double y)
-{
-    double mind = DBL_MAX;
-    int clsst;
-    for (int i = 0; i < squares.size(); i++)
-    {
-        int x1 = squares[i].first, y1 = squares[i].second;
-        double d = sqrt((long long) pow((long long)x-x1, 2) + pow((long long)y-y1, 2));
-        if (d<mind)
-        {
-            mind = d;
-            clsst = i;
+                m_context = downloaded[i];
+                break;
+            }
         }
     }
-    return clsst;
-}
+
+    //the constructor is passed the string that describes the ephemeris in the source and parses trough it
+    Ephemeris(std::string raw){
+        int i = 0;
+
+        // getting the offsets
+        std::string n1 = "", n2 = "";
+        while(raw[i] != '<'){
+            if (raw[i] == '-' || raw[i] == '+'){
+                if (n1.empty()) n1 += raw[i];
+                else n2 += raw[i];
+            }
+            else if (raw[i] != ' '){
+                if (n2.empty()) n1 += raw[i];
+                else n2 += raw[i];
+            }
+            i++;
+        }
+        std::stringstream stream1(n1), stream2(n2);
+        stream1 >> m_offsetRa; stream2 >> m_offsetDec;
+        while(raw[i-1] != '"') i++;
+        
+        //getting the link of the ephemeris
+        while(raw[i] != '"'){
+            m_link += raw[i];
+            i++;
+        }
+        while(raw[i-2] != '#') i++;
+
+        //getting the number of the ephemeris
+        m_ephemerisNumber = 0;
+        while(raw[i] != '<'){
+            m_ephemerisNumber = m_ephemerisNumber*10 + (raw[i]-'0');
+            i++;
+        }
+        while(raw[i-1] != '>') i++;
+
+        //getting the category
+        m_category = 0;
+        while(raw[i] != '\n'){
+            m_category++;
+            i++;
+        }
+    }
+};
+
+class Picture{
+private:
+    float m_ra, m_dec; // not implemented yet
+    float m_offsetRa, m_offsetDec;
+public:
+    const std::tuple<float, float> coords() const { return {m_ra, m_dec}; }
+    const std::tuple<float, float> offsets() const { return {m_offsetRa, m_offsetDec}; }
+
+    void approx_coords(float centerRa, float centerDec){
+        m_ra = centerRa + (float)m_offsetRa/3600.f/15.f;
+        m_dec = centerDec + (float)m_offsetDec/3600.f;
+    }
+
+    Picture(float ra, float dec) : m_offsetRa(ra), m_offsetDec(dec) {}
+};
+
+class ObjectDatabase{
+private:
+    // mean center is the offset coordinates of the middle point
+    float m_mean_centerRa, m_mean_centerDec;
+    // mean edge is the offset distance of points most distant from mean center
+    float m_mean_edgeRa, m_mean_edgeDec;
+    // center is the absolute coordinates of the 0, 0 ephemerid
+    float m_centerRa, m_centerDec;
+public:
+    std::vector<Ephemeris> obj_data;
+    std::vector<Picture> pictures;
+    std::string obj_name;
+
+    const std::tuple<float, float> mean_center() const { return {m_mean_centerRa, m_mean_centerDec}; }
+    const std::tuple<float, float> mean_edges() const { return {m_mean_edgeRa, m_mean_edgeDec}; }
+
+    void export_observation_targets(){
+        //this context thing is just a temporary workaround
+        std::string context = obj_data[0].m_context;
+        std::string targets = "";
+        for(int i = 0; i < pictures.size(); i++){
+            pictures[i].approx_coords(m_centerRa, m_centerDec);
+            bool wrote = false;
+            for (int j = 0; j < context.size(); j++){
+                if (j < 18){
+                    if (context[j] == ' ') targets += ' ';
+                    else targets += context[j];
+                }
+                else if(j > 37){
+                    if (context[j] == ' ') targets += ' ';
+                    else targets += 'x';
+                }
+                else if (!wrote){
+                    float ra, dec;
+                    std::tie(ra, dec) = pictures[i].coords();
+                    std::cout << ra << " " << dec << std::endl;
+                    int ra_whole = ra, ra_min = ((float)ra-ra_whole)*60.f, ra_sec = (((float)ra-ra_whole)*60.f - ra_min)*600.f;
+                    targets+=('0'+ra_whole/10); targets += ('0'+ra_whole%10); targets += ' '; targets+=('0'+ra_min/10); targets+=('0'+ra_min%10);
+                    targets+=' '; targets+=('0'+ra_sec/100); targets+=('0'+(ra_sec%100)/10); targets+='.'; targets+=('0'+ra_sec%10); targets+=' ';
+
+                    int dec_whole = dec, dec_min = ((float)dec-dec_whole)*60.f, dec_sec = (((float)dec-dec_whole)*60.f - dec_min)*60.f;
+                    char sajn = (dec < 0) ? '-' : '+';
+                    targets+=sajn; targets+=('0'+dec_whole/10); targets+=('0'+dec_whole%10); targets+=' '; targets+=('0'+dec_min/10);
+                    targets+=('0'+dec_min%10); targets+=' '; targets+=('0'+dec_sec/10); targets+=('0'+dec_sec%10);
+                    wrote = true;
+                }
+            }
+            targets += '\n';
+        }
+        sf::Clipboard::setString(targets);
+        std::cout << "Observation targets for " + obj_name + ":\n\n" << targets << "\n\nCopied to clipboard" << std::endl;
+    }
+
+    void insert_data(std::string* str){
+        Ephemeris e(*str);
+        obj_data.emplace_back(e);
+    }
+
+    void insert_picture(float ra, float dec){
+        Picture p(ra, dec);
+        pictures.emplace_back(p);
+    }
+
+    const int closest_picture_index(float ra, float dec){
+        float x, y, d = FLT_MAX;
+        int ind;
+        for(int i = 0; i < pictures.size(); i++){
+            std::tie(x, y) = pictures[i].offsets();
+            float newd = sqrt(pow(ra-x, 2) + pow(dec-y, 2));
+            if (newd < d){
+                d = newd;
+                ind = i;
+            }
+        }
+        return ind;
+    }
+
+    void reset(){
+        obj_data.clear();
+        obj_name.clear();
+        pictures.clear();
+        m_mean_centerRa = 0.f; m_mean_centerDec = 0.f;
+        m_mean_edgeRa = 0.f; m_mean_edgeDec = 0.f;
+    }
+
+    void fill_database(std::string lynk){
+        //Get the object name from the link and set it
+        bool writing = false;
+        obj_name.clear();
+        for(int i = 0; i < lynk.size(); i++){
+            if (lynk[i] == '?'){
+                writing = true;
+                i += 5;
+            }
+            else if (lynk[i] == '&') break;
+
+            if (writing) obj_name += lynk[i];
+        }
+
+        //downloads the data off the internet
+        std::vector<std::string> downloaded;
+        get_html(lynk, &downloaded);
+
+        //saves the data
+        for(int i = 0; i < downloaded.size(); i++){
+            if (downloaded[i].size() < 80) continue;
+            insert_data(&(downloaded[i]));
+        }
+
+        //finding the extremities and using them to set the mean center/egdes
+        int minRa = INT_MAX, maxRa = INT_MIN;
+        int minDec = INT_MAX, maxDec = INT_MIN;
+        for(int i = 0; i < obj_data.size(); i++){
+            int ra, dec;
+            std::tie(ra, dec) = obj_data[i].offsets();
+            if (ra < minRa) minRa = ra;
+            if (ra > maxRa) maxRa = ra;
+            if (dec < minDec) minDec = dec;
+            if (dec > maxDec) maxDec = dec;
+        }
+        m_mean_centerRa = (float) (minRa+maxRa)/2;
+        m_mean_centerDec = (float) (minDec+maxDec)/2;
+        m_mean_edgeRa = std::max(abs(m_mean_centerRa-minRa), abs(m_mean_centerRa-maxRa));
+        m_mean_edgeDec = std::max(abs(m_mean_centerDec-minDec), abs(m_mean_centerDec-maxDec));
+
+        //here we use the fact that the first element has offsets of 0, 0 
+        obj_data[0].follow_link();
+        std::tie(m_centerRa, m_centerDec) = obj_data[0].coords();
+
+        return;
+    }
+
+    ObjectDatabase(){
+        m_mean_centerRa = 0.f; m_mean_centerDec = 0.f;
+        m_mean_edgeRa = 0.f; m_mean_edgeDec = 0.f;
+    }
+
+} database;
+
+class Camera{
+private:
+    //camera location in offset coords
+    float m_offsetRa, m_offsetDec;
+    //camera location in absolute coords [NOT IMPLEMENTED YET]
+    float m_ra_abs, m_dec_abs;
+    //zoom factor -> ratio of window size in px and arcseconds that fit in the window
+    float m_zoomFactor;
+    //window dimensions in px
+    int W, H;
+public:
+    const float raOffset() const { return m_offsetRa; }
+    const float decOffset() const { return m_offsetDec; }
+
+    const int window_w() const { return W; }
+    const int window_h() const { return H; }
+
+    const float zoom() const { return m_zoomFactor; }
+    const float view_w() const { return W/m_zoomFactor; }
+    const float view_h() const { return H/m_zoomFactor; }
+
+    void reset_position(){
+        std::tie(m_offsetRa, m_offsetDec) = database.mean_center();
+        float edgeRa, edgeDec;
+        std::tie(edgeRa, edgeDec) = database.mean_edges();
+        edgeRa *= 2; edgeDec *= 2;
+        m_zoomFactor = std::min((float)W/edgeRa, (float)H/edgeDec);
+    }
+
+    const std::tuple<float, float> px_to_off(int x, int y) {
+        float x_to_center = (float)W/2.f - x, y_to_center = (float)H/2.f - y;
+        float x_off = x_to_center/m_zoomFactor + m_offsetRa;
+        float y_off = y_to_center/m_zoomFactor + m_offsetDec;
+        return {x_off, y_off};
+    }
+
+    void change_zoom(float delta, float x, float y){
+        m_offsetRa += ((W/2.f - x) * 0.05f * delta) / m_zoomFactor;
+        m_offsetDec += ((H/2.f - y) * 0.05f * delta) / m_zoomFactor;
+        m_zoomFactor += m_zoomFactor * 0.05f * delta;
+    }
+
+    void change_dimensions(int x, int y){ W = x; H = y; }
+
+    Camera(int x = 1080, int y = 920) : W(x), H(y) {
+        m_offsetRa = 0.f;
+        m_offsetDec = 0.f;
+    }
+} cam;
+
 
 //-----------------------WINDOW STUFF-----------------------
 
-void WindowSetup()
-{
+void WindowSetup(){
     using namespace sf;
 
     //init window
-    RenderWindow window(VideoMode(W, H), obj_name);
-    std::tie(centx, centy) = db2Coords(0, 0);
-    View view(Vector2f(centx, centy), Vector2f(W, H));
-    view.rotate(180);
-    FixSqdim();
 
-    Font font; font.loadFromFile("arial.ttf");
-    Text text;
-    text.setFont(font);
-    text.setCharacterSize(20);
-    text.setRotation(180.f);
+    ContextSettings settings;
+    settings.antialiasingLevel = 8;
+    VideoMode desktop = VideoMode::getDesktopMode();
+    RenderWindow window(VideoMode(cam.window_w(), cam.window_h(), desktop.bitsPerPixel), database.obj_name, Style::Default, settings);
+    window.setFramerateLimit(60);
+
+    View view(Vector2f(cam.raOffset(), cam.decOffset()), Vector2f(cam.view_w(), cam.view_h()));
+    view.rotate(180);
+
+    Font font; font.loadFromFile("resources/arial.ttf");
+
+    Text infoText;
+    infoText.setFont(font);
+    infoText.setCharacterSize(20);
+    infoText.setRotation(180.f);
 
     bool fokus = true;          //is window focused?
     bool mistu = false;         //is mouse on the window?
-    double sqlx, sqly;          //where is the mouse?
-    double csqx, csqy;          //where is the closest square?
+    float mouseRa = 0.f, mouseDec = 0.f;    //where is the mouse?
     bool brisanje = false;      //is a square being deleted?
-    while(window.isOpen())
-    {
+
+    while(window.isOpen()){
         //Event processing 
         Event event;
-        while(window.pollEvent(event))
-        {
-            if(event.type == Event::Closed)
-                window.close();
-            
-            if(event.type == Event::KeyPressed)
-            {
-                if (event.key.code == Keyboard::Q)
-                    window.close();
-                
-                if (event.key.code == Keyboard::C)
-                    squares.clear();
-        
-                if (event.key.code == Keyboard::U && !squares.empty())
-                    squares.pop_back();
-                
-                if (event.key.code == Keyboard::R)
-                {
-                    zoomFactor = 1;
-                    std::tie(centx, centy) = db2Coords(0, 0);
-                    view.setSize(Vector2f(W, H));
-                    view.setCenter(centx, centy);
-                    FixSqdim();
+        while(window.pollEvent(event)){
+            if(event.type == Event::Closed) window.close();
+            if(event.type == Event::KeyPressed) {
+                if (event.key.code == Keyboard::Q) window.close();
+                if (event.key.code == Keyboard::C) database.pictures.clear();
+                if (event.key.code == Keyboard::U && !database.pictures.empty()) database.pictures.pop_back();
+                if (event.key.code == Keyboard::R){
+                    cam.reset_position();
+                    view.setSize(Vector2f(cam.view_w(), cam.view_h()));
+                    view.setCenter(cam.raOffset(), cam.decOffset());
                 }
             }
-            
-            if(event.type == Event::Resized)
-            {
-                W = event.size.width;
-                H = event.size.height;
-                view.setSize(Vector2f(W*zoomFactor, H*zoomFactor));
-                FixSqdim();
+            if(event.type == Event::Resized){
+                cam.change_dimensions(event.size.width, event.size.height);
+                cam.reset_position();
+                view.setSize(Vector2f(cam.view_w(), cam.view_h()));
             }
-
-            if (event.type == Event::MouseButtonPressed)
-            {
-                if (event.mouseButton.button == Mouse::Left)
-                {
+            if (event.type == Event::MouseButtonPressed){
+                if (event.mouseButton.button == Mouse::Left){
                     double xd, yd;
-                    std::tie(xd, yd) = Coords2Loc(event.mouseButton.x, event.mouseButton.y);
-                    std::tie(xd, yd) = Loc2db(xd-sqdim/2, yd-sqdim/2);
-                    squares.emplace_back(std::make_pair(xd, yd));
+                    std::tie(xd, yd) = cam.px_to_off(event.mouseButton.x, event.mouseButton.y);
+                    database.insert_picture(xd, yd);
                 }
-                if (event.mouseButton.button == Mouse::Right && !squares.empty())
-                    brisanje = true;
+                if (event.mouseButton.button == Mouse::Right && !database.pictures.empty()) brisanje = true;
             }
-
-            if (event.type == Event::MouseButtonReleased)
-            {
-                if (event.mouseButton.button == Mouse::Right && brisanje)
-                {
+            if (event.type == Event::MouseButtonReleased){
+                if (event.mouseButton.button == Mouse::Right && brisanje){
                     double xd, yd;
-                    std::tie(xd, yd) = Coords2Loc(event.mouseButton.x, event.mouseButton.y);
-                    std::tie(xd, yd) = Loc2db(xd-sqdim/2, yd-sqdim/2);
-                    squares.erase(squares.begin()+findClosest(xd, yd));
+                    std::tie(xd, yd) = cam.px_to_off(event.mouseButton.x, event.mouseButton.y);
+                    database.pictures.erase(database.pictures.begin()+database.closest_picture_index(xd, yd));
                     brisanje = false;
                 }
             }
-
-            if (event.type == Event::MouseWheelScrolled)
-            {
-                if (event.mouseWheelScroll.wheel == Mouse::VerticalWheel)
-                {
-                    int dlt = event.mouseWheelScroll.delta;
-                    zoomFactor += dlt*0.05f*zoomFactor;
-
-                    //set new center
-                    double xd, yd;
-                    std::tie(xd, yd) = Coords2Loc(event.mouseWheelScroll.x, event.mouseWheelScroll.y);
-                    centx += (centx-xd)*0.05f*dlt;
-                    centy += (centy-yd)*0.05f*dlt;
-
-                    view.setCenter(centx, centy);
-                    view.setSize(Vector2f(W*zoomFactor, H*zoomFactor));
-                    FixSqdim();
+            if (event.type == Event::MouseWheelScrolled){
+                if (event.mouseWheelScroll.wheel == Mouse::VerticalWheel){
+                    cam.change_zoom(event.mouseWheelScroll.delta, event.mouseWheelScroll.x, event.mouseWheelScroll.y);
+                    view.setCenter(cam.raOffset(), cam.decOffset());
+                    view.setSize(Vector2f(cam.view_w(), cam.view_h()));
                 }
             }
-
-            if (event.type == Event::MouseMoved)
-            {
-                std::tie(sqlx, sqly) = Coords2Loc(event.mouseMove.x, event.mouseMove.y);
-                //if right mouse button is pressed find the closest square and remember its location
-                if (brisanje)
-                {
-                    double xd, yd;
-                    std::tie(xd, yd) = Coords2Loc(event.mouseMove.x, event.mouseMove.y);
-                    std::tie(xd, yd) = Loc2db(xd-sqdim/2, yd-sqdim/2);
-                    int ind = findClosest(xd, yd);
-                    std::tie(csqx, csqy) = db2Coords(squares[ind].first, squares[ind].second);
-                }
-            }
-
-            if (event.type == Event::LostFocus)
-                fokus = false;
-            if (event.type == Event::GainedFocus)
-                fokus = true;
-            if (event.type == Event::MouseEntered)
-                mistu = true;
-            if (event.type == Event::MouseLeft)
-                mistu = false;
-
-            //h hide/show help gui
+            if (event.type == Event::MouseMoved) std::tie(mouseRa, mouseDec) = cam.px_to_off(event.mouseMove.x, event.mouseMove.y);
+            if (event.type == Event::LostFocus) fokus = false;
+            if (event.type == Event::GainedFocus) fokus = true;
+            if (event.type == Event::MouseEntered) mistu = true;
+            if (event.type == Event::MouseLeft) mistu = false;
         }
         window.clear();
         window.setView(view);
 
         //draw dots
-        CircleShape tocka(1.5f*zoomFactor);
-        for(int i = 0; i < db.size(); i++)
-        {
-            if (cate[i] == 0) tocka.setFillColor(Color(0, 255, 0));
-            else if (cate[i] == 2) tocka.setFillColor(Color(255, 255, 0));
-            else if (cate[i] == 3) tocka.setFillColor(Color(255, 0, 0));
-            else if (cate[i] == 4) tocka.setFillColor(Color(255, 255, 255));
-            else if (cate[i] == 11) tocka.setFillColor(Color(0, 0, 255));
+        CircleShape tocka(1.5f/cam.zoom());
+        for(int i = 0; i < database.obj_data.size(); i++){
+            short int cat = database.obj_data[i].category();
+            if (cat == 0) tocka.setFillColor(Color(0, 255, 0));
+            else if (cat == 2) tocka.setFillColor(Color(255, 255, 0));
+            else if (cat == 3) tocka.setFillColor(Color(255, 0, 0));
+            else if (cat == 4) tocka.setFillColor(Color(255, 255, 255));
+            else if (cat == 11) tocka.setFillColor(Color(0, 0, 255));
             else tocka.setFillColor(Color(255, 0, 255));
 
             double x, y;
-            std::tie(x, y) = db2Coords(db[i].first, db[i].second);
+            std::tie(x, y) = database.obj_data[i].offsets();
             tocka.setPosition(x, y);
             window.draw(tocka);
         }
 
-        //square projecting
-        RectangleShape kvadrat(Vector2f(sqdim, sqdim));
+        //setup the square projection settings
+        RectangleShape kvadrat(Vector2f(telescope_FOV, telescope_FOV));
         kvadrat.setFillColor(Color::Transparent);
-        kvadrat.setOutlineThickness(zoomFactor);
+        kvadrat.setOutlineThickness(2.f/cam.zoom());
 
         //draw a blue square on cursor location
-        if (mistu && fokus)
-        {
+        if (mistu && fokus){
             kvadrat.setOutlineColor(Color(0, 255, 255));
-            kvadrat.setPosition(sqlx-sqdim/2, sqly-sqdim/2);
+            kvadrat.setPosition(mouseRa-telescope_FOV/2, mouseDec-telescope_FOV/2);
             window.draw(kvadrat);
         }
 
         //draw other squares
         kvadrat.setOutlineColor(Color(255, 255, 0));
-        for(int i = 0; i < squares.size(); i++)
-        {
-            double x,y;
-            std::tie(x, y) = db2Coords(squares[i].first, squares[i].second);
-            kvadrat.setPosition(x, y);
+        for(int i = 0; i < database.pictures.size(); i++){
+            float xd, yd;
+            std::tie(xd, yd) = database.pictures[i].offsets();
+            kvadrat.setPosition(xd-telescope_FOV/2, yd-telescope_FOV/2);
             window.draw(kvadrat);
         }
 
         //show which square will be deleted if the button is released
-        if (brisanje)
-        {
-            sf::Vertex line[] = {Vertex(Vector2f(sqlx, sqly)), Vertex(Vector2f(csqx+sqdim/2, csqy+sqdim/2))};
+        if (brisanje){
+            int ind = database.closest_picture_index(mouseRa, mouseDec);
+            float xd, yd;
+            std::tie(xd, yd) = database.pictures[ind].offsets();
+            sf::Vertex line[] = {
+                Vertex(Vector2f(mouseRa, mouseDec)), 
+                Vertex(Vector2f(xd, yd))
+            };
             window.draw(line, 2, Lines);
         }
 
-        //show text
-        
+        //show info text
+        std::string xs = std::to_string(mouseRa);
+        std::string ys = std::to_string(mouseDec);
+        infoText.setScale(1.f/cam.zoom(), 1.f/cam.zoom());
+        infoText.setPosition(cam.raOffset()+cam.view_w()/2, cam.decOffset()+cam.view_h()/2);
+        infoText.setString("Offsets:\nRa= " + xs + "\nDec= " + ys);
+        window.draw(infoText);
 
-        double xstr, ystr;
-        std::tie(xstr, ystr) = Loc2db(sqlx, sqly);
-        std::string xs = std::to_string(xstr);
-        std::string ys = std::to_string(ystr);
-        text.setString("Offsets:\nRA= " + xs + "\nDEC= " + ys);
-        text.setScale(zoomFactor, zoomFactor);
-        text.setPosition(centx+W/2*zoomFactor, centy+H/2*zoomFactor);
-        window.draw(text);
 
         window.display();
     }
 }
-
-
-//-----------------------RESULT OUTPUT STUFF-----------------------
-
-//add clipboard string (cpb) to clipboard
-void toClipboard(std::string cpb)
-{   
-    const char* output = cpb.c_str();
-    const size_t len = strlen(output) + 1;
-    HGLOBAL hMem =  GlobalAlloc(GMEM_MOVEABLE, len);
-    memcpy(GlobalLock(hMem), output, len);
-    GlobalUnlock(hMem);
-    OpenClipboard(0);
-    EmptyClipboard();
-    SetClipboardData(CF_TEXT, hMem);
-    CloseClipboard();
-
-    printf("\nCopied to clipboard\n\n\n");
-    return;
-}
-
-void observationTargets()
-{
-    using namespace std;
-    string obj_pre = obj_context.substr(0, 18);
-    string obj_post = obj_context.substr(38, obj_context.length()-38);
-    string cpb=obj_name+"\n";
-
-    //since the data cointained in post is unknown for a specific orbit, it is removed
-    for(int i = 0; i < obj_post.length(); i++) if (obj_post[i] != ' ' && obj_post[i] != '.') obj_post[i] = 'x';
-
-    printf("\nData:\n");
-
-    //print out the targets
-    for(int i = 0; i < squares.size(); i++)
-    {
-        double nr = (squares[i].first + zero_r)/15;
-        double nd = squares[i].second + zero_d;
-        string sgn = "+"; if (nd < 0) {sgn="-"; nd*=-1;}
-
-        int r1 = floor(nr/3600);
-        int r2 = floor(((nr/3600)-r1)*60);
-        int r3 = floor(((((nr/3600)-r1)*60)-r2)*600);
-        string pr1 = to_string(r1); while (pr1.size() < 2) pr1 = "0" + pr1;
-        string pr2 = to_string(r2); while (pr2.size() < 2) pr2 = "0" + pr2;
-        string pr3 = to_string(r3); while (pr3.size() < 3) pr3 = "0" + pr3;
-
-        int d1 = floor(nd/3600);
-        int d2 = floor(((nd/3600)-d1)*60);
-        int d3 = floor(((((nd/3600)-d1)*60)-d2)*60);
-        string pd1 = to_string(d1); while (pd1.size() < 2) pd1 = "0" + pd1;
-        string pd2 = to_string(d2); while (pd2.size() < 2) pd2 = "0" + pd2;
-        string pd3 = to_string(d3); while (pd3.size() < 2) pd3 = "0" + pd3;
-
-        pr3.insert(2, ".");
-        string rec = pr1 + " " + pr2 + " " + pr3;
-        string dec = sgn + pd1 + " " + pd2 + " " + pd3;
-        string tmps = obj_pre + rec + " " + dec + obj_post + "\n";
-        printf (tmps.c_str());
-
-        //add to clipboard string
-        cpb += tmps;
-    }
-
-    if (cpb.length())
-        toClipboard(cpb);
-
-    return;
-}
-
 
 //-----------------------MAIN-----------------------
 
@@ -506,7 +492,7 @@ void defaultVariables()
 {
     using namespace std;
 
-    ifstream ReadFile("variables.txt");
+    ifstream ReadFile("data/variables.txt");
     string linija;
     while(getline(ReadFile, linija))
     {
@@ -521,33 +507,51 @@ void defaultVariables()
         {
             string a = linija.substr(3, linija.length()-3);
             stringstream ss(a);
+            int W, H;
             if (linija[0] == 'H') ss >> H;
             else if (linija[0] == 'W') ss >> W;
+            cam.change_dimensions(W, H);
         }
         }
     }
 }
 
-int main(void)
-{
-    while(true)
-    {
-        db.clear();
-        squares.clear();
-        zoomFactor = 1;
+int main(void){
+    while(true){
         defaultVariables();
 
-        GenData();
-        
-        printf("\nOBJECT: ");
-        printf(obj_name.c_str());
-        printf("\n");
+        std::cout << "Insert the website URL: ";
+        std::string url;
+        std::getline(std::cin, url);
+        std::cout << std::endl;
+        database.fill_database(url);
+        std::cout << "Object: " << database.obj_name << std::endl;
+
+        cam.reset_position();
 
         WindowSetup();
-        observationTargets();
+        database.export_observation_targets();
 
-        system("pause");
-        printf("\n\n");
+        std::cout << "\n\n" << std::flush;
     }
     return 0;
 }
+
+//TODO:
+// Try to make an algorythm for automatically selecting squares in an optimal manner
+// Add exposure time variable
+// Make ephemeris save their positons change trough time
+// Implement time passing display (and linear approximations for movements between hours)
+// Add object selection menu
+// Remove the console aspect of the app
+// Add the windoww to see the changes
+// Add panning
+// Show the coordinate system
+// Add error handling
+// Optimize event conditional logic
+// remove using namespace calls
+// do some inheritance for camera, picture and ephemeris
+// break up code
+// add help gui
+// rename database to db
+// make downloading progress more interesting

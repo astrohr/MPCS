@@ -1,6 +1,5 @@
 #! /bin/sh
 
-cmake -S . -B build/ -G "MinGW Makefiles" -DSFML_BUILD_AUDIO=OFF -DSFML_BUILD_NETWORK=OFF -DBUILD_SHARED_LIBS=OFF -DCMAKE_BUILD_TYPE=Debug -DBUILD_CURL_EXE=OFF -DBUILD_TESTING=OFF;
+cmake -S . -B build/ -G "MinGW Makefiles" -DCMAKE_BUILD_TYPE=Debug;
 cd ./build/;
 mingw32-make
-
