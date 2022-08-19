@@ -13,6 +13,23 @@ int telescope_FOV;   //telescope_FOV in arcseconds
 
 //------------------------CURL STUFF------------------------
 
+static size_t progress_callback(void* clientp, double dltotal, double dlnow, double ultotal, double ulnow){
+    if (dltotal <= 0.0) {
+        std::cout << dlnow << " bytes downloaded\r" << std::flush;
+    }
+    else{
+        std::cout << '|';
+        int bar_size = 50; //this + 7 is the total size
+        int fragments = round(dlnow/dltotal*bar_size);
+        for(int i = 0; i < bar_size; i++){
+            if (i<fragments) std::cout << '-';
+            else std::cout << ' ';
+        }
+        std::cout << "| " << (int)(dlnow/dltotal*100) << "%\r" << std::flush;
+    }
+    return 0;
+}
+
 size_t read_curl_data(char* ptr, size_t size, size_t nmemb, std::vector<std::string>* userdata){
     size_t bytes = size*nmemb;
 
@@ -31,12 +48,15 @@ void get_html(std::string link, std::vector<std::string>* userdata){
     (*userdata).emplace_back("");
     curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, read_curl_data);
     curl_easy_setopt(curl, CURLOPT_WRITEDATA, userdata);
+    curl_easy_setopt(curl, CURLOPT_NOPROGRESS, FALSE);
+    curl_easy_setopt(curl, CURLOPT_PROGRESSFUNCTION, progress_callback);
+    // curl_easy_setopt(curl, CURLOPT_XFERINFODATA, &data);
     curl_easy_setopt(curl, CURLOPT_URL, link.c_str());
 
-    std::cout << "Downloading data...\t\t";
+    std::cout << "Downloading data...\n";
     CURLcode res = curl_easy_perform(curl);
     if (res != CURLE_OK) std::cout<< curl_easy_strerror(res) << std::endl;
-    else std::cout << "Download success\n" << std::endl;
+    else std::cout << "\nDownload success\n" << std::endl;
     
     curl_easy_cleanup(curl);
     return;
@@ -202,8 +222,10 @@ public:
             }
             targets += '\n';
         }
-        sf::Clipboard::setString(targets);
-        std::cout << "Observation targets for " + obj_name + ":\n\n" << targets << "\n\nCopied to clipboard" << std::endl;
+        if (targets.size()){
+            sf::Clipboard::setString(targets);
+            std::cout << "Observation targets for " + obj_name + ":\n\n" << targets << "\n\nCopied to clipboard" << std::endl;
+        }
     }
 
     void insert_data(std::string* str){
@@ -486,6 +508,7 @@ void WindowSetup(){
     }
 }
 
+
 //-----------------------MAIN-----------------------
 
 void defaultVariables()
@@ -531,6 +554,7 @@ int main(void){
 
         WindowSetup();
         database.export_observation_targets();
+        database.reset();
 
         std::cout << "\n\n" << std::flush;
     }
@@ -553,5 +577,4 @@ int main(void){
 // do some inheritance for camera, picture and ephemeris
 // break up code
 // add help gui
-// rename database to db
 // make downloading progress more interesting
