@@ -12,6 +12,7 @@ set(BUILD_TESTING OFF)
 
 set(CURL_ENABLE_SSL ON)
 if (WIN32)
+    set(SFML_USE_STATIC_STD_LIBS ON)
     set(CURL_USE_SCHANNEL ON)
 endif()
 

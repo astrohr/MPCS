@@ -13,6 +13,11 @@ int telescope_FOV;   //telescope_FOV in arcseconds
 
 //------------------------CURL STUFF------------------------
 
+std::vector<std::string> allowed_links{
+    "https://cgi.minorplanetcenter.net/",
+    "https://www.minorplanetcenter.net/"
+};
+
 static size_t progress_callback(void* clientp, double dltotal, double dlnow, double ultotal, double ulnow){
     if (dltotal <= 0.0) {
         std::cout << dlnow << " bytes downloaded\r" << std::flush;
@@ -43,23 +48,45 @@ size_t read_curl_data(char* ptr, size_t size, size_t nmemb, std::vector<std::str
     return bytes; // returns the number of bytes passed to the function
 }
 
-void get_html(std::string link, std::vector<std::string>* userdata){
+int get_html(std::string link, std::vector<std::string>* userdata){
     CURL *curl = curl_easy_init();
     (*userdata).emplace_back("");
     curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, read_curl_data);
     curl_easy_setopt(curl, CURLOPT_WRITEDATA, userdata);
     curl_easy_setopt(curl, CURLOPT_NOPROGRESS, FALSE);
     curl_easy_setopt(curl, CURLOPT_PROGRESSFUNCTION, progress_callback);
-    // curl_easy_setopt(curl, CURLOPT_XFERINFODATA, &data);
     curl_easy_setopt(curl, CURLOPT_URL, link.c_str());
+
+    bool match = false;
+    for(int i = 0; i < allowed_links.size() && !match; i++){
+        bool ac = true;
+        for(int j = 0; j < allowed_links[i].size(); j++){
+            if (j >= link.size() || link[j] != allowed_links[i][j]){
+                ac = false;
+                break;
+            }
+        }
+        if(ac) match = true;
+    }
+    if (!match){
+        std::cout << "Error: link not allowed" << std::endl;
+        return 2;
+    }
 
     std::cout << "Downloading data...\n";
     CURLcode res = curl_easy_perform(curl);
-    if (res != CURLE_OK) std::cout<< curl_easy_strerror(res) << std::endl;
-    else std::cout << "\nDownload success\n" << std::endl;
+    int returnvalue;
+    if (res != CURLE_OK) {
+        std::cout<< curl_easy_strerror(res) << std::endl;
+        returnvalue = 1;
+    }
+    else{
+        std::cout << "\nDownload success\n" << std::endl;
+        returnvalue = 0;
+    }
     
     curl_easy_cleanup(curl);
-    return;
+    return returnvalue;
 }
 
 
@@ -84,9 +111,10 @@ public:
         m_dec = centerDec + (float)m_offsetDec/3600.f;
     }
 
-    void follow_link(){
+    int follow_link(){
         std::vector<std::string> downloaded;
-        get_html(m_link, &downloaded);
+        int returnvalue = get_html(m_link, &downloaded);
+        if (returnvalue != 0) return returnvalue;
 
         //for now it just looks at the first ephemeris, but that will be changed
         for (int i = 0; i < downloaded.size(); i++){
@@ -110,6 +138,7 @@ public:
                 break;
             }
         }
+        return 0;
     }
 
     //the constructor is passed the string that describes the ephemeris in the source and parses trough it
@@ -181,6 +210,37 @@ private:
     float m_mean_edgeRa, m_mean_edgeDec;
     // center is the absolute coordinates of the 0, 0 ephemerid
     float m_centerRa, m_centerDec;
+    int m_picExposure, m_picAmmount;
+
+    //function for nicely formatting the numbers to strings (with leading zeroes)
+    std::string frmt(int num, int digits=2){
+        int dgtnum = 0, num2 = num;
+        while(num2){
+            dgtnum++;
+            num2 /= 10;
+        } digits = std::max(dgtnum, digits);
+        
+        std::string str = "";
+        for(int i = digits-1; i >= 0; i--)
+            str += '0'+(num/(int)pow(10, i)%10);
+        
+        return str;
+    }
+
+    std::string b10_to_b26(int c){
+        std::string str = "";
+        while(c || str == ""){
+            if (c%26) {
+                str += 'a' + c%26-1;
+                c /= 26;
+                continue;
+            }
+            str += 'z';
+            c = c/26 -1;
+        } std::reverse(str.begin(), str.end());
+        return str;
+    }
+
 public:
     std::vector<Ephemeris> obj_data;
     std::vector<Picture> pictures;
@@ -189,12 +249,22 @@ public:
     const std::tuple<float, float> mean_center() const { return {m_mean_centerRa, m_mean_centerDec}; }
     const std::tuple<float, float> mean_edges() const { return {m_mean_edgeRa, m_mean_edgeDec}; }
 
+    void set_exposure(int exp){ m_picExposure = exp; }
+    void set_ammount(int amm){ m_picAmmount = amm; }
+
     void export_observation_targets(){
         //this context thing is just a temporary workaround
         std::string context = obj_data[0].m_context;
         std::string targets = "";
+        std::string cpbnl = "\r\n"; //clipboard 
         for(int i = 0; i < pictures.size(); i++){
             pictures[i].approx_coords(m_centerRa, m_centerDec);
+            if (pictures.size() > 1){
+    	        std::string letter = b10_to_b26(i+1);
+                targets += "* " + obj_name + "_" + letter + "    " + frmt(m_picAmmount) + " x " + frmt(m_picExposure) + " sec" + cpbnl;
+            }
+            else targets += "* " + obj_name + "    " + frmt(m_picAmmount) + " x " + frmt(m_picExposure) + " sec" + cpbnl;
+
             bool wrote = false;
             for (int j = 0; j < context.size(); j++){
                 if (j < 18){
@@ -208,23 +278,20 @@ public:
                 else if (!wrote){
                     float ra, dec;
                     std::tie(ra, dec) = pictures[i].coords();
-                    std::cout << ra << " " << dec << std::endl;
                     int ra_whole = ra, ra_min = ((float)ra-ra_whole)*60.f, ra_sec = (((float)ra-ra_whole)*60.f - ra_min)*600.f;
-                    targets+=('0'+ra_whole/10); targets += ('0'+ra_whole%10); targets += ' '; targets+=('0'+ra_min/10); targets+=('0'+ra_min%10);
-                    targets+=' '; targets+=('0'+ra_sec/100); targets+=('0'+(ra_sec%100)/10); targets+='.'; targets+=('0'+ra_sec%10); targets+=' ';
+                    targets += frmt(ra_whole) + " " + frmt(ra_min) + " " + frmt(ra_sec, 3).insert(2, ".") + " ";
 
                     int dec_whole = dec, dec_min = ((float)dec-dec_whole)*60.f, dec_sec = (((float)dec-dec_whole)*60.f - dec_min)*60.f;
-                    char sajn = (dec < 0) ? '-' : '+';
-                    targets+=sajn; targets+=('0'+dec_whole/10); targets+=('0'+dec_whole%10); targets+=' '; targets+=('0'+dec_min/10);
-                    targets+=('0'+dec_min%10); targets+=' '; targets+=('0'+dec_sec/10); targets+=('0'+dec_sec%10);
+                    std::string sajn = (dec < 0) ? "-" : "+";
+                    targets += sajn + frmt(dec_whole) + " " + frmt(dec_min) + " " + frmt(dec_sec);
                     wrote = true;
                 }
             }
-            targets += '\n';
+            targets += cpbnl+cpbnl;
         }
         if (targets.size()){
             sf::Clipboard::setString(targets);
-            std::cout << "Observation targets for " + obj_name + ":\n\n" << targets << "\n\nCopied to clipboard" << std::endl;
+            std::cout << "\nObservation targets for " + obj_name + ":\n\n" << targets << "\n\nCopied to clipboard" << std::endl;
         }
     }
 
@@ -260,7 +327,7 @@ public:
         m_mean_edgeRa = 0.f; m_mean_edgeDec = 0.f;
     }
 
-    void fill_database(std::string lynk){
+    int fill_database(std::string lynk){
         //Get the object name from the link and set it
         bool writing = false;
         obj_name.clear();
@@ -276,7 +343,8 @@ public:
 
         //downloads the data off the internet
         std::vector<std::string> downloaded;
-        get_html(lynk, &downloaded);
+        int returnvalue = get_html(lynk, &downloaded);
+        if (returnvalue != 0) return returnvalue;
 
         //saves the data
         for(int i = 0; i < downloaded.size(); i++){
@@ -301,10 +369,15 @@ public:
         m_mean_edgeDec = std::max(abs(m_mean_centerDec-minDec), abs(m_mean_centerDec-maxDec));
 
         //here we use the fact that the first element has offsets of 0, 0 
-        obj_data[0].follow_link();
+        if (obj_data.empty()){
+            std::cout << "Error: no data" << std::endl;
+            return 4;
+        }
+        returnvalue = obj_data[0].follow_link();
+        if (returnvalue != 0) return 1;
         std::tie(m_centerRa, m_centerDec) = obj_data[0].coords();
 
-        return;
+        return 0;
     }
 
     ObjectDatabase(){
@@ -340,7 +413,7 @@ public:
         float edgeRa, edgeDec;
         std::tie(edgeRa, edgeDec) = database.mean_edges();
         edgeRa *= 2; edgeDec *= 2;
-        m_zoomFactor = std::min((float)W/edgeRa, (float)H/edgeDec);
+        m_zoomFactor = std::min((float)W/edgeRa, (float)H/edgeDec) * 0.9f;
     }
 
     const std::tuple<float, float> px_to_off(int x, int y) {
@@ -371,7 +444,6 @@ void WindowSetup(){
     using namespace sf;
 
     //init window
-
     ContextSettings settings;
     settings.antialiasingLevel = 8;
     VideoMode desktop = VideoMode::getDesktopMode();
@@ -388,40 +460,49 @@ void WindowSetup(){
     infoText.setCharacterSize(20);
     infoText.setRotation(180.f);
 
-    bool fokus = true;          //is window focused?
-    bool mistu = false;         //is mouse on the window?
+    bool fokus = true;                      //is window focused?
+    bool mistu = false;                     //is mouse on the window?
     float mouseRa = 0.f, mouseDec = 0.f;    //where is the mouse?
-    bool brisanje = false;      //is a square being deleted?
+    bool brisanje = false;                  //is a square being deleted?
 
     while(window.isOpen()){
         //Event processing 
         Event event;
         while(window.pollEvent(event)){
             if(event.type == Event::Closed) window.close();
-            if(event.type == Event::KeyPressed) {
+            else if(event.type == Event::KeyPressed) {
                 if (event.key.code == Keyboard::Q) window.close();
-                if (event.key.code == Keyboard::C) database.pictures.clear();
-                if (event.key.code == Keyboard::U && !database.pictures.empty()) database.pictures.pop_back();
-                if (event.key.code == Keyboard::R){
+                else if (event.key.code == Keyboard::C) database.pictures.clear();
+                else if (event.key.code == Keyboard::U && !database.pictures.empty()) database.pictures.pop_back();
+                else if (event.key.code == Keyboard::R){
                     cam.reset_position();
                     view.setSize(Vector2f(cam.view_w(), cam.view_h()));
                     view.setCenter(cam.raOffset(), cam.decOffset());
                 }
+                else if (event.key.code == Keyboard::H){
+                    std::cout << "\nLeft Click to add an observation target" << std::endl;
+                    std::cout << "Right Click to remove an observation target" << std::endl;
+                    std::cout << "Q to exit the window and confirm the selection" << std::endl;
+                    std::cout << "R to reset the view" << std::endl;
+                    std::cout << "U to undo an observation target" << std::endl;
+                    std::cout << "C to remove all observation targets" << std::endl;
+                    std::cout << "You can zoom in and out with the scroll wheel\n" << std::endl;
+                }
             }
-            if(event.type == Event::Resized){
+            else if(event.type == Event::Resized){
                 cam.change_dimensions(event.size.width, event.size.height);
                 cam.reset_position();
                 view.setSize(Vector2f(cam.view_w(), cam.view_h()));
             }
-            if (event.type == Event::MouseButtonPressed){
+            else if (event.type == Event::MouseButtonPressed){
                 if (event.mouseButton.button == Mouse::Left){
                     double xd, yd;
                     std::tie(xd, yd) = cam.px_to_off(event.mouseButton.x, event.mouseButton.y);
                     database.insert_picture(xd, yd);
                 }
-                if (event.mouseButton.button == Mouse::Right && !database.pictures.empty()) brisanje = true;
+                else if (event.mouseButton.button == Mouse::Right && !database.pictures.empty()) brisanje = true;
             }
-            if (event.type == Event::MouseButtonReleased){
+            else if (event.type == Event::MouseButtonReleased){
                 if (event.mouseButton.button == Mouse::Right && brisanje){
                     double xd, yd;
                     std::tie(xd, yd) = cam.px_to_off(event.mouseButton.x, event.mouseButton.y);
@@ -429,18 +510,18 @@ void WindowSetup(){
                     brisanje = false;
                 }
             }
-            if (event.type == Event::MouseWheelScrolled){
+            else if (event.type == Event::MouseWheelScrolled){
                 if (event.mouseWheelScroll.wheel == Mouse::VerticalWheel){
                     cam.change_zoom(event.mouseWheelScroll.delta, event.mouseWheelScroll.x, event.mouseWheelScroll.y);
                     view.setCenter(cam.raOffset(), cam.decOffset());
                     view.setSize(Vector2f(cam.view_w(), cam.view_h()));
                 }
             }
-            if (event.type == Event::MouseMoved) std::tie(mouseRa, mouseDec) = cam.px_to_off(event.mouseMove.x, event.mouseMove.y);
-            if (event.type == Event::LostFocus) fokus = false;
-            if (event.type == Event::GainedFocus) fokus = true;
-            if (event.type == Event::MouseEntered) mistu = true;
-            if (event.type == Event::MouseLeft) mistu = false;
+            else if (event.type == Event::MouseMoved) std::tie(mouseRa, mouseDec) = cam.px_to_off(event.mouseMove.x, event.mouseMove.y);
+            else if (event.type == Event::LostFocus) fokus = false;
+            else if (event.type == Event::GainedFocus) fokus = true;
+            else if (event.type == Event::MouseEntered) mistu = true;
+            else if (event.type == Event::MouseLeft) mistu = false;
         }
         window.clear();
         window.setView(view);
@@ -509,54 +590,62 @@ void WindowSetup(){
 }
 
 
-//-----------------------MAIN-----------------------
+//---------------------------MAIN---------------------------
 
 void defaultVariables()
 {
     using namespace std;
+    int W, H;
 
     ifstream ReadFile("data/variables.txt");
     string linija;
     while(getline(ReadFile, linija))
     {
         if (linija.size()){
-        if (linija[0] == 'F')
-        {
+        if (linija[0] == 'F'){
             string a = linija.substr(5, linija.length()-5);
             stringstream ss(a);
             ss >> telescope_FOV;
         }
-        else
-        {
+        else{
             string a = linija.substr(3, linija.length()-3);
             stringstream ss(a);
-            int W, H;
             if (linija[0] == 'H') ss >> H;
             else if (linija[0] == 'W') ss >> W;
-            cam.change_dimensions(W, H);
-        }
-        }
+        }}
     }
+    cam.change_dimensions(W, H);
 }
 
 int main(void){
+    defaultVariables();
     while(true){
-        defaultVariables();
+        database.reset();
 
-        std::cout << "Insert the website URL: ";
+        std::cout << "Insert the website URL: " << std::endl;
         std::string url;
-        std::getline(std::cin, url);
-        std::cout << std::endl;
-        database.fill_database(url);
-        std::cout << "Object: " << database.obj_name << std::endl;
+        //the for is here to make sure that the url inserted isnt an empty line
+        for(int i = 0; i < 3 && !url.size(); i++) std::getline(std::cin, url);
 
+        std::cout << std::endl;
+        int greska = database.fill_database(url);
+        if (greska){
+            std::cout << std::endl << std::endl;
+            continue;
+        }
         cam.reset_position();
+
+        int amm, exp;
+        std::cout << "Object: " << database.obj_name << std::endl;
+        std::cout << "Insert the ammount of pictures: " << std::flush;
+        std::cin >> amm; database.set_ammount(amm);
+        std::cout << "Insert the exposure length (in seconds): " << std::flush;
+        std:: cin >> exp; database.set_exposure(exp);
 
         WindowSetup();
         database.export_observation_targets();
-        database.reset();
 
-        std::cout << "\n\n" << std::flush;
+        std::cout << std::endl << std::endl;
     }
     return 0;
 }
@@ -576,5 +665,3 @@ int main(void){
 // remove using namespace calls
 // do some inheritance for camera, picture and ephemeris
 // break up code
-// add help gui
-// make downloading progress more interesting
