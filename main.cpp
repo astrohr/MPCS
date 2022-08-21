@@ -109,6 +109,12 @@ public:
     void approx_coords(float centerRa, float centerDec){
         m_ra = centerRa + (float)m_offsetRa/3600.f/15.f;
         m_dec = centerDec + (float)m_offsetDec/3600.f;
+        while(m_ra >= 24.f) m_ra -= 24.f;
+        while(m_ra < 0.f) m_ra += 24.f;
+        while(m_dec > 90.f || m_dec < -90.f){
+            if (m_dec > 90.f) m_dec = 180.f-m_dec;
+            if (m_dec < -90.f) m_dec = -180.f-m_dec;
+        }
     }
 
     int follow_link(){
@@ -188,7 +194,7 @@ public:
 
 class Picture{
 private:
-    float m_ra, m_dec; // not implemented yet
+    float m_ra, m_dec;
     float m_offsetRa, m_offsetDec;
 public:
     const std::tuple<float, float> coords() const { return {m_ra, m_dec}; }
@@ -197,6 +203,12 @@ public:
     void approx_coords(float centerRa, float centerDec){
         m_ra = centerRa + (float)m_offsetRa/3600.f/15.f;
         m_dec = centerDec + (float)m_offsetDec/3600.f;
+        while(m_ra >= 24.f) m_ra -= 24.f;
+        while(m_ra < 0.f) m_ra += 24.f;
+        while(m_dec > 90.f || m_dec < -90.f){
+            if (m_dec > 90.f) m_dec = 180.f-m_dec;
+            if (m_dec < -90.f) m_dec = -180.f-m_dec;
+        }
     }
 
     Picture(float ra, float dec) : m_offsetRa(ra), m_offsetDec(dec) {}
@@ -259,6 +271,9 @@ public:
         std::string cpbnl = "\r\n"; //clipboard 
         for(int i = 0; i < pictures.size(); i++){
             pictures[i].approx_coords(m_centerRa, m_centerDec);
+            float ra, dec;
+            std::tie(ra, dec) = pictures[i].coords();
+            std::cout << ra << "  " << dec << std::endl;
             if (pictures.size() > 1){
     	        std::string letter = b10_to_b26(i+1);
                 targets += "* " + obj_name + "_" + letter + "    " + frmt(m_picAmmount) + " x " + frmt(m_picExposure) + " sec" + cpbnl;
@@ -276,12 +291,11 @@ public:
                     else targets += 'x';
                 }
                 else if (!wrote){
-                    float ra, dec;
-                    std::tie(ra, dec) = pictures[i].coords();
                     int ra_whole = ra, ra_min = ((float)ra-ra_whole)*60.f, ra_sec = (((float)ra-ra_whole)*60.f - ra_min)*600.f;
+
                     targets += frmt(ra_whole) + " " + frmt(ra_min) + " " + frmt(ra_sec, 3).insert(2, ".") + " ";
 
-                    int dec_whole = dec, dec_min = ((float)dec-dec_whole)*60.f, dec_sec = (((float)dec-dec_whole)*60.f - dec_min)*60.f;
+                    int dec_whole = abs(dec), dec_min = ((float)abs(dec)-dec_whole)*60.f, dec_sec = (((float)abs(dec)-dec_whole)*60.f - dec_min)*60.f;
                     std::string sajn = (dec < 0) ? "-" : "+";
                     targets += sajn + frmt(dec_whole) + " " + frmt(dec_min) + " " + frmt(dec_sec);
                     wrote = true;
