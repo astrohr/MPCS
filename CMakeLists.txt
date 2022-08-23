@@ -2,6 +2,8 @@ cmake_minimum_required(VERSION 3.20)
 
 project(MPCS VERSION 2.0)
 
+configure_file(cmakevars.h.in cmakevars.h)
+
 add_executable(${PROJECT_NAME} main.cpp)
 
 set(SFML_BUILD_AUDIO OFF)
@@ -22,6 +24,7 @@ add_subdirectory(external/curl/)
 target_include_directories(${PROJECT_NAME}
     PUBLIC external/SFML/include
     PUBLIC external/curl/include
+    PUBLIC "${PROJECT_BINARY_DIR}"
 )
 
 target_link_libraries(${PROJECT_NAME}
@@ -30,10 +33,12 @@ target_link_libraries(${PROJECT_NAME}
 
 #copy the resources
 if(NOT EXISTS "./build/resources")
+    message("> Resources copied")
     file(COPY "./resources" DESTINATION ".")
 endif()
 
 #copy data
 if(NOT EXISTS "./build/data")
+    message("> Data copied")
     file(COPY "./data" DESTINATION ".")
 endif()

@@ -9,29 +9,27 @@
 #include <tuple>
 #include <cmath>
 
+#include "cmakevars.h"
+
 int telescope_FOV;   //telescope_FOV in arcseconds
 
 //------------------------CURL STUFF------------------------
 
-std::vector<std::string> allowed_links{
-    "https://cgi.minorplanetcenter.net/",
-    "https://www.minorplanetcenter.net/"
-};
+std::vector<std::string> allowed_links; //this gets populated in default_variables()
 
-static size_t progress_callback(void* clientp, double dltotal, double dlnow, double ultotal, double ulnow){
-    if (dltotal <= 0.0) {
-        std::cout << dlnow << " bytes downloaded\r" << std::flush;
-    }
-    else{
-        std::cout << '|';
-        int bar_size = 50; //this + 7 is the total size
+static size_t progress_callback(void* approx_size, double dltotal, double dlnow, double ultotal, double ulnow){
+    if (dltotal <= 0.0) dltotal = *((double*)approx_size);
+    if (dltotal > 0.0){
+        std::cout << '[';
+        int bar_size = 45; //this + 15 ish is the total size
         int fragments = round(dlnow/dltotal*bar_size);
         for(int i = 0; i < bar_size; i++){
-            if (i<fragments) std::cout << '-';
-            else std::cout << ' ';
+            if (i<fragments) std::cout << '#';
+            else std::cout << '-';
         }
-        std::cout << "| " << (int)(dlnow/dltotal*100) << "%\r" << std::flush;
+        std::cout << "] " << std::min((int)(dlnow/dltotal*100), 100) << "%  ";
     }
+    std::cout << "(" << dlnow << " B)\r" << std::flush;
     return 0;
 }
 
@@ -48,13 +46,14 @@ size_t read_curl_data(char* ptr, size_t size, size_t nmemb, std::vector<std::str
     return bytes; // returns the number of bytes passed to the function
 }
 
-int get_html(std::string link, std::vector<std::string>* userdata){
+int get_html(std::string link, std::vector<std::string>* userdata, double size = 0.0){
     CURL *curl = curl_easy_init();
     (*userdata).emplace_back("");
     curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, read_curl_data);
     curl_easy_setopt(curl, CURLOPT_WRITEDATA, userdata);
     curl_easy_setopt(curl, CURLOPT_NOPROGRESS, FALSE);
     curl_easy_setopt(curl, CURLOPT_PROGRESSFUNCTION, progress_callback);
+    curl_easy_setopt(curl, CURLOPT_PROGRESSDATA, (void*)&size);
     curl_easy_setopt(curl, CURLOPT_URL, link.c_str());
 
     bool match = false;
@@ -73,7 +72,7 @@ int get_html(std::string link, std::vector<std::string>* userdata){
         return 2;
     }
 
-    std::cout << "Downloading data...\n";
+    std::cout << "Downloading data..." << std::endl;
     CURLcode res = curl_easy_perform(curl);
     int returnvalue;
     if (res != CURLE_OK) {
@@ -99,12 +98,14 @@ private:
     int m_category;
     int m_ephemerisNumber;
     std::string m_link;
+    std::string m_magnitude;
 public:
     //context is a temporary variable that gives an example of what a ephemeris looks like
     std::string m_context;
     const std::tuple<float, float> coords() const { return {m_ra, m_dec}; }
     const std::tuple<float, float> offsets() const { return {m_offsetRa, m_offsetDec}; }
     const int category() const { return m_category; }
+    const std::string mag() const { return m_magnitude; }
 
     void approx_coords(float centerRa, float centerDec){
         m_ra = centerRa + (float)m_offsetRa/3600.f/15.f;
@@ -119,8 +120,18 @@ public:
 
     int follow_link(){
         std::vector<std::string> downloaded;
-        int returnvalue = get_html(m_link, &downloaded);
-        if (returnvalue != 0) return returnvalue;
+        int returnvalue = 1;
+        for(int i = 0; i < 3 && returnvalue; i++){
+            if (i) std::cout << "Metadata download failed.. trying again" << std::endl;
+            returnvalue = get_html(m_link, &downloaded, 4500.0);
+        }
+        if (returnvalue != 0){
+            std::cout << "Metadata download failed, insert the object data yourself" << std::endl;
+            std::cout << "!Make sure there is no leading spaces!" << std::endl;
+            std::string s = "";
+            while(s != "") std::getline(std::cin, s);
+            downloaded.emplace_back(s);
+        }
 
         //for now it just looks at the first ephemeris, but that will be changed
         for (int i = 0; i < downloaded.size(); i++){
@@ -128,7 +139,8 @@ public:
                 //here we use the fact that on the website all data is always equaly spaced
                 std::string ra = downloaded[i].substr(18, 10);
                 std::string dec = downloaded[i].substr(29, 9);
-                
+                m_magnitude = downloaded[i].substr(46, 4);
+
                 std::stringstream streamRa(ra), streamDec(dec);
                 
                 float ra_whole, ra_min, ra_sec;
@@ -223,6 +235,7 @@ private:
     // center is the absolute coordinates of the 0, 0 ephemerid
     float m_centerRa, m_centerDec;
     int m_picExposure, m_picAmmount;
+    std::string m_magnitude;
 
     //function for nicely formatting the numbers to strings (with leading zeroes)
     std::string frmt(int num, int digits=2){
@@ -264,7 +277,7 @@ public:
     void set_exposure(int exp){ m_picExposure = exp; }
     void set_ammount(int amm){ m_picAmmount = amm; }
 
-    void export_observation_targets(){
+    void export_observation_targets(bool copy_cpb){
         //this context thing is just a temporary workaround
         std::string context = obj_data[0].m_context;
         std::string targets = "";
@@ -273,12 +286,11 @@ public:
             pictures[i].approx_coords(m_centerRa, m_centerDec);
             float ra, dec;
             std::tie(ra, dec) = pictures[i].coords();
-            std::cout << ra << "  " << dec << std::endl;
             if (pictures.size() > 1){
     	        std::string letter = b10_to_b26(i+1);
-                targets += "* " + obj_name + "_" + letter + "    " + frmt(m_picAmmount) + " x " + frmt(m_picExposure) + " sec" + cpbnl;
+                targets += "* "+obj_name+"_"+letter+"    "+m_magnitude+"    "+frmt(m_picAmmount)+" x "+frmt(m_picExposure)+" sec"+cpbnl;
             }
-            else targets += "* " + obj_name + "    " + frmt(m_picAmmount) + " x " + frmt(m_picExposure) + " sec" + cpbnl;
+            else targets += "* "+obj_name+"    "+m_magnitude+"    "+frmt(m_picAmmount)+" x "+frmt(m_picExposure)+" sec"+cpbnl;
 
             bool wrote = false;
             for (int j = 0; j < context.size(); j++){
@@ -286,7 +298,7 @@ public:
                     if (context[j] == ' ') targets += ' ';
                     else targets += context[j];
                 }
-                else if(j > 37){
+                else if(j > 50){
                     if (context[j] == ' ') targets += ' ';
                     else targets += 'x';
                 }
@@ -298,14 +310,18 @@ public:
                     int dec_whole = abs(dec), dec_min = ((float)abs(dec)-dec_whole)*60.f, dec_sec = (((float)abs(dec)-dec_whole)*60.f - dec_min)*60.f;
                     std::string sajn = (dec < 0) ? "-" : "+";
                     targets += sajn + frmt(dec_whole) + " " + frmt(dec_min) + " " + frmt(dec_sec);
+                    targets += " xxxxx  " + m_magnitude;
                     wrote = true;
                 }
             }
             targets += cpbnl+cpbnl;
         }
         if (targets.size()){
-            sf::Clipboard::setString(targets);
-            std::cout << "\nObservation targets for " + obj_name + ":\n\n" << targets << "\n\nCopied to clipboard" << std::endl;
+            std::cout << "\nObservation targets for " + obj_name + ":\n\n" << targets << std::endl;
+            if (copy_cpb){
+                sf::Clipboard::setString(targets);
+                std::cout << "\nCopied to clipboard" << std::endl;
+            }
         }
     }
 
@@ -357,7 +373,7 @@ public:
 
         //downloads the data off the internet
         std::vector<std::string> downloaded;
-        int returnvalue = get_html(lynk, &downloaded);
+        int returnvalue = get_html(lynk, &downloaded, 390000.0);
         if (returnvalue != 0) return returnvalue;
 
         //saves the data
@@ -390,6 +406,7 @@ public:
         returnvalue = obj_data[0].follow_link();
         if (returnvalue != 0) return 1;
         std::tie(m_centerRa, m_centerDec) = obj_data[0].coords();
+        m_magnitude = obj_data[0].mag();
 
         return 0;
     }
@@ -428,6 +445,11 @@ public:
         std::tie(edgeRa, edgeDec) = database.mean_edges();
         edgeRa *= 2; edgeDec *= 2;
         m_zoomFactor = std::min((float)W/edgeRa, (float)H/edgeDec) * 0.9f;
+    }
+
+    void pan_camera(int deltaX, int deltaY){
+        m_offsetRa += (float)deltaX * W/m_zoomFactor * 0.005f;
+        m_offsetDec += (float)deltaY * H/m_zoomFactor * 0.005f;
     }
 
     const std::tuple<float, float> px_to_off(int x, int y) {
@@ -473,12 +495,13 @@ void WindowSetup(){
     infoText.setFont(font);
     infoText.setCharacterSize(20);
     infoText.setRotation(180.f);
+    
+    RectangleShape kvadrat(Vector2f(telescope_FOV, telescope_FOV));
+    kvadrat.setFillColor(Color::Transparent);
 
     bool fokus = true;                      //is window focused?
     bool mistu = false;                     //is mouse on the window?
     float mouseRa = 0.f, mouseDec = 0.f;    //where is the mouse?
-    bool brisanje = false;                  //is a square being deleted?
-
     while(window.isOpen()){
         //Event processing 
         Event event;
@@ -488,11 +511,7 @@ void WindowSetup(){
                 if (event.key.code == Keyboard::Q) window.close();
                 else if (event.key.code == Keyboard::C) database.pictures.clear();
                 else if (event.key.code == Keyboard::U && !database.pictures.empty()) database.pictures.pop_back();
-                else if (event.key.code == Keyboard::R){
-                    cam.reset_position();
-                    view.setSize(Vector2f(cam.view_w(), cam.view_h()));
-                    view.setCenter(cam.raOffset(), cam.decOffset());
-                }
+                else if (event.key.code == Keyboard::R) cam.reset_position();
                 else if (event.key.code == Keyboard::H){
                     std::cout << "\nLeft Click to add an observation target" << std::endl;
                     std::cout << "Right Click to remove an observation target" << std::endl;
@@ -506,7 +525,6 @@ void WindowSetup(){
             else if(event.type == Event::Resized){
                 cam.change_dimensions(event.size.width, event.size.height);
                 cam.reset_position();
-                view.setSize(Vector2f(cam.view_w(), cam.view_h()));
             }
             else if (event.type == Event::MouseButtonPressed){
                 if (event.mouseButton.button == Mouse::Left){
@@ -514,31 +532,36 @@ void WindowSetup(){
                     std::tie(xd, yd) = cam.px_to_off(event.mouseButton.x, event.mouseButton.y);
                     database.insert_picture(xd, yd);
                 }
-                else if (event.mouseButton.button == Mouse::Right && !database.pictures.empty()) brisanje = true;
             }
             else if (event.type == Event::MouseButtonReleased){
-                if (event.mouseButton.button == Mouse::Right && brisanje){
+                if (event.mouseButton.button == Mouse::Right){
                     double xd, yd;
                     std::tie(xd, yd) = cam.px_to_off(event.mouseButton.x, event.mouseButton.y);
                     database.pictures.erase(database.pictures.begin()+database.closest_picture_index(xd, yd));
-                    brisanje = false;
                 }
             }
             else if (event.type == Event::MouseWheelScrolled){
                 if (event.mouseWheelScroll.wheel == Mouse::VerticalWheel){
                     cam.change_zoom(event.mouseWheelScroll.delta, event.mouseWheelScroll.x, event.mouseWheelScroll.y);
-                    view.setCenter(cam.raOffset(), cam.decOffset());
-                    view.setSize(Vector2f(cam.view_w(), cam.view_h()));
                 }
             }
-            else if (event.type == Event::MouseMoved) std::tie(mouseRa, mouseDec) = cam.px_to_off(event.mouseMove.x, event.mouseMove.y);
             else if (event.type == Event::LostFocus) fokus = false;
             else if (event.type == Event::GainedFocus) fokus = true;
             else if (event.type == Event::MouseEntered) mistu = true;
             else if (event.type == Event::MouseLeft) mistu = false;
         }
+        if (Keyboard::isKeyPressed(Keyboard::Right)) cam.pan_camera(-1, 0);
+        if (Keyboard::isKeyPressed(Keyboard::Down)) cam.pan_camera(0, -1);
+        if (Keyboard::isKeyPressed(Keyboard::Left)) cam.pan_camera(1, 0);
+        if (Keyboard::isKeyPressed(Keyboard::Up)) cam.pan_camera(0, 1);
+
         window.clear();
+        view.setSize(Vector2f(cam.view_w(), cam.view_h()));
+        view.setCenter(cam.raOffset(), cam.decOffset());
         window.setView(view);
+
+        Vector2i pos = Mouse::getPosition(window);
+        std::tie(mouseRa, mouseDec) = cam.px_to_off(pos.x, pos.y);
 
         //draw dots
         CircleShape tocka(1.5f/cam.zoom());
@@ -558,8 +581,6 @@ void WindowSetup(){
         }
 
         //setup the square projection settings
-        RectangleShape kvadrat(Vector2f(telescope_FOV, telescope_FOV));
-        kvadrat.setFillColor(Color::Transparent);
         kvadrat.setOutlineThickness(2.f/cam.zoom());
 
         //draw a blue square on cursor location
@@ -579,7 +600,7 @@ void WindowSetup(){
         }
 
         //show which square will be deleted if the button is released
-        if (brisanje){
+        if (Mouse::isButtonPressed(Mouse::Right)){
             int ind = database.closest_picture_index(mouseRa, mouseDec);
             float xd, yd;
             std::tie(xd, yd) = database.pictures[ind].offsets();
@@ -591,11 +612,9 @@ void WindowSetup(){
         }
 
         //show info text
-        std::string xs = std::to_string(mouseRa);
-        std::string ys = std::to_string(mouseDec);
         infoText.setScale(1.f/cam.zoom(), 1.f/cam.zoom());
         infoText.setPosition(cam.raOffset()+cam.view_w()/2, cam.decOffset()+cam.view_h()/2);
-        infoText.setString("Offsets:\nRa= " + xs + "\nDec= " + ys);
+        infoText.setString("Offsets:\nRa= " + std::to_string(mouseRa) + "\nDec= " + std::to_string(mouseDec));
         window.draw(infoText);
 
 
@@ -610,12 +629,12 @@ void defaultVariables()
 {
     using namespace std;
     int W, H;
+    string linija;
 
     ifstream ReadFile("data/variables.txt");
-    string linija;
     while(getline(ReadFile, linija))
     {
-        if (linija.size()){
+        if (!linija.size()) continue;
         if (linija[0] == 'F'){
             string a = linija.substr(5, linija.length()-5);
             stringstream ss(a);
@@ -626,39 +645,72 @@ void defaultVariables()
             stringstream ss(a);
             if (linija[0] == 'H') ss >> H;
             else if (linija[0] == 'W') ss >> W;
-        }}
+        }
     }
     cam.change_dimensions(W, H);
+    ReadFile.close();
+
+    ifstream LinksFile("data/allowed_links.txt");
+    while(getline(LinksFile, linija)){
+        if(!linija.size()) continue;
+        allowed_links.emplace_back(linija);
+    }
+    LinksFile.close();
 }
 
-int main(void){
+int main(int argc, char** argv){
+    //argc syntax: MPCS <url:str> <exposition:int> <number:int> <copy to clipboard:bool(1/0)>
+    //i wont check your inputs, make sure you code them right yourself
+    if (argc > 6){
+        std::cout << "Error: Too many arguments" << std::endl;
+        return 0;
+    }
+    std::cout << "Running MPCSolver " << VERSION_MAJOR << "." << VERSION_MINOR << "\n" << std::endl;
+
     defaultVariables();
     while(true){
         database.reset();
 
-        std::cout << "Insert the website URL: " << std::endl;
         std::string url;
-        //the for is here to make sure that the url inserted isnt an empty line
-        for(int i = 0; i < 3 && !url.size(); i++) std::getline(std::cin, url);
-
-        std::cout << std::endl;
+        if (argc == 1){
+            std::cout << "Insert the website URL: " << std::endl;
+            //the for is here to make sure that the url inserted isnt an empty line
+            for(int i = 0; i < 3 && !url.size(); i++) std::getline(std::cin, url);
+            std::cout << std::endl;
+        }
+        else url = argv[1];
         int greska = database.fill_database(url);
         if (greska){
             std::cout << std::endl << std::endl;
-            continue;
+            if (argc == 1) continue;
+            else break;
         }
         cam.reset_position();
+        
+        if (argc == 1) std::cout << "Object: " << database.obj_name << std::endl;
 
         int amm, exp;
-        std::cout << "Object: " << database.obj_name << std::endl;
-        std::cout << "Insert the ammount of pictures: " << std::flush;
-        std::cin >> amm; database.set_ammount(amm);
-        std::cout << "Insert the exposure length (in seconds): " << std::flush;
-        std:: cin >> exp; database.set_exposure(exp);
+        if (argc < 3){
+            std::cout << "Insert the ammount of pictures: " << std::flush;
+            std::cin >> amm;
+        }
+        else amm = atoi(argv[2]);
+        database.set_ammount(amm);
+
+        if (argc < 4){
+            std::cout << "Insert the exposure length (in seconds): " << std::flush;
+            std::cin >> exp;
+        }
+        else exp = atoi(argv[3]);
+        database.set_exposure(exp);
 
         WindowSetup();
-        database.export_observation_targets();
 
+        bool copy_to_clipboard = true;
+        if (argc == 5) copy_to_clipboard = atoi(argv[4]);
+        database.export_observation_targets(copy_to_clipboard);
+
+        if (argc > 1) break; // if the program was called from the console just kill it after use
         std::cout << std::endl << std::endl;
     }
     return 0;
@@ -674,8 +726,7 @@ int main(void){
 // Add the windoww to see the changes
 // Add panning
 // Show the coordinate system
-// Add error handling
-// Optimize event conditional logic
+// Add error handling (default_variables)
 // remove using namespace calls
 // do some inheritance for camera, picture and ephemeris
 // break up code
