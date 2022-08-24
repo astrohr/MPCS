@@ -4,7 +4,7 @@ A program for solving the neo uncertainty
 MPCS stands for "Minor Planet Center Solver"
 
 ## Requirements for building
-Cmake version 3.20 and above
+Cmake version 3.20 and above, & 
 C++ compiler
 
 ## How to build
