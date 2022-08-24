@@ -5,6 +5,11 @@ MPCS stands for "Minor Planet Center Solver"
 
 ## Requirements for building
 Cmake version 3.20 and above
+C++ compiler
+
+## How to build
+You need to clone the repo, after that you have configure the file using cmake and compile it with the cmake configuration (you can see example commands in build.sh)
++ if you use windows and mingw you can just run the build shell script
 
 ## How to use
 First, you will have to provide an offsets link to the program. To get the link go to https://www.minorplanetcenter.net/iau/NEO/toconfirm_tabular.html, manage the settings on the bottom of the site, select the objects, and click on "get ephemerides". After this, find the object you want to observe, and click on one of its "Offsets" links, at the time you want to observe it.
