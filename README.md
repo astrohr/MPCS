@@ -4,7 +4,7 @@ A program for solving the neo uncertainty
 MPCS stands for "Minor Planet Center Solver"
 
 ## Requirements for building
-Curl version 3.20 and above
+Cmake version 3.20 and above
 
 ## How to use
 First, you will have to provide an offsets link to the program. To get the link go to https://www.minorplanetcenter.net/iau/NEO/toconfirm_tabular.html, manage the settings on the bottom of the site, select the objects, and click on "get ephemerides". After this, find the object you want to observe, and click on one of its "Offsets" links, at the time you want to observe it.
