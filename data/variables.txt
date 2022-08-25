@@ -1,5 +1,5 @@
-FOV: 1300
-H: 1080
+FOV: 2562
 W: 1080
+H: 1080
 
 //dont change variable names, just their values

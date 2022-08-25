@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.20)
 
-project(MPCS VERSION 2.0)
+project(MPCS VERSION 2.1)
 
 configure_file(cmakevars.h.in cmakevars.h)
 
