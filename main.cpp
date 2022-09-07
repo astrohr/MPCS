@@ -96,8 +96,10 @@ private:
     float m_ra, m_dec;
     int m_offsetRa, m_offsetDec;
     int m_ephemerisNumber;
+    std::string m_elong, m_velocity, m_angle, m_magnitude; // these are strings cuz i dont need to calculate anything, duh 
+    std::string m_time;
+    std::string m_otherData; // this is just the rest of the context data
     std::string m_link;
-    std::string m_magnitude;
     sf::Color m_color;
 public:
     //context is a temporary variable that gives an example of what an ephemeris looks like
@@ -105,6 +107,10 @@ public:
     const std::tuple<float, float> coords() const { return {m_ra, m_dec}; }
     const std::tuple<float, float> offsets() const { return {m_offsetRa, m_offsetDec}; }
     const std::string mag() const { return m_magnitude; }
+    const std::string time() const { return m_time; }
+    const std::string context() const {
+        return m_elong + "  " + m_magnitude + "  " + m_velocity + "  " + m_angle + m_otherData; 
+    }
     const sf::Color color() const { return m_color; }
 
     void approx_coords(float centerRa, float centerDec){
@@ -137,9 +143,14 @@ public:
         for (int i = 0; i < downloaded.size(); i++){
             if (downloaded[i][0] == '2'){
                 //here we use the fact that on the website all data is always equaly spaced
+                m_time = downloaded[i].substr(0, 18);
                 std::string ra = downloaded[i].substr(18, 10);
                 std::string dec = downloaded[i].substr(29, 9);
+                m_elong = downloaded[i].substr(39, 5);
                 m_magnitude = downloaded[i].substr(46, 4);
+                m_velocity = downloaded[i].substr(52, 6);
+                m_angle = downloaded[i].substr(60, 5);
+                m_otherData = downloaded[i].substr(65, downloaded[i].size()-65);
 
                 std::stringstream streamRa(ra), streamDec(dec);
                 
@@ -208,7 +219,10 @@ public:
         else if (cat == 4) m_color = sf::Color(255, 255, 255);
         else if (cat == 11) m_color = sf::Color(0, 0, 255);
         else m_color = sf::Color(255, 0, 255);
+        
+        m_time = "k"; //this just means the link hasnt been followed yet
     }
+
 };
 
 class Picture{
@@ -314,43 +328,34 @@ public:
     }
 
     void export_observation_targets(bool copy_cpb){
-        //this context thing is just a temporary workaround
-        std::string context = obj_data[0].m_context;
         std::string targets = "";
-        std::string cpbnl = "\r\n"; //clipboard 
+        std::string cpbnl = "\r\n"; //clipboard newline
         for(int i = 0; i < pictures.size(); i++){
             pictures[i].approx_coords(m_centerRa, m_centerDec);
             float ra, dec;
             std::tie(ra, dec) = pictures[i].coords();
+            float raOff, decOff;
+            std::tie(raOff, decOff) = pictures[i].offsets();
+            
+            int ephIndex = closest_ephemeris_index(raOff, decOff);
+            if (obj_data[ephIndex].time() == "k") obj_data[ephIndex].follow_link();
+
             if (pictures.size() > 1){
     	        std::string letter = b10_to_b26(i+1);
                 targets+="* "+obj_name+"_"+letter+"    "+m_magnitude+"    "+frmt(m_picAmmount)+" x "+frmt(m_picExposure)+" sec"+cpbnl;
             }
             else targets+="* "+obj_name+"    "+m_magnitude+"    "+frmt(m_picAmmount)+" x "+frmt(m_picExposure)+" sec"+cpbnl;
 
-            bool wrote = false;
-            for (int j = 0; j < context.size(); j++){
-                if (j < 18){
-                    if (context[j] == ' ') targets += ' ';
-                    else targets += context[j];
-                }
-                else if(j > 50){
-                    if (context[j] == ' ') targets += ' ';
-                    else targets += 'x';
-                }
-                else if (!wrote){
-                    int ra_whole = ra, ra_min = ((float)ra-ra_whole)*60.f, ra_sec = (((float)ra-ra_whole)*60.f - ra_min)*600.f;
+            targets += obj_data[ephIndex].time();
 
-                    targets += frmt(ra_whole) + " " + frmt(ra_min) + " " + frmt(ra_sec, 3).insert(2, ".") + " ";
+            int ra_whole = ra, ra_min = ((float)ra-ra_whole)*60.f, ra_sec = (((float)ra-ra_whole)*60.f - ra_min)*600.f;
+            targets += frmt(ra_whole) + " " + frmt(ra_min) + " " + frmt(ra_sec, 3).insert(2, ".") + " ";
 
-                    int dec_whole = abs(dec), dec_min = ((float)abs(dec)-dec_whole)*60.f, dec_sec = (((float)abs(dec)-dec_whole)*60.f - dec_min)*60.f;
-                    std::string sajn = (dec < 0) ? "-" : "+";
-                    targets += sajn + frmt(dec_whole) + " " + frmt(dec_min) + " " + frmt(dec_sec);
-                    targets += " xxxxx  " + m_magnitude;
-                    wrote = true;
-                }
-            }
-            targets += cpbnl+cpbnl;
+            int dec_whole = abs(dec), dec_min = ((float)abs(dec)-dec_whole)*60.f, dec_sec = (((float)abs(dec)-dec_whole)*60.f - dec_min)*60.f;
+            std::string sajn = (dec < 0) ? "-" : "+";
+            targets += sajn + frmt(dec_whole) + " " + frmt(dec_min) + " " + frmt(dec_sec) + " ";
+
+            targets += obj_data[ephIndex].context()+cpbnl+cpbnl;
         }
         if (targets.size()){
             std::cout << "\nObservation targets for " + obj_name + ":\n\n" << targets << std::endl;
@@ -377,6 +382,20 @@ public:
         pictures.erase(pictures.begin() + index);
         for(int i = 0; i < pictures.size(); i++)
             pictures[i].set_sign(b10_to_b26(i+1));
+    }
+
+    const int closest_ephemeris_index(float ra, float dec){
+        float x, y, d = FLT_MAX;
+        int ind;
+        for(int i = 0; i < obj_data.size(); i++){
+            std::tie(x, y) = obj_data[i].offsets();
+            float newd = sqrt(pow(ra-x, 2) + pow(dec-y, 2));
+            if (newd < d){
+                d = newd;
+                ind = i;
+            }
+        }
+        return ind;
     }
 
     const int closest_picture_index(float ra, float dec){
