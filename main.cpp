@@ -275,6 +275,10 @@ private:
     float m_centerRa, m_centerDec;
     int m_picExposure, m_picAmmount;
     std::string m_magnitude;
+    // holds the percent of celected ephemeris inside existing pictures
+    float selectedPercentage;
+    // the name of the object
+    std::string m_name;
 
     //function for nicely formatting the numbers to strings (with leading zeroes)
     std::string frmt(int num, int digits=2){
@@ -305,13 +309,31 @@ private:
         return str;
     }
 
+    void calculateSelected(){
+        selectedPercentage = 0.f;
+        for(int i = 0; i < obj_data.size(); i++){
+            float ephRa, ephDec;
+            std::tie(ephRa, ephDec) = obj_data[i].offsets();
+            for(int j = 0; j < pictures.size(); j++){
+                float picRa, picDec;
+                std::tie(picRa, picDec) = pictures[j].offsets();
+                if (abs(picRa-ephRa) < telescope_FOV/2.f && abs(picDec-ephDec) < telescope_FOV/2.f){
+                    selectedPercentage++;
+                    break;
+                }
+            }
+        }
+        selectedPercentage = selectedPercentage / obj_data.size() * 100.f;
+    }
+
 public:
     std::vector<Ephemeris> obj_data;
     std::vector<Picture> pictures;
-    std::string obj_name;
 
     const std::tuple<float, float> mean_center() const { return {m_mean_centerRa, m_mean_centerDec}; }
     const std::tuple<float, float> mean_edges() const { return {m_mean_edgeRa, m_mean_edgeDec}; }
+    const float selectedPercent() const { return selectedPercentage; }
+    const std::string name() const { return m_name; }
 
     void set_exposure(int exp){ m_picExposure = exp; }
     void set_ammount(int amm){ m_picAmmount = amm; }
@@ -342,9 +364,9 @@ public:
 
             if (pictures.size() > 1){
     	        std::string letter = b10_to_b26(i+1);
-                targets+="* "+obj_name+"_"+letter+"    "+m_magnitude+"    "+frmt(m_picAmmount)+" x "+frmt(m_picExposure)+" sec"+cpbnl;
+                targets+="* "+m_name+"_"+letter+"    "+m_magnitude+"    "+frmt(m_picAmmount)+" x "+frmt(m_picExposure)+" sec"+cpbnl;
             }
-            else targets+="* "+obj_name+"    "+m_magnitude+"    "+frmt(m_picAmmount)+" x "+frmt(m_picExposure)+" sec"+cpbnl;
+            else targets+="* "+m_name+"    "+m_magnitude+"    "+frmt(m_picAmmount)+" x "+frmt(m_picExposure)+" sec"+cpbnl;
 
             targets += obj_data[ephIndex].time();
 
@@ -358,7 +380,7 @@ public:
             targets += obj_data[ephIndex].context()+cpbnl+cpbnl;
         }
         if (targets.size()){
-            std::cout << "\nObservation targets for " + obj_name + ":\n\n" << targets << std::endl;
+            std::cout << "\nObservation targets for " + m_name + ":\n\n" << targets << std::endl;
             if (copy_cpb){
                 sf::Clipboard::setString(targets);
                 std::cout << "\nCopied to clipboard" << std::endl;
@@ -376,12 +398,25 @@ public:
         Picture p(ra, dec, num);
         pictures.emplace_back(p);
         pictures[pictures.size()-1].set_sign(b10_to_b26(pictures.size()));
+        calculateSelected();
     }
 
-    void object_remove(int index){
+    void remove_picture(int index){
         pictures.erase(pictures.begin() + index);
         for(int i = 0; i < pictures.size(); i++)
             pictures[i].set_sign(b10_to_b26(i+1));
+        calculateSelected();
+    }
+
+    void undo_picture(){
+        if (pictures.size())
+            pictures.pop_back();
+        calculateSelected();
+    }
+
+    void clear_pictures(){
+        pictures.clear();
+        selectedPercentage = 0.f;
     }
 
     const int closest_ephemeris_index(float ra, float dec){
@@ -414,7 +449,7 @@ public:
 
     void reset(){
         obj_data.clear();
-        obj_name.clear();
+        m_name.clear();
         pictures.clear();
         m_mean_centerRa = 0.f; m_mean_centerDec = 0.f;
         m_mean_edgeRa = 0.f; m_mean_edgeDec = 0.f;
@@ -423,7 +458,7 @@ public:
     int fill_database(std::string lynk){
         //Get the object name from the link and set it
         bool writing = false;
-        obj_name.clear();
+        m_name.clear();
         for(int i = 0; i < lynk.size(); i++){
             if (lynk[i] == '?'){
                 writing = true;
@@ -431,7 +466,7 @@ public:
             }
             else if (lynk[i] == '&') break;
 
-            if (writing) obj_name += lynk[i];
+            if (writing) m_name += lynk[i];
         }
 
         //downloads the data off the internet
@@ -470,13 +505,13 @@ public:
         if (returnvalue != 0) return 1;
         std::tie(m_centerRa, m_centerDec) = obj_data[0].coords();
         m_magnitude = obj_data[0].mag();
-
         return 0;
     }
 
     ObjectDatabase(){
         m_mean_centerRa = 0.f; m_mean_centerDec = 0.f;
         m_mean_edgeRa = 0.f; m_mean_edgeDec = 0.f;
+        selectedPercentage = 0.f;
     }
 
 } database;
@@ -546,7 +581,7 @@ void WindowSetup(){
     sf::ContextSettings settings;
     settings.antialiasingLevel = 8;
     sf::VideoMode desktop = sf::VideoMode::getDesktopMode();
-    sf::RenderWindow window(sf::VideoMode(cam.window_w(), cam.window_h(), desktop.bitsPerPixel), database.obj_name, sf::Style::Default, settings);
+    sf::RenderWindow window(sf::VideoMode(cam.window_w(), cam.window_h(), desktop.bitsPerPixel), database.name(), sf::Style::Default, settings);
     window.setFramerateLimit(60);
 
     sf::View view(sf::Vector2f(cam.raOffset(), cam.decOffset()), sf::Vector2f(cam.view_w(), cam.view_h()));
@@ -578,8 +613,8 @@ void WindowSetup(){
             if(event.type == sf::Event::Closed) window.close();
             else if(event.type == sf::Event::KeyPressed) {
                 if (event.key.code == sf::Keyboard::Q) window.close();
-                else if (event.key.code == sf::Keyboard::C) database.pictures.clear();
-                else if (event.key.code == sf::Keyboard::U && !database.pictures.empty()) database.pictures.pop_back();
+                else if (event.key.code == sf::Keyboard::C) database.clear_pictures();
+                else if (event.key.code == sf::Keyboard::U) database.undo_picture();
                 else if (event.key.code == sf::Keyboard::R) cam.reset_position();
                 else if (event.key.code == sf::Keyboard::H){
                     std::cout << "\nLeft Click to add an observation target" << std::endl;
@@ -607,7 +642,7 @@ void WindowSetup(){
                 if (event.mouseButton.button == sf::Mouse::Right){
                     double xd, yd;
                     std::tie(xd, yd) = cam.px_to_off(event.mouseButton.x, event.mouseButton.y);
-                    database.object_remove(database.closest_picture_index(xd, yd));
+                    database.remove_picture(database.closest_picture_index(xd, yd));
                 }
             }
             else if (event.type == sf::Event::MouseWheelScrolled){
@@ -700,7 +735,9 @@ void WindowSetup(){
         std::string buraz = "";
         for(int i = 0; i < database.pictures.size(); i++)
             buraz += database.pictures[i].sign() + " " + database.pictures[i].percentStr(database.obj_data.size()) +  "\n";
-        probText.setString(buraz);
+        std::string total = std::to_string(database.selectedPercent());
+        total = total.substr(0, total.size()-4);
+        probText.setString(buraz + "\n= " + total + "%");
         window.draw(probText);
 
         window.display();
@@ -779,7 +816,7 @@ int main(int argc, char** argv){
         }
         cam.reset_position();
         
-        if (argc == 1) std::cout << "Object: " << database.obj_name << std::endl;
+        if (argc == 1) std::cout << "Object: " << database.name() << std::endl;
 
         int amm, exp;
         if (argc < 3){
@@ -821,3 +858,4 @@ int main(int argc, char** argv){
 // Show the coordinate system
 // do some inheritance for camera, picture and ephemeris
 // break up code
+// create object class so that object database is simpler
