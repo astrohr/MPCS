@@ -402,6 +402,7 @@ public:
     }
 
     void remove_picture(int index){
+        if (!pictures.size()) return;
         pictures.erase(pictures.begin() + index);
         for(int i = 0; i < pictures.size(); i++)
             pictures[i].set_sign(b10_to_b26(i+1));
@@ -706,7 +707,7 @@ void WindowSetup(){
         }
 
         //show which square will be deleted if the button is released
-        if (sf::Mouse::isButtonPressed(sf::Mouse::Right)){
+        if (sf::Mouse::isButtonPressed(sf::Mouse::Right) && !database.pictures.empty()){
             int ind = database.closest_picture_index(mouseRa, mouseDec);
             float xd, yd;
             std::tie(xd, yd) = database.pictures[ind].offsets();
@@ -788,7 +789,7 @@ int defaultVariables(){
 }
 
 int main(int argc, char** argv){
-    //argc syntax: MPCS <url:str> <exposition:int> <number:int> <copy to clipboard:bool(1/0)>
+    //argc syntax: MPCS <url:str> <exposition:int> <number:int> <copy to clipboard:bool(1/0)> <FOV:int>
     //i wont check your inputs, make sure you code them right yourself
     if (argc > 6){
         std::cout << "Error: Too many arguments" << std::endl;
@@ -814,6 +815,9 @@ int main(int argc, char** argv){
             if (argc == 1) continue;
             else break;
         }
+
+        if (argc == 6) telescope_FOV = atoi(argv[5]);
+
         cam.reset_position();
         
         if (argc == 1) std::cout << "Object: " << database.name() << std::endl;
@@ -836,7 +840,7 @@ int main(int argc, char** argv){
         WindowSetup();
 
         bool copy_to_clipboard = true;
-        if (argc == 5) copy_to_clipboard = atoi(argv[4]);
+        if (argc > 4) copy_to_clipboard = atoi(argv[4]);
         database.export_observation_targets(copy_to_clipboard);
         
         if (argc > 1){
