@@ -22,6 +22,7 @@ The program will download all the data needed, and display an uncertainty map. T
 - U to undo an observation target
 - C to remove all observation targets
 - You can zoom in and out with the scroll wheel
+- Arrow keys to pan the view
 
 After you have selected all observation areas, just close the uncertainty map window, and on the console you will see the coordinates of your targets. Also, the targets will automatically be copied to your clipboard.
 

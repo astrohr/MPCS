@@ -1,10 +1,6 @@
 cmake_minimum_required(VERSION 3.20)
 
-project(MPCS VERSION 2.3)
-
-configure_file(cmakevars.h.in cmakevars.h)
-
-add_executable(${PROJECT_NAME} main.cpp)
+project(MPCS VERSION 3.0)
 
 set(SFML_BUILD_AUDIO OFF)
 set(SFML_BUILD_NETWORK OFF)
@@ -20,6 +16,8 @@ endif()
 
 add_subdirectory(external/SFML/)
 add_subdirectory(external/curl/)
+
+add_subdirectory(src/)
 
 target_include_directories(${PROJECT_NAME}
     PUBLIC external/SFML/include
