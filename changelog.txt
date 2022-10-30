@@ -4,5 +4,7 @@ Whats new in version 3.0
 
 - added changelog :)
 - broke up the code into multiple files for developer friendlieness
+- get_html now keeps trying to reach a link for some ammount of time and
+adapts itself to curl error 35 (SSL error)
 
 --------------------------------------------------------------------------

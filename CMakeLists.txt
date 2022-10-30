@@ -7,6 +7,7 @@ set(SFML_BUILD_NETWORK OFF)
 set(BUILD_SHARED_LIBS OFF)
 set(BUILD_CURL_EXE OFF) 
 set(BUILD_TESTING OFF)
+set(CMAKE_BUILD_FLAGS "-O3")
 
 set(CURL_ENABLE_SSL ON)
 if (WIN32)
@@ -17,6 +18,7 @@ endif()
 add_subdirectory(external/SFML/)
 add_subdirectory(external/curl/)
 
+set (CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
 add_subdirectory(src/)
 
 target_include_directories(${PROJECT_NAME}

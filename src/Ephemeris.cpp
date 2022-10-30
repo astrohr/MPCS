@@ -22,18 +22,7 @@ void Ephemeris::approx_coords(float centerRa, float centerDec){
 
 int Ephemeris::follow_link(){
     std::vector<std::string> downloaded;
-    int returnvalue = 1;
-    for(int i = 0; i < 3 && returnvalue; i++){
-        if (i) std::cout << "Metadata download failed.. trying again" << std::endl;
-        returnvalue = get_html(m_link, &downloaded, 4500.0);
-    }
-    if (returnvalue != 0){
-        std::cout << "Metadata download failed, insert the object data yourself" << std::endl;
-        std::cout << "!Make sure there is no leading spaces!" << std::endl;
-        std::string s = "";
-        while(s != "") std::getline(std::cin, s);
-        downloaded.emplace_back(s);
-    }
+    int returnvalue = get_html(m_link, &downloaded, 4500.0);
 
     //for now it just looks at the first ephemeris, but that will be changed
     for (int i = 0; i < downloaded.size(); i++){

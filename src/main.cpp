@@ -8,7 +8,7 @@
 #include <tuple>
 #include <cmath>
 
-#include "cmakevars.h"
+#include "src/cmakevars.h"
 #include "Camera.hpp"
 
 int g_telescope_FOV;   //telescope_FOV in arcseconds
