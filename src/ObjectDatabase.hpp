@@ -1,13 +1,21 @@
 #pragma once
-
+// ObjectDatabase.hpp --------------------------------------
+// this file defines the class that is used for manipulating all of the data (ephemeris, pictures, object information etc)
 #include <SFML/Window/Clipboard.hpp>
-#include <string>
-#include <cmath>
-#include <cfloat>
+
+#include "pch.hpp"
+// Precompiled headers this file uses:
+// iostream
+// cfloat, cmath
+// string, vector, tuple
 
 #include "Ephemeris.hpp"
 #include "Picture.hpp"
 #include "net.hpp"
+
+//----------------------------------------------------------
+
+
 
 class ObjectDatabase{
 private:

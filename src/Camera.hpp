@@ -1,8 +1,17 @@
 #pragma once
+// Camera.hpp ----------------------------------------------
+// this file controls the camera in the UI
 
-#include <tuple>
-#include <cmath>
+#include "pch.hpp"
+// Precompiled headers in this file:
+// cmath
+// tuple
+
 #include "ObjectDatabase.hpp"
+
+//----------------------------------------------------------
+
+
 
 class Camera{
 private:

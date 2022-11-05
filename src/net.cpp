@@ -1,4 +1,11 @@
+// net.cpp -------------------------------------------------
+// this file defines all things declared in net.hpp
+
 #include "net.hpp"
+
+//----------------------------------------------------------
+
+
 
 std::vector<std::string> g_allowed_links; //this gets populated in default_variables()
 
@@ -6,7 +13,7 @@ static size_t progress_callback(void* approx_size, double dltotal, double dlnow,
     if (dltotal <= 0.0) dltotal = *((double*)approx_size);
     if (dltotal > 0.0){
         std::cout << "\r[";
-        int bar_size = 45; //this + 15 ish is the total size
+        int bar_size = 45;
         int fragments = round(dlnow/dltotal*bar_size);
         for(int i = 0; i < bar_size; i++){
             if (i<fragments) std::cout << '#';
@@ -72,15 +79,9 @@ int get_html(std::string link, std::vector<std::string>* userdata, double size, 
         if (responsovi.find(res) != responsovi.end()) responsovi[res]++;
         else responsovi[res] = 1;
 
-        if (res == CURLE_OK){
-            //you could use ansi escape codes here to clear the download line
-            std::cout << "         " << std::flush;
-            break;
-        }
-        else if (res == 35){
-            std::cout << " " << 100-(int)clock.getElapsedTime().asSeconds() << " s   " << std::flush;
-            milis = 100000;
-        }
+        if (res == CURLE_OK) break;
+        else if (res == CURLE_SSL_CONNECT_ERROR) milis = 100000;
+        std::cout << " " << (milis/1000)-(int)clock.getElapsedTime().asSeconds() << " s   " << std::flush;
     }
     
     int returnvalue;

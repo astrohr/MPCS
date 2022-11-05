@@ -1,4 +1,11 @@
+// Camera.cpp ----------------------------------------------
+// this file defines all things from Camera.hpp
+
 #include "Camera.hpp"
+
+//----------------------------------------------------------
+
+
 
 const float Camera::raOffset() const { return m_offsetRa; }
 const float Camera::decOffset() const { return m_offsetDec; }

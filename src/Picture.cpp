@@ -1,4 +1,11 @@
+// Picture.cpp ---------------------------------------------
+// this file defines all things declared in Picture.hpp
+
 #include "Picture.hpp"
+
+//----------------------------------------------------------
+
+
 
 const std::tuple<float, float> Picture::coords() const { return {m_ra, m_dec}; }
 const std::tuple<float, float> Picture::offsets() const { return {m_offsetRa, m_offsetDec}; }

@@ -1,7 +1,17 @@
 #pragma once
+// Picture.hpp ---------------------------------------------
+// this file is used for easier storage and manipulation of picture data
+// * in this program, the "picture" is a field where the telescope will be taking final images
 
 #include <SFML/Graphics/Text.hpp>
-#include <tuple>
+
+#include "pch.hpp"
+// Precompiled headers this file uses:
+// tuple
+
+//----------------------------------------------------------
+
+
 
 class Picture{
 private:

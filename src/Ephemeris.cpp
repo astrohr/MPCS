@@ -1,4 +1,11 @@
+// Ephemeris.cpp -------------------------------------------
+// this file defines all things declared in Ephemeris.hpp
+
 #include "Ephemeris.hpp"
+
+//----------------------------------------------------------
+
+
 
 const std::tuple<float, float> Ephemeris::coords() const { return {m_ra, m_dec}; }
 const std::tuple<float, float> Ephemeris::offsets() const { return {m_offsetRa, m_offsetDec}; }

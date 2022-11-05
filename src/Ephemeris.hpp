@@ -1,13 +1,19 @@
 #pragma once
+// Ephemeris.hpp -------------------------------------------
+// this header defines the ephemeris class
+// the point of the class is to simplify the storage and manipulation of ephemeris datapoints
 
 #include <SFML/Graphics/Color.hpp>
-#include <iostream>
-#include <sstream>
-#include <vector>
-#include <string>
-#include <tuple>
+
+#include "pch.hpp"
+// Precompiled headers used in this file:
+// iostream, sstream
+// vector, string, tuple
 
 #include "net.hpp"
+// net.hpp is used for net requests in Ephemeris::follow_link()
+
+//----------------------------------------------------------
 
 class Ephemeris{
 private:

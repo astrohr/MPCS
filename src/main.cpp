@@ -1,22 +1,26 @@
+// main.cpp ------------------------------------------------
+// This is the main file, it regulates the flow of the program, and the UI
+
 #include <SFML/Graphics.hpp>
-#include <iostream>
-#include <fstream>
-#include <sstream>
-#include <vector>
-#include <cfloat>
-#include <string>
-#include <tuple>
-#include <cmath>
+
+#include "pch.hpp"
+// Precompiled headers this file uses:
+// iostream, fstream, sstream
+// cfloat, cmath
+// vector, string, tuple
 
 #include "src/cmakevars.h"
 #include "Camera.hpp"
+
+//----------------------------------------------------------
+
+
 
 int g_telescope_FOV;   //telescope_FOV in arcseconds
 
 ObjectDatabase database;
 Camera cam;
 
-//-----------------------WINDOW STUFF-----------------------
 
 void WindowSetup(){
     //init window
@@ -187,7 +191,6 @@ void WindowSetup(){
 }
 
 
-//---------------------------MAIN---------------------------
 
 int defaultVariables(){
     int W, H;
@@ -304,4 +307,9 @@ int main(int argc, char** argv){
 // Show the coordinate system
 // do some inheritance for camera, picture and ephemeris
 // create object class so that object database is simpler
-// add precompiled headers and make classes independent
+// make classes more independent from submodules
+//  - ephemeris.hpp does not need sfml/color since you can just save RGB values in a tuple or hex or something (check how sfml does it)
+// You gotta comment the code a bit better man
+// Make an "object" class, so you can have more of them in the database
+// Object database has a format (frmt) function thats overcomplicated (and all of that stuff thats related to frmt is overcomplicated)
+// - you can fix this by using the {fmt} library at https://fmt.dev/latest/index.html

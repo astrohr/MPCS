@@ -1,4 +1,11 @@
+// ObjectDatabase.cpp --------------------------------------
+// this file defines all things declared in ObjectDatabase.hpp
+
 #include "ObjectDatabase.hpp"
+
+//----------------------------------------------------------
+
+
 
 std::string ObjectDatabase::frmt(int num, int digits=2){
     int dgtnum = 0, num2 = num;

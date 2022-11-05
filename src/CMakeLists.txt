@@ -8,3 +8,5 @@ add_executable(${PROJECT_NAME}
     Ephemeris.cpp
     Picture.cpp
 )
+
+target_precompile_headers(${PROJECT_NAME} PRIVATE pch.hpp)

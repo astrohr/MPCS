@@ -1,3 +1,10 @@
-// the configured options and settings for Tutorial
+// cmakevars.h.in ------------------------------------------
+// this file interact with cmake and is used to set some variables trough cmake
+// this simplifies code :D
+
+//----------------------------------------------------------
+
+
+
 #define VERSION_MAJOR @MPCS_VERSION_MAJOR@
 #define VERSION_MINOR @MPCS_VERSION_MINOR@
