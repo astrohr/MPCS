@@ -6,9 +6,10 @@
 
 
 //streams
-#include <iostream>     //main, net, Ephemeris, ObjectDatabase
+#include <iostream>     //main
 #include <fstream>      //main
 #include <sstream>      //main, Ephemeris
+#include <fmt/core.h>   //net, ObjectDatabase
 
 #include <algorithm>    //net
 #include <cfloat>       //main, ObjectDatabase

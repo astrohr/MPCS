@@ -7,20 +7,6 @@
 
 
 
-std::string ObjectDatabase::frmt(int num, int digits=2){
-    int dgtnum = 0, num2 = num;
-    while(num2){
-        dgtnum++;
-        num2 /= 10;
-    } digits = std::max(dgtnum, digits);
-    
-    std::string str = "";
-    for(int i = digits-1; i >= 0; i--)
-        str += '0'+(num/(int)pow(10, i)%10);
-    
-    return str;
-}
-
 std::string ObjectDatabase::b10_to_b26(int c){
     std::string str = "";
     while(c || str == ""){
@@ -35,21 +21,25 @@ std::string ObjectDatabase::b10_to_b26(int c){
     return str;
 }
 
+//this function calculates the percentage of datapoints selected by picture areas
 void ObjectDatabase::calculateSelected(){
-    selectedPercentage = 0.f;
+    int covered_amm = 0;
+    //making a test for every datapoint
     for(int i = 0; i < obj_data.size(); i++){
-        float ephRa, ephDec;
+        float ephRa, ephDec;    //datapoint coords init
         std::tie(ephRa, ephDec) = obj_data[i].offsets();
+        //here we check if the datapoint is within any picture areas
         for(int j = 0; j < pictures.size(); j++){
-            float picRa, picDec;
+            float picRa, picDec;    //pic coords init
             std::tie(picRa, picDec) = pictures[j].offsets();
+            //the check
             if (abs(picRa-ephRa) < telescope_FOV/2.f && abs(picDec-ephDec) < telescope_FOV/2.f){
-                selectedPercentage++;
+                covered_amm++;
                 break;
             }
         }
     }
-    selectedPercentage = selectedPercentage / obj_data.size() * 100.f;
+    selectedPercentage = (float)covered_amm / obj_data.size() * 100.f;
 }
 
 const std::tuple<float, float> ObjectDatabase::mean_center() const { return {m_mean_centerRa, m_mean_centerDec}; }
@@ -75,7 +65,6 @@ const int ObjectDatabase::ephemeris_in_picture(float ra, float dec){
 
 void ObjectDatabase::export_observation_targets(bool copy_cpb){
     std::string targets = "";
-    std::string cpbnl = "\r\n"; //clipboard newline
     for(int i = 0; i < pictures.size(); i++){
         pictures[i].approx_coords(m_centerRa, m_centerDec);
         float ra, dec;
@@ -86,28 +75,32 @@ void ObjectDatabase::export_observation_targets(bool copy_cpb){
         int ephIndex = closest_ephemeris_index(raOff, decOff);
         if (obj_data[ephIndex].time() == "k") obj_data[ephIndex].follow_link();
 
-        if (pictures.size() > 1){
-            std::string letter = b10_to_b26(i+1);
-            targets+="* "+m_name+"_"+letter+"    "+m_magnitude+"    "+frmt(m_picAmmount)+" x "+frmt(m_picExposure)+" sec"+cpbnl;
-        }
-        else targets+="* "+m_name+"    "+m_magnitude+"    "+frmt(m_picAmmount)+" x "+frmt(m_picExposure)+" sec"+cpbnl;
+        //name
+        targets += fmt::format("* {}", m_name);
+        targets += (pictures.size()-1) ? fmt::format("_{}", b10_to_b26(i+1)) : ""; // adds the letter that shows the picture index (if needed)
+        
+        //magnitude and picture info
+        targets += fmt::format("    {}    {:02} x {:02} sec\r\n", m_magnitude, m_picAmmount, m_picExposure);
 
+        //time
         targets += obj_data[ephIndex].time();
 
-        int ra_whole = ra, ra_min = ((float)ra-ra_whole)*60.f, ra_sec = (((float)ra-ra_whole)*60.f - ra_min)*600.f;
-        targets += frmt(ra_whole) + " " + frmt(ra_min) + " " + frmt(ra_sec, 3).insert(2, ".") + " ";
+        //right ascnension
+        float ra_whole, ra_min = std::modf(ra, &ra_whole)*60.f, ra_sec = std::modf(ra_min, &ra_min)*60.f;
+        targets += fmt::format("{:02.0f} {:02.0f} {:04.1f} ", ra_whole, ra_min, ra_sec);
 
-        int dec_whole = abs(dec), dec_min = ((float)abs(dec)-dec_whole)*60.f, dec_sec = (((float)abs(dec)-dec_whole)*60.f - dec_min)*60.f;
-        std::string sajn = (dec < 0) ? "-" : "+";
-        targets += sajn + frmt(dec_whole) + " " + frmt(dec_min) + " " + frmt(dec_sec) + " ";
+        //declination
+        float dec_whole, dec_min = abs(std::modf(dec, &dec_whole)*60.f), dec_sec = std::modf(dec_min, &dec_min)*60.f;
+        targets += fmt::format("{:+02.0f} {:02.0f} {:02.0f} ", dec_whole, dec_min, dec_sec);
 
-        targets += obj_data[ephIndex].context()+cpbnl+cpbnl;
+        //other data
+        targets += obj_data[ephIndex].context()+"\r\n\r\n";
     }
     if (targets.size()){
-        std::cout << "\nObservation targets for " + m_name + ":\n\n" << targets << std::endl;
+        fmt::print("\nObservation targets for {}:\n\n{}\n", m_name, targets);
         if (copy_cpb){
             sf::Clipboard::setString(targets);
-            std::cout << "\nCopied to clipboard" << std::endl;
+            fmt::print("Copied to clipboard\n");
         }
     }
 }
@@ -223,7 +216,7 @@ int ObjectDatabase::fill_database(std::string lynk){
 
     //here we use the fact that the first element has offsets of 0, 0 
     if (obj_data.empty()){
-        std::cout << "Error: no data" << std::endl;
+        fmt::print("Error: no data\n");
         return 4;
     }
     returnvalue = obj_data[0].follow_link();

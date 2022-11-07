@@ -7,5 +7,7 @@ Whats new in version 3.0
 - get_html now keeps trying to reach a link for some ammount of time and adapts itself to
   curl error 35 (SSL error)
 - Added precompiled headers :D
+- Download meter has been changed due to performance issues
+- fmt library added for performance and for simpler code
 
 -----------------------------------------------------------------------------------------

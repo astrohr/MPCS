@@ -9,95 +9,88 @@
 
 std::vector<std::string> g_allowed_links; //this gets populated in default_variables()
 
-static size_t progress_callback(void* approx_size, double dltotal, double dlnow, double ultotal, double ulnow){
-    if (dltotal <= 0.0) dltotal = *((double*)approx_size);
-    if (dltotal > 0.0){
-        std::cout << "\r[";
-        int bar_size = 45;
-        int fragments = round(dlnow/dltotal*bar_size);
-        for(int i = 0; i < bar_size; i++){
-            if (i<fragments) std::cout << '#';
-            else std::cout << '-';
-        }
-        int perc = dlnow/dltotal*100;
-        std::cout << "] " << ((perc > 100) ? 100 : perc) << "%  ";
-    }
-    std::cout << "(" << dlnow << " B)" << std::flush;
+static size_t progress_callback(void* progcall, double dltotal, double dlnow, double ultotal, double ulnow){
+    char prog; int progamm = *((int*)progcall);
+    if (progamm==0) prog = '|';
+    else if (progamm==1) prog = '/';
+    else if (progamm==2) prog = '-';
+    else prog = '\\';
+    fmt::print("\rDownloading data... {}       ", prog);
+    //ammount ++, mod 4
+    (*((int*)progcall))=(progamm+1)%4;
     return 0;
 }
 
 size_t read_curl_data(char* ptr, size_t size, size_t nmemb, std::vector<std::string>* userdata){
     size_t bytes = size*nmemb;
 
+    // saves the data in the user data variable in a way that every line of html gets its own string
     for(char *i = ptr; i-ptr < bytes; i++){
+        //saves all data on the n-th line in the first element
         (*userdata)[0] += *i;
         if(*i == '\n'){
-            (*userdata).emplace_back((*userdata)[0]);
+            //places the first element on the end of the array and clears it
+            userdata->emplace_back((*userdata)[0]);
             (*userdata)[0] = "";
         }
     }
     return bytes; // returns the number of bytes passed to the function
 }
 
-// defaults from header: size = 0.0
-int get_html(std::string link, std::vector<std::string>* userdata, double size, int milis){
-    std::cout << "Downloading data..." << std::endl;
-    // Check if the link type is allowed
+// defaults from header: size = 0.0, milis = 10000
+int get_html(std::string link, std::vector<std::string>* userdata, int milis){
+    // Check if the link type is allowed by comparing to the strings in g_allowed_links
     bool match = false;
-    for(int i = 0; i < g_allowed_links.size() && !match; i++){
-        bool ac = true;
-        for(int j = 0; j < g_allowed_links[i].size(); j++){
-            if (j >= link.size() || link[j] != g_allowed_links[i][j]){
-                ac = false;
-                break;
-            }
-        }
-        if(ac) match = true;
-    }
+    for(int i = 0; i < g_allowed_links.size() && !match; i++)
+        if (link.substr(0, g_allowed_links[i].size()) == g_allowed_links[i]) match = true;
+    
     if (!match){
-        std::cout << "Error: link not allowed" << std::endl;
+        fmt::print("Error: link not allowed\n");
         return 2;
     }
 
-
     std::map<CURLcode, int> responsovi;
     sf::Clock clock;
+    //the loop that keeeps trying to connect to a site for some ammount of time
     while(clock.getElapsedTime().asMilliseconds() < milis){
+        //prepare userdata fo writing in it
+        userdata->emplace_back("");
+        //setting up the curl request
         CURL *curl = curl_easy_init();
-        (*userdata).emplace_back("");
         curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, read_curl_data);
         curl_easy_setopt(curl, CURLOPT_WRITEDATA, userdata);
         curl_easy_setopt(curl, CURLOPT_NOPROGRESS, FALSE);
         curl_easy_setopt(curl, CURLOPT_PROGRESSFUNCTION, progress_callback);
-        curl_easy_setopt(curl, CURLOPT_PROGRESSDATA, (void*)&size);
+        int progcall = 0; // measures how many times progressdata function is called, mod 4
+        curl_easy_setopt(curl, CURLOPT_PROGRESSDATA, (void*)&progcall);
         curl_easy_setopt(curl, CURLOPT_URL, link.c_str());
 
-        CURLcode res = curl_easy_perform(curl);
-        
+        CURLcode res = curl_easy_perform(curl); //execute reques
         curl_easy_cleanup(curl);
         
+        //save the response in a map that measures the ammounts of specific responses
         if (responsovi.find(res) != responsovi.end()) responsovi[res]++;
         else responsovi[res] = 1;
 
+        //handle the response
         if (res == CURLE_OK) break;
-        else if (res == CURLE_SSL_CONNECT_ERROR) milis = 100000;
-        std::cout << " " << (milis/1000)-(int)clock.getElapsedTime().asSeconds() << " s   " << std::flush;
+        else if (res == CURLE_SSL_CONNECT_ERROR) milis = 60000;
+
+        //if response wasnt CURLE_OK, then display for how much time will the program keep trying
+        fmt::print(" {:.1f} s   ", (milis/1000)-clock.getElapsedTime().asSeconds());
+
+        //clear userdata since the request failed and we have to retry
+        userdata->clear();
     }
     
-    int returnvalue;
-    if (responsovi.find(CURLE_OK) != responsovi.end()){
-        std::cout << "\nDownload success\n" << std::endl;
-        returnvalue = 0;
-    }
+    int returnvalue = 0;
+    //if there is CURLE_OK, all is fine
+    if (responsovi.find(CURLE_OK) != responsovi.end()) fmt::print("\rDownload success :D          \n");
     else{
-        CURLcode res; int mx = 0;
-        for (auto x : responsovi){
-            if (x.second > mx){
-                res = x.first;
-                mx = x.second;
-            }
-        }
-        std::cout << "\nDownload failed: " << curl_easy_strerror(res) << std::endl;
+        // if there is no CURLE_OK, show errors that happened during the download
+        fmt::print("\rDownload failed, errors are:   \n");
+        for (auto x : responsovi)
+            fmt::print("{} times: {}\n", x.second, curl_easy_strerror(x.first));
         returnvalue = 1;
     }
     return returnvalue;

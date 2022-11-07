@@ -12,7 +12,7 @@ const std::tuple<float, float> Ephemeris::offsets() const { return {m_offsetRa, 
 const std::string Ephemeris::mag() const { return m_magnitude; }
 const std::string Ephemeris::time() const { return m_time; }
 const std::string Ephemeris::context() const {
-    return m_elong + "  " + m_magnitude + "  " + m_velocity + "  " + m_angle + m_otherData; 
+    return fmt::format("{} {} {} {}{}", m_elong, m_magnitude, m_velocity, m_angle, m_otherData); 
 }
 const sf::Color Ephemeris::color() const { return m_color; }
 
@@ -44,14 +44,17 @@ int Ephemeris::follow_link(){
             m_angle = downloaded[i].substr(60, 5);
             m_otherData = downloaded[i].substr(65, downloaded[i].size()-65);
 
+            //the following code takes advantade of spaces between numbers in the string
             std::stringstream streamRa(ra), streamDec(dec);
             
             float ra_whole, ra_min, ra_sec;
             float dec_whole, dec_min, dec_sec;
             
+            //here thanks to whitespaces, each number is placed in its variable
             streamRa >> ra_whole >> ra_min >> ra_sec;
             streamDec >> dec_whole >> dec_min >> dec_sec;
 
+            //and here they are added together into a single number for simplicity
             m_ra = ra_whole + ra_min/60.f + ra_sec/3600.f;
             m_dec = (abs(dec_whole) + dec_min/60.f + dec_sec/3600.f) * (abs(dec_whole)/dec_whole);
 

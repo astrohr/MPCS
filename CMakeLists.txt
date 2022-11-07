@@ -17,6 +17,7 @@ endif()
 
 add_subdirectory(external/SFML/)
 add_subdirectory(external/curl/)
+add_subdirectory(external/fmt/)
 
 set (CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
 add_subdirectory(src/)
@@ -24,11 +25,12 @@ add_subdirectory(src/)
 target_include_directories(${PROJECT_NAME}
     PUBLIC external/SFML/include
     PUBLIC external/curl/include
+    PUBLIC external/fmt/include
     PUBLIC "${PROJECT_BINARY_DIR}"
 )
 
 target_link_libraries(${PROJECT_NAME}
-    "sfml-system;sfml-window;sfml-graphics;libcurl"
+    "sfml-system;sfml-window;sfml-graphics;libcurl;fmt"
 )
 
 #copy the resources

@@ -35,7 +35,7 @@ void WindowSetup(){
 
     sf::Font font; 
     if (!font.loadFromFile("resources/arial.ttf"))
-        std::cout << "Font not found, using default font" << std::endl;
+        fmt::print("Font not found, using default font\n");
 
     sf::Text infoText;
     infoText.setFont(font);
@@ -63,14 +63,15 @@ void WindowSetup(){
                 else if (event.key.code == sf::Keyboard::U) database.undo_picture();
                 else if (event.key.code == sf::Keyboard::R) cam.reset_position(g_telescope_FOV, &database);
                 else if (event.key.code == sf::Keyboard::H){
-                    std::cout << "\nLeft Click to add an observation target" << std::endl;
-                    std::cout << "Right Click to remove an observation target" << std::endl;
-                    std::cout << "Q to exit the window and confirm the selection" << std::endl;
-                    std::cout << "R to reset the view" << std::endl;
-                    std::cout << "U to undo an observation target" << std::endl;
-                    std::cout << "C to remove all observation targets" << std::endl;
-                    std::cout << "You can zoom in and out with the scroll wheel" << std::endl;
-                    std::cout << "Arrow keys for panning the view\n" << std::endl;
+                    fmt::print("\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n\n",
+                    "Left Click to add an observation target",
+                    "Right Click to remove an observation target",
+                    "Q to exit the window and confirm the selection",
+                    "R to reset the view",
+                    "U to undo an observation target",
+                    "C to remove all observation targets",
+                    "You can zoom in and out with the scroll wheel",
+                    "Arrow keys for panning the view");
                 }
             }
             else if(event.type == sf::Event::Resized){
@@ -163,29 +164,29 @@ void WindowSetup(){
             window.draw(line, 2, sf::Lines);
         }
 
-        //show info text
+        //INFO TEXT:
         infoText.setScale(1.f/cam.zoom(), 1.f/cam.zoom());
         infoText.setPosition(cam.raOffset()+cam.view_w()/2.f, cam.decOffset()+cam.view_h()/2.f);
-        std::string capturePercent = std::to_string((float)database.ephemeris_in_picture(mouseRa, mouseDec)/database.obj_data.size() * 100.f);
-        capturePercent = capturePercent.substr(0, capturePercent.size()-4) + "%";
-        std::string mouseRaStr = std::to_string(mouseRa);
-        mouseRaStr = mouseRaStr.substr(0, mouseRaStr.size()-4);
-        std::string mouseDecStr = std::to_string(mouseDec);
-        mouseDecStr = mouseDecStr.substr(0, mouseDecStr.size()-4);
-        infoText.setString("Offsets:\nRa: " + mouseRaStr + "\nDec: " + mouseDecStr + "\n\n" + capturePercent);
+        //the percentage that shows datapoints within the current cursor area
+        std::string capturePercent = fmt::format("{:.2f}%", (float)database.ephemeris_in_picture(mouseRa, mouseDec)/database.obj_data.size()*100.f);
+        //set the string to RA & DEC of the mouse and the capturePercent value
+        infoText.setString(fmt::format("Offsets:\nRa: {:.2f}\nDec: {:.2f}\n\n{}", mouseRa, mouseDec, capturePercent));
         window.draw(infoText);
 
-        //show probability text
+
+        //PROBABILITY TEXT:
         probText.setScale(1.f/cam.zoom(), 1.f/cam.zoom());
         probText.setPosition(cam.raOffset()-cam.view_w()*2.5f/7.f, cam.decOffset()+cam.view_h()/2.f);
-        std::string buraz = "";
+        //total percentage of captured datapoints
+        std::string per_pic = "", total = fmt::format("{:.2f}", database.selectedPercent());
+        //percentage per picture
         for(int i = 0; i < database.pictures.size(); i++)
-            buraz += database.pictures[i].sign() + " " + database.pictures[i].percentStr(database.obj_data.size()) +  "\n";
-        std::string total = std::to_string(database.selectedPercent());
-        total = total.substr(0, total.size()-4);
-        probText.setString(buraz + "\n= " + total + "%");
+            per_pic += fmt::format("{} {}\n", database.pictures[i].sign(), database.pictures[i].percentStr(database.obj_data.size()));
+        //set the text
+        probText.setString(fmt::format("{}\n= {}%", per_pic, total));
         window.draw(probText);
 
+        
         window.display();
     }
 }
@@ -198,7 +199,7 @@ int defaultVariables(){
 
     std::ifstream ReadFile("data/variables.txt");
     if (!ReadFile.is_open()){
-        std::cout << "Error: didnt find \"data/variable.txt\"" << std::endl;
+        fmt::print("Error: didnt find \"data/variable.txt\"\n");
         return 1;
     }
     while(getline(ReadFile, linija)){
@@ -221,7 +222,7 @@ int defaultVariables(){
 
     std::ifstream LinksFile("data/allowed_links.txt");
     if (!LinksFile.is_open()){
-        std::cout << "Error: didnt find \"data/allowed_links.txt\"" << std::endl;
+        fmt::print("Error: didnt find \"data/allowed_links.txt\"\n");
         return 1;
     }
     while(getline(LinksFile, linija)){
@@ -236,10 +237,10 @@ int main(int argc, char** argv){
     //argc syntax: MPCS <url:str> <exposition:int> <number:int> <copy to clipboard:bool(1/0)> <FOV:int>
     //i wont check your inputs, make sure you code them right yourself
     if (argc > 6){
-        std::cout << "Error: Too many arguments" << std::endl;
+        fmt::print("Error: Too many arguments\n");
         return 0;
     }
-    std::cout << "Running MPCSolver " << VERSION_MAJOR << "." << VERSION_MINOR << "\n" << std::endl;
+    fmt::print("Running MPCSolver {}.{}\n\n", VERSION_MAJOR, VERSION_MINOR);
 
     if (defaultVariables()) return 1;
     while(true){
@@ -247,15 +248,15 @@ int main(int argc, char** argv){
 
         std::string url;
         if (argc == 1){
-            std::cout << "Insert the website URL: " << std::endl;
+            fmt::print("Insert the website URL:\n");
             //the for is here to make sure that the url inserted isnt an empty line
             for(int i = 0; i < 3 && !url.size(); i++) std::getline(std::cin, url);
-            std::cout << std::endl;
+            fmt::print("\n");
         }
         else url = argv[1];
         int greska = database.fill_database(url);
         if (greska){
-            std::cout << std::endl << std::endl;
+            fmt::print("\n\n");
             if (argc == 1) continue;
             else break;
         }
@@ -265,18 +266,18 @@ int main(int argc, char** argv){
         database.set_FOV(g_telescope_FOV);
         cam.reset_position(g_telescope_FOV, &database);
         
-        if (argc == 1) std::cout << "Object: " << database.name() << std::endl;
+        if (argc == 1) fmt::print("\nObject: {}\n", database.name());
 
         int amm, exp;
         if (argc < 3){
-            std::cout << "Insert the ammount of pictures: " << std::flush;
+            fmt::print("Insert the ammount of pictures: ");
             std::cin >> amm;
         }
         else amm = atoi(argv[2]);
         database.set_ammount(amm);
 
         if (argc < 4){
-            std::cout << "Insert the exposure length (in seconds): " << std::flush;
+            fmt::print("Insert the exposure length (in seconds): ");
             std::cin >> exp;
         }
         else exp = atoi(argv[3]);
@@ -289,11 +290,11 @@ int main(int argc, char** argv){
         database.export_observation_targets(copy_to_clipboard);
         
         if (argc > 1){
-            std::cout << "Click any key to exit..." << std::endl;
+            fmt::print("Click any key to exit...\n");
             std::cin.get();
             break; // if the program was called from the console just kill it after use
         }
-        std::cout << std::endl << std::endl;
+        fmt::print("\n\n");
     }
     return 0;
 }
@@ -310,6 +311,4 @@ int main(int argc, char** argv){
 // make classes more independent from submodules
 //  - ephemeris.hpp does not need sfml/color since you can just save RGB values in a tuple or hex or something (check how sfml does it)
 // You gotta comment the code a bit better man
-// Make an "object" class, so you can have more of them in the database
-// Object database has a format (frmt) function thats overcomplicated (and all of that stuff thats related to frmt is overcomplicated)
-// - you can fix this by using the {fmt} library at https://fmt.dev/latest/index.html
+// replace data folder with a .ini file

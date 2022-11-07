@@ -7,7 +7,7 @@
 
 #include "pch.hpp"
 // Precompiled headers this file uses:
-// iostream
+// fmt/core.h
 // algorithm, cmath
 // vector, string, map
 
@@ -21,5 +21,5 @@ static size_t progress_callback(void* approx_size, double dltotal, double dlnow,
 
 size_t read_curl_data(char* ptr, size_t size, size_t nmemb, std::vector<std::string>* userdata);
 
-int get_html(std::string link, std::vector<std::string>* userdata, double size = 0.0, int milis = 10000);
+int get_html(std::string link, std::vector<std::string>* userdata, int milis = 10000);
 
