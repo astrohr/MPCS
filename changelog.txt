@@ -1,6 +1,6 @@
 
 -----------------------------------------------------------------------------------------
-Whats new in version 3.0
+Whats new in version 2.4
 
 - added changelog :)
 - broke up the code into multiple files for developer friendlieness

@@ -301,6 +301,7 @@ int main(int argc, char** argv){
 
 //TODO:
 // Try to make an algorythm for automatically selecting squares in an optimal manner
+//  - linear regression is possible in most cases (detection algorythm needed), in others its NP (heuristic?)
 // Make ephemeris save their positons change trough time
 // Implement time passing display (and linear approximations for movements between hours)
 // Add object selection menu
