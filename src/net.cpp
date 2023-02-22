@@ -7,7 +7,11 @@
 
 
 
-std::vector<std::string> g_allowed_links; //this gets populated in default_variables()
+std::vector<std::string> g_allowed_links = {
+    "https://cgi.minorplanetcenter.net/",
+    "https://www.minorplanetcenter.net/",
+    "http://cgi.minorplanetcenter.net/",
+};
 
 static size_t progress_callback(void* progcall, double dltotal, double dlnow, double ultotal, double ulnow){
     char prog; int progamm = *((int*)progcall);

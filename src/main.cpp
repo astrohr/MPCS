@@ -219,17 +219,6 @@ int defaultVariables(){
     }
     cam.change_dimensions(W, H);
     ReadFile.close();
-
-    std::ifstream LinksFile("data/allowed_links.txt");
-    if (!LinksFile.is_open()){
-        fmt::print("Error: didnt find \"data/allowed_links.txt\"\n");
-        return 1;
-    }
-    while(getline(LinksFile, linija)){
-        if(!linija.size()) continue;
-        g_allowed_links.emplace_back(linija);
-    }
-    LinksFile.close();
     return 0;
 }
 

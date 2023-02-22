@@ -4,6 +4,8 @@ Whats new in 2.5 (22.2.2023)
 - this version is a hotfix for the issue that had been occurring for the past week with
   coordinates not being generated properly due to non functional links on the site
   (contacted MPC, they fixed it), and MPCS not following redirects (also fixed)
+- also removed the "allowed_links.txt" file since its existence isnt really necessary
+  (links are now hardcoded)
 
 -----------------------------------------------------------------------------------------
 Whats new in version 2.4
