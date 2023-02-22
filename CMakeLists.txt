@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.20)
 
-project(MPCS VERSION 2.4)
+project(MPCS VERSION 2.5)
 
 set(SFML_BUILD_AUDIO OFF)
 set(SFML_BUILD_NETWORK OFF)

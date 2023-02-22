@@ -61,11 +61,12 @@ int get_html(std::string link, std::vector<std::string>* userdata, int milis){
         curl_easy_setopt(curl, CURLOPT_WRITEDATA, userdata);
         curl_easy_setopt(curl, CURLOPT_NOPROGRESS, FALSE);
         curl_easy_setopt(curl, CURLOPT_PROGRESSFUNCTION, progress_callback);
+        curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, (long)1);
         int progcall = 0; // measures how many times progressdata function is called, mod 4
         curl_easy_setopt(curl, CURLOPT_PROGRESSDATA, (void*)&progcall);
         curl_easy_setopt(curl, CURLOPT_URL, link.c_str());
 
-        CURLcode res = curl_easy_perform(curl); //execute reques
+        CURLcode res = curl_easy_perform(curl); //execute request
         curl_easy_cleanup(curl);
         
         //save the response in a map that measures the ammounts of specific responses

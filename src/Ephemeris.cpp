@@ -33,7 +33,7 @@ int Ephemeris::follow_link(){
 
     //for now it just looks at the first ephemeris, but that will be changed
     for (int i = 0; i < downloaded.size(); i++){
-        if (downloaded[i][0] == '2'){
+        if (downloaded[i].size() && downloaded[i][0] == '2'){
             //here we use the fact that on the website all data is always equaly spaced
             m_time = downloaded[i].substr(0, 18);
             std::string ra = downloaded[i].substr(18, 10);
