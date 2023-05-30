@@ -1,4 +1,12 @@
 -----------------------------------------------------------------------------------------
+Whats new in 2.5.1 (22.2.2023)
+
+- fixed some logical inconsistencies across the code
+- added todo.txt
+- microversions are now a thing :D
+- fixed the bug where 1 digit declination would print +9 instead of +09
+
+-----------------------------------------------------------------------------------------
 Whats new in 2.5 (22.2.2023)
 
 - this version is a hotfix for the issue that had been occurring for the past week with

@@ -181,7 +181,7 @@ void WindowSetup(){
         std::string per_pic = "", total = fmt::format("{:.2f}", database.selectedPercent());
         //percentage per picture
         for(int i = 0; i < database.pictures.size(); i++)
-            per_pic += fmt::format("{} {}\n", database.pictures[i].sign(), database.pictures[i].percentStr(database.obj_data.size()));
+            per_pic += fmt::format("{} {:.2f}%\n", database.pictures[i].sign(), database.pictures[i].percent(database.obj_data.size()));
         //set the text
         probText.setString(fmt::format("{}\n= {}%", per_pic, total));
         window.draw(probText);
@@ -229,7 +229,12 @@ int main(int argc, char** argv){
         fmt::print("Error: Too many arguments\n");
         return 0;
     }
-    fmt::print("Running MPCSolver {}.{}\n\n", VERSION_MAJOR, VERSION_MINOR);
+    
+    #ifdef VERSION_MICRO
+        fmt::print("Running MPCSolver {}.{}.{}\n\n", VERSION_MAJOR, VERSION_MINOR, VERSION_MICRO);
+    #else
+        fmt::print("Running MPCSolver {}.{}\n\n", VERSION_MAJOR, VERSION_MINOR);
+    #endif
 
     if (defaultVariables()) return 1;
     while(true){
@@ -238,8 +243,8 @@ int main(int argc, char** argv){
         std::string url;
         if (argc == 1){
             fmt::print("Insert the website URL:\n");
-            //the for is here to make sure that the url inserted isnt an empty line
-            for(int i = 0; i < 3 && !url.size(); i++) std::getline(std::cin, url);
+            //the while is here to make sure that the url inserted isnt an empty line
+            while(!url.size()) std::getline(std::cin, url);
             fmt::print("\n");
         }
         else url = argv[1];
@@ -287,18 +292,3 @@ int main(int argc, char** argv){
     }
     return 0;
 }
-
-//TODO:
-// Try to make an algorythm for automatically selecting squares in an optimal manner
-//  - linear regression is possible in most cases (detection algorythm needed), in others its NP (heuristic?)
-// Make ephemeris save their positons change trough time
-// Implement time passing display (and linear approximations for movements between hours)
-// Add object selection menu
-// Remove the console aspect of the app
-// Show the coordinate system
-// do some inheritance for camera, picture and ephemeris
-// create object class so that object database is simpler
-// make classes more independent from submodules
-//  - ephemeris.hpp does not need sfml/color since you can just save RGB values in a tuple or hex or something (check how sfml does it)
-// You gotta comment the code a bit better man
-// replace data folder with a .ini file

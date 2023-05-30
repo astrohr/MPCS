@@ -1,6 +1,11 @@
 cmake_minimum_required(VERSION 3.20)
 
-project(MPCS VERSION 2.5)
+project(MPCS VERSION 2.5.1)
+
+if(NOT EXISTS "./build")
+    file(MAKE_DIRECTORY "build")
+    message("> build folder created")
+endif()
 
 set(SFML_BUILD_AUDIO OFF)
 set(SFML_BUILD_NETWORK OFF)
@@ -37,12 +42,12 @@ target_link_libraries(${PROJECT_NAME}
 
 #copy the resources
 if(NOT EXISTS "./build/resources")
-    message("> Resources copied")
     file(COPY "./resources" DESTINATION ".")
+    message("> Resources copied")
 endif()
 
 #copy data
 if(NOT EXISTS "./build/data")
-    message("> Data copied")
     file(COPY "./data" DESTINATION ".")
+    message("> Data copied")
 endif()

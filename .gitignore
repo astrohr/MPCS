@@ -47,3 +47,4 @@ _deps
 #other
 build/
 .vscode
+*ignoreme.txt

@@ -91,7 +91,7 @@ void ObjectDatabase::export_observation_targets(bool copy_cpb){
 
         //declination
         float dec_whole, dec_min = abs(std::modf(dec, &dec_whole)*60.f), dec_sec = std::modf(dec_min, &dec_min)*60.f;
-        targets += fmt::format("{:+02.0f} {:02.0f} {:02.0f} ", dec_whole, dec_min, dec_sec);
+        targets += fmt::format("{:+03.0f} {:02.0f} {:02.0f} ", dec_whole, dec_min, dec_sec);
 
         //other data
         targets += obj_data[ephIndex].context()+"\r\n\r\n";
@@ -214,11 +214,11 @@ int ObjectDatabase::fill_database(std::string lynk){
     m_mean_edgeRa = std::max(abs(m_mean_centerRa-minRa), abs(m_mean_centerRa-maxRa));
     m_mean_edgeDec = std::max(abs(m_mean_centerDec-minDec), abs(m_mean_centerDec-maxDec));
 
-    //here we use the fact that the first element has offsets of 0, 0 
     if (obj_data.empty()){
         fmt::print("Error: no data\n");
         return 4;
     }
+    //here we use the fact that the first element has offsets of 0, 0
     returnvalue = obj_data[0].follow_link();
     if (returnvalue != 0) return 1;
     std::tie(m_centerRa, m_centerDec) = obj_data[0].coords();

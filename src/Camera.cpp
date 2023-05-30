@@ -47,8 +47,7 @@ void Camera::change_zoom(float delta, float x, float y){
 
 void Camera::change_dimensions(int x, int y){ W = x; H = y; }
 
-// defaults in header: x = 1080, y = 920
-Camera::Camera(int x, int y) : W(x), H(y) {
+Camera::Camera(int x/*=1080*/, int y/*=920*/) : W(x), H(y) {
     m_offsetRa = 0.f;
     m_offsetDec = 0.f;
 }

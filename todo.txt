@@ -1,0 +1,47 @@
+TODO:
+
+When debugging, link libraries and build *dynamically*, and when in release mode, link statically
+Make the "class dependency" graph ad analyse it
+ - pay special attention to ephemeris and picture classes
+Try to make an algorythm for automatically selecting squares in an optimal manner
+ - linear regression is possible in most cases (detection algorythm needed), in others its NP (heuristic?)
+Improve installation and updates
+ - add some code to install updates as they arrive so ppl dont have to build stuff themselves
+ - add installation program (idk how it works but userr shouldnt be building eveerything himself)
+make classes more independent from submodules
+ - ephemeris.hpp does not need sfml/color since you can just save RGB values in a tuple or hex or something (check how sfml does it)
+You gotta comment the code a bit better man
+ - Comment the classes and their functions properly so you have hover documentation (like the javadoc documentation)
+Improve error handling
+- keep a sort of a log file, there you can remember the states the program has been in use it for remote debugging
+- try to setup vscode debugging, cmake debugging, and console debugging (OpenGL-like)
+- improve download fail cases
+Account for atmospheric refraction and potential camera distortions
+Update readme.md both for v2.4 and v3.0
+replace data folder with a .ini file
+ - add the telescope code (and make it save the coordinates from the telescope database on mpc if there are none)
+ - You could do it by code automatically checking for the data and prompting you to insert the code or you could make cmake insert that data and the program get it from mpc
+3D view of the sky, the plan is simple
+ - Create a sphere on which the dots and all other things will be rendered (it should be a sphere, that makes everything easier)
+ - Camera object now just needs the ability to rotate (and also stay parralel to the horizon)
+ - Camera oject needs to be rotated like the position of the night sky (optionally like the telescope too)
+ - Camera zoom might be a bit tricky to achieve but i believe it can be done
+ - Picture areas gotta be tilted like the telescope is
+ - Use openGL to do all of the above and below
+ - When you click on the picture area, it should automatically show you where things are after you take pictures
+ - Show the coordinate system and all of that
+ - Show where the ground is, and the sides of the world too
+ - Add an object selection menu, there you should be able to select objects to show (do it as a sidebar)
+ - You should do some sort of a time passing display
+     - Linear approximations can be useful here, as someone could get a preview of how the object acts and then have the data downloaded when they set a time
+ - You could remove the console if you do those things
+ - VERY IMPORTANT, SEPARATE THE CALCULATIONS FROM THE DISPLAY SO THAT IT CAN BE AUTOMATED (stay out of main!)
+Separate the program into multiple programs
+ - a program for GUI only
+ - a program for background downloading
+Better object data management
+ - Download data using the korisno.txt tips
+ - Download data asynchrously and display it right away
+ - Manage classes a bit nicer so that you can have more objects
+ - One ephemeris should store its variant orbits by itself (creating a subclass for VO)
+ - Background downloads for data

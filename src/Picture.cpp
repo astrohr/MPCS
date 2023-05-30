@@ -11,12 +11,8 @@ const std::tuple<float, float> Picture::coords() const { return {m_ra, m_dec}; }
 const std::tuple<float, float> Picture::offsets() const { return {m_offsetRa, m_offsetDec}; }
 const sf::Text Picture::text() const { return m_text; }
 const std::string Picture::sign() const { return (std::string)m_text.getString(); }
-const float Picture::percent(int totalEphemeris) const { return (float)m_containedEphemeris/totalEphemeris * 100.f; }
-const std::string Picture::percentStr(int totalEphemeris) const {
-    float percent = (float)m_containedEphemeris/totalEphemeris * 100.f;
-    std::string s = std::to_string(percent);
-    s = s.substr(0, s.size()-4) + "%";
-    return s;
+const float Picture::percent(int totalEphemeris) const {
+    return (float)m_containedEphemeris/totalEphemeris * 100.f;
 }
 
 void Picture::approx_coords(float centerRa, float centerDec){

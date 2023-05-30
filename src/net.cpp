@@ -41,8 +41,7 @@ size_t read_curl_data(char* ptr, size_t size, size_t nmemb, std::vector<std::str
     return bytes; // returns the number of bytes passed to the function
 }
 
-// defaults from header: size = 0.0, milis = 10000
-int get_html(std::string link, std::vector<std::string>* userdata, int milis){
+int get_html(std::string link, std::vector<std::string>* userdata, int milis/*=10000*/){
     // Check if the link type is allowed by comparing to the strings in g_allowed_links
     bool match = false;
     for(int i = 0; i < g_allowed_links.size() && !match; i++)

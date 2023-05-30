@@ -1,3 +1,4 @@
+#pragma once
 // pch.hpp -------------------------------------------------
 // this is a precompiled header setup
 
