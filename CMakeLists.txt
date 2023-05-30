@@ -27,7 +27,19 @@ add_subdirectory(external/curl/)
 add_subdirectory(external/fmt/)
 
 set (CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
-add_subdirectory(src/)
+
+configure_file(src/cmakevars.h.in src/cmakevars.h)
+
+add_executable(${PROJECT_NAME} 
+    src/main.cpp
+    src/Camera.cpp
+    src/net.cpp
+    src/ObjectDatabase.cpp
+    src/Ephemeris.cpp
+    src/Picture.cpp
+)
+
+target_precompile_headers(${PROJECT_NAME} PRIVATE src/pch.hpp)
 
 target_include_directories(${PROJECT_NAME}
     PUBLIC external/SFML/include
