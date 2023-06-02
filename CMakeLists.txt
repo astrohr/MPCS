@@ -22,9 +22,9 @@ if (WIN32)
     set(CURL_USE_SCHANNEL ON)
 endif()
 
-add_subdirectory(external/SFML/)
-add_subdirectory(external/curl/)
-add_subdirectory(external/fmt/)
+add_subdirectory(submodules/SFML/)
+add_subdirectory(submodules/curl/)
+add_subdirectory(submodules/fmt/)
 
 set (CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
 
@@ -42,10 +42,10 @@ add_executable(${PROJECT_NAME}
 target_precompile_headers(${PROJECT_NAME} PRIVATE src/pch.hpp)
 
 target_include_directories(${PROJECT_NAME}
-    PUBLIC external/SFML/include
-    PUBLIC external/curl/include
-    PUBLIC external/fmt/include
-    PUBLIC external/args
+    PUBLIC submodules/SFML/include
+    PUBLIC submodules/curl/include
+    PUBLIC submodules/fmt/include
+    PUBLIC submodules/args
     PUBLIC "${PROJECT_BINARY_DIR}"
 )
 
