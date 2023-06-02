@@ -97,10 +97,13 @@ void ObjectDatabase::export_observation_targets(bool copy_cpb){
         targets += obj_data[ephIndex].context()+"\r\n\r\n";
     }
     if (targets.size()){
-        fmt::print("\nObservation targets for {}:\n\n{}\n", m_name, targets);
+        fmt::print("\nObservation targets for {}:\n\n{}", m_name, targets);
         if (copy_cpb){
             sf::Clipboard::setString(targets);
             fmt::print("Copied to clipboard\n");
+        }
+        else{
+            fmt::print("! Didnt copy to clipboard !\n");
         }
     }
 }

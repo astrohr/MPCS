@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.20)
 
-project(MPCS VERSION 2.5.1)
+project(MPCS VERSION 2.6.0)
 
 if(NOT EXISTS "./build")
     file(MAKE_DIRECTORY "build")
@@ -45,6 +45,7 @@ target_include_directories(${PROJECT_NAME}
     PUBLIC external/SFML/include
     PUBLIC external/curl/include
     PUBLIC external/fmt/include
+    PUBLIC external/args
     PUBLIC "${PROJECT_BINARY_DIR}"
 )
 

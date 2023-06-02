@@ -1,4 +1,14 @@
 -----------------------------------------------------------------------------------------
+Whats new in 2.6.0 (22.2.2023)
+
+- removed src/CMakeLists.txt and put its contents inside toplevel CMakeLists
+- improved arguments and argument parsing
+    - added [-x|--exit <bool>] argument which is true if you want to exitthe program
+      after use
+    - using external args library to parse args (https://github.com/Taywee/args)
+    - args don't need to be ordered now, and you can pass any that you like
+
+-----------------------------------------------------------------------------------------
 Whats new in 2.5.1 (22.2.2023)
 
 - fixed some logical inconsistencies across the code

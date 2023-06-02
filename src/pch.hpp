@@ -10,10 +10,10 @@
 #include <iostream>     //main
 #include <fstream>      //main
 #include <sstream>      //main, Ephemeris
-#include <fmt/core.h>   //net, ObjectDatabase
 
+//functionalities
 #include <algorithm>    //net
-#include <cfloat>       //main, ObjectDatabase
+#include <cfloat>       //ObjectDatabase
 #include <cmath>        //main, net, Camera, ObjectDatabase
 
 //data structures
@@ -21,3 +21,7 @@
 #include <string>       //main, net, Ephemeris, ObjectDatabase
 #include <tuple>        //main, Ephemeris, Picture, Camera, ObjectDatabase
 #include <map>          //net
+
+//external libs
+#include <fmt/core.h>   //net, ObjectDatabase
+#include <args.hxx>     //main

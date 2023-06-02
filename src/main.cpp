@@ -6,7 +6,7 @@
 #include "pch.hpp"
 // Precompiled headers this file uses:
 // iostream, fstream, sstream
-// cfloat, cmath
+// cmath
 // vector, string, tuple
 
 #include "src/cmakevars.h"
@@ -222,73 +222,110 @@ int defaultVariables(){
     return 0;
 }
 
+//args syntax: ./MPCS [-u|--url <str>] [-e|--exposition <int>] [-n|--number <int>] [-f|--fov <int>] [-c|--copy] [-x|--exit]
 int main(int argc, char** argv){
-    //argc syntax: MPCS <url:str> <exposition:int> <number:int> <copy to clipboard:bool(1/0)> <FOV:int>
-    //i wont check your inputs, make sure you code them right yourself
-    if (argc > 6){
-        fmt::print("Error: Too many arguments\n");
-        return 0;
-    }
-    
+    std::string version;
     #ifdef VERSION_MICRO
-        fmt::print("Running MPCSolver {}.{}.{}\n\n", VERSION_MAJOR, VERSION_MINOR, VERSION_MICRO);
+        version = fmt::format("Running MPCSolver {}.{}.{}\n\n", VERSION_MAJOR, VERSION_MINOR, VERSION_MICRO);
     #else
-        fmt::print("Running MPCSolver {}.{}\n\n", VERSION_MAJOR, VERSION_MINOR);
+        version = fmt::format("Running MPCSolver {}.{}\n\n", VERSION_MAJOR, VERSION_MINOR);
     #endif
 
+    std::string obj_url = "";
+    int pic_exposition=0, pic_number=0;
+    bool to_clipboard = false, close_after = false;
+
+    //Argument parser
+    args::ArgumentParser parser("MPCS - Minor Planet Center Solver", version);
+    args::HelpFlag help(parser, "help", "Display this message", {'h', "help"});
+    args::ValueFlag<std::string> url(parser, "url", "the url to the object offsets link", {'u', "url"});
+    args::ValueFlag<int> exposition(parser, "exposition", "the exposition duration (seconds)", {'e', "expositon"});
+    args::ValueFlag<int> number(parser, "number", "number of pictures to be taken", {'n', "number"});
+    args::ValueFlag<int> fov(parser, "fov", "fov of the telescope", {'f', "fov"});
+    args::Flag copy(parser, "copy", "copy to clipboard", {'c', "copy"});
+    args::Flag exit(parser, "exit", "exit the program after use", {'x', "exit"});
+
+    try{
+        parser.ParseCLI(argc, argv);
+        fmt::print(version);
+    } 
+    catch (args::Help) {
+        std::cout << std::endl << parser << std::endl;
+        return 0;
+    } 
+    catch (args::ParseError e) {
+        fmt::print("\n{}\n", e.what());
+        std::cout << parser << std::endl;
+        return 1;
+    }
+    catch (args::ValidationError e){
+        fmt::print("\n{}\n", e.what());
+        std::cout << parser << std::endl;
+        return 1;
+    }
+    if (url) obj_url = args::get(url);
+    if (exposition) pic_exposition = args::get(exposition);
+    if (number) pic_number = args::get(number);
+    if (fov) g_telescope_FOV = args::get(fov); 
+    if (exit) close_after = true; 
+    //if no parameters were passed, assume copy to be true
+    if (copy || (!url && !exposition && !number && !fov && !exit)) to_clipboard = true; 
+
     if (defaultVariables()) return 1;
+
     while(true){
         database.reset();
 
-        std::string url;
-        if (argc == 1){
-            fmt::print("Insert the website URL:\n");
-            //the while is here to make sure that the url inserted isnt an empty line
-            while(!url.size()) std::getline(std::cin, url);
-            fmt::print("\n");
-        }
-        else url = argv[1];
-        int greska = database.fill_database(url);
+        if (obj_url == "") fmt::print("Insert the website URL:\n");
+        //this while loop is here to make sure a link is provided
+        while(!obj_url.size()) std::getline(std::cin, obj_url);
+        fmt::print("\n");
+        
+        int greska = database.fill_database(obj_url);
         if (greska){
-            fmt::print("\n\n");
-            if (argc == 1) continue;
-            else break;
+            if (close_after) break;
+            else{
+                pic_exposition = pic_number = 0;
+                obj_url = "";
+                fmt::print("\n\n");
+                continue;
+            }
         }
-
-        if (argc == 6) g_telescope_FOV = atoi(argv[5]);
 
         database.set_FOV(g_telescope_FOV);
         cam.reset_position(g_telescope_FOV, &database);
         
-        if (argc == 1) fmt::print("\nObject: {}\n", database.name());
+        fmt::print("\nObject: {}\n", database.name());
 
-        int amm, exp;
-        if (argc < 3){
+        if (!pic_number){
             fmt::print("Insert the ammount of pictures: ");
-            std::cin >> amm;
+            std::cin >> pic_number;
         }
-        else amm = atoi(argv[2]);
-        database.set_ammount(amm);
+        database.set_ammount(pic_number);
 
-        if (argc < 4){
+        if (!pic_exposition){
             fmt::print("Insert the exposure length (in seconds): ");
-            std::cin >> exp;
+            std::cin >> pic_exposition;
         }
-        else exp = atoi(argv[3]);
-        database.set_exposure(exp);
+        database.set_exposure(pic_exposition);
 
         WindowSetup();
 
-        bool copy_to_clipboard = true;
-        if (argc > 4) copy_to_clipboard = atoi(argv[4]);
-        database.export_observation_targets(copy_to_clipboard);
+        database.export_observation_targets(to_clipboard);
         
-        if (argc > 1){
-            fmt::print("Click any key to exit...\n");
-            std::cin.get();
-            break; // if the program was called from the console just kill it after use
+        if (close_after){
+            if (!to_clipboard){
+                fmt::print("Press enter to exit");
+                std::cin.ignore(); std::cin.ignore();
+                // two ignores because from some reason the program skips over the first one
+            }
+            break;
         }
-        fmt::print("\n\n");
+        else{
+            pic_exposition = pic_number = 0;
+            obj_url = "";
+            fmt::print("\n\n");
+        }
     }
     return 0;
 }

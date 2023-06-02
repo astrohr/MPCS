@@ -1,6 +1,7 @@
 TODO:
 
 When debugging, link libraries and build *dynamically*, and when in release mode, link statically
+Add a prompt to copy data to the clipboard, its a keystroke of work and saving you of the annoyance of having your clipboard filled with shit every time
 Make the "class dependency" graph ad analyse it
  - pay special attention to ephemeris and picture classes
 Try to make an algorythm for automatically selecting squares in an optimal manner
