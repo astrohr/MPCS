@@ -43,6 +43,7 @@ public:
     void change_zoom(float delta, float x, float y);
 
     void change_dimensions(int x, int y);
+    void change_dimensions(unsigned int x, unsigned int y);
 
     Camera(int x = 1080, int y = 920);
 

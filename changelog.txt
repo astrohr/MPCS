@@ -8,6 +8,8 @@ Whats new in 2.6.0 (22.2.2023)
     - using external args library to parse args (https://github.com/Taywee/args)
     - args don't need to be ordered now, and you can pass any that you like
 - figured that todo.txt is kinda unnecesarry
+- Replaced the data/variables.txt with a MPCS.ini file
+    - added external libary for using .ini (https://github.com/mcmtroffaes/inipp)
 - Improved Picture.hpp/.cpp to be leaner and better documented
 
 -----------------------------------------------------------------------------------------

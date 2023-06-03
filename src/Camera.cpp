@@ -46,6 +46,7 @@ void Camera::change_zoom(float delta, float x, float y){
 }
 
 void Camera::change_dimensions(int x, int y){ W = x; H = y; }
+void Camera::change_dimensions(unsigned int x, unsigned int y){ W = (int)x; H = (int)y; }
 
 Camera::Camera(int x/*=1080*/, int y/*=920*/) : W(x), H(y) {
     m_offsetRa = 0.f;

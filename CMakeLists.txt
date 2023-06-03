@@ -46,6 +46,7 @@ target_include_directories(${PROJECT_NAME}
     PUBLIC submodules/curl/include
     PUBLIC submodules/fmt/include
     PUBLIC submodules/args
+    PUBLIC submodules/inipp
     PUBLIC "${PROJECT_BINARY_DIR}"
 )
 
@@ -59,8 +60,8 @@ if(NOT EXISTS "./build/resources")
     message("> Resources copied")
 endif()
 
-#copy data
-if(NOT EXISTS "./build/data")
-    file(COPY "./data" DESTINATION ".")
-    message("> Data copied")
+#copy MPCS.ini
+if(NOT EXISTS "./build/MPCS.ini")
+    file(COPY "./MPCS.ini" DESTINATION ".")
+    message("> MPCS.ini copied")
 endif()

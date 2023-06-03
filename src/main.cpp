@@ -2,6 +2,8 @@
 // This is the main file, it regulates the flow of the program, and the UI
 
 #include <SFML/Graphics.hpp>
+#include <inipp/inipp.h>
+#include <args.hxx>
 
 #include "pch.hpp"
 // Precompiled headers this file uses:
@@ -22,7 +24,8 @@ ObjectDatabase database;
 Camera cam;
 
 
-void WindowSetup(){
+void WindowSetup()
+{
     //init window
     sf::ContextSettings settings;
     settings.antialiasingLevel = 8;
@@ -201,51 +204,67 @@ void WindowSetup(){
 }
 
 
+// this function parses the MPCS.ini file
+// \param[out] W window width 
+// \param[out] H window height 
+void defaultVariables(unsigned int& W, unsigned int& H)
+{
+    std::ifstream ReadFile("MPCS.ini");
+    if (!ReadFile.is_open())
+        fmt::print(
+            "Warning: MPCS.ini does not exist, or isnt in the right directory!\n\n"
+        );
 
-int defaultVariables(){
-    int W, H;
-    std::string linija;
+    // initialize inipp
+    inipp::Ini<char> ini;
 
-    std::ifstream ReadFile("data/variables.txt");
-    if (!ReadFile.is_open()){
-        fmt::print("Error: didnt find \"data/variable.txt\"\n");
-        return 1;
+    // inipp magic
+    ini.parse(ReadFile);
+    if (!inipp::get_value(ini.sections["Window"], "W", W)){
+        W = 1080;
+        fmt::print(
+            "Warning: Window width not properly specified in MPCS.ini!\n"
+            "Defaulting to W = {}\n", W
+        );
     }
-    while(getline(ReadFile, linija)){
-        if (!linija.size()) continue;
-
-        if (linija[0] == 'F'){
-            std::string a = linija.substr(5, linija.length()-5);
-            std::stringstream ss(a);
-            ss >> g_telescope_FOV;
-        }
-        else{
-            std::string a = linija.substr(3, linija.length()-3);
-            std::stringstream ss(a);
-            if (linija[0] == 'H') ss >> H;
-            else if (linija[0] == 'W') ss >> W;
-        }
+    if (!inipp::get_value(ini.sections["Window"], "H", H)){
+        H = 920;
+        fmt::print(
+            "Warning: Window height not properly specified in MPCS.ini!\n"
+            "Defaulting to H = {}\n", H
+        );
     }
-    cam.change_dimensions(W, H);
+    if (!inipp::get_value(ini.sections["Telescope"], "FOV", g_telescope_FOV)){
+        g_telescope_FOV = 2500;
+        fmt::print(
+            "Warning: Telescope FOV not properly specified in MPCS.ini!\n"
+            "Defaulting to FOV = {}\n", g_telescope_FOV
+        );
+    }
+
+    fmt::print("\n");
     ReadFile.close();
-    return 0;
 }
 
-//args syntax: ./MPCS [-u|--url <str>] [-e|--exposition <int>] [-n|--number <int>] [-f|--fov <int>] [-c|--copy] [-x|--exit]
-int main(int argc, char** argv){
+
+// args syntax: ./MPCS [-u|--url <str>] [-e|--exposition <int>] [-n|--number <int>] [-f|--fov <int>] [-c|--copy] [-x|--exit]
+int main(int argc, char** argv)
+{
+    // string containing the version of the MPCS
     std::string version;
-    #ifdef VERSION_MICRO
-        version = fmt::format("Running MPCSolver {}.{}.{}\n\n", VERSION_MAJOR, VERSION_MINOR, VERSION_MICRO);
+    #ifdef MPCS_VERSION_MICRO
+        version = fmt::format("MPCSolver {}.{}.{}\n\n", MPCS_VERSION_MAJOR, MPCS_VERSION_MINOR, MPCS_VERSION_MICRO);
     #else
-        version = fmt::format("Running MPCSolver {}.{}\n\n", VERSION_MAJOR, VERSION_MINOR);
+        version = fmt::format("MPCSolver {}.{}\n\n", MPCS_VERSION_MAJOR, MPCS_VERSION_MINOR);
     #endif
 
     std::string obj_url = "";
     int pic_exposition=0, pic_number=0;
     bool to_clipboard = false, close_after = false;
 
-    //Argument parser
+    // Argument parser
     args::ArgumentParser parser("MPCS - Minor Planet Center Solver", version);
+    // arguments
     args::HelpFlag help(parser, "help", "Display this message", {'h', "help"});
     args::ValueFlag<std::string> url(parser, "url", "the url to the object offsets link", {'u', "url"});
     args::ValueFlag<int> exposition(parser, "exposition", "the exposition duration (seconds)", {'e', "expositon"});
@@ -254,37 +273,49 @@ int main(int argc, char** argv){
     args::Flag copy(parser, "copy", "copy to clipboard", {'c', "copy"});
     args::Flag exit(parser, "exit", "exit the program after use", {'x', "exit"});
 
+    // try parsing arguments
     try{
         parser.ParseCLI(argc, argv);
         fmt::print(version);
     } 
+    // if parsing fails, print help message and inform user of the error
     catch (args::Help) {
         std::cout << std::endl << parser << std::endl;
         return 0;
-    } 
+    }
     catch (args::ParseError e) {
-        fmt::print("\n{}\n", e.what());
+        fmt::print("\nError: {}\n\n", e.what());
         std::cout << parser << std::endl;
         return 1;
     }
     catch (args::ValidationError e){
-        fmt::print("\n{}\n", e.what());
+        fmt::print("\nError: {}\n\n", e.what());
         std::cout << parser << std::endl;
         return 1;
     }
+
+    // if parsing was successful store the inputed arguments
     if (url) obj_url = args::get(url);
     if (exposition) pic_exposition = args::get(exposition);
     if (number) pic_number = args::get(number);
     if (fov) g_telescope_FOV = args::get(fov); 
     if (exit) close_after = true; 
-    //if no parameters were passed, assume copy to be true
+    // if no parameters were passed, assume to_clipboard to be true
     if (copy || (!url && !exposition && !number && !fov && !exit)) to_clipboard = true; 
 
-    if (defaultVariables()) return 1;
+    // read the default variables
+    try{
+        unsigned int W, H;
+        defaultVariables(W, H);
+        cam.change_dimensions(W, H);
+    }
+    catch (std::exception& e){
+        fmt::print("Error: {} \n\n", e.what());
+        return 1;
+    }
 
-    while(true){
-        database.reset();
-
+    while(true)
+    {
         if (obj_url == "") fmt::print("Insert the website URL:\n");
         //this while loop is here to make sure a link is provided
         while(!obj_url.size()) std::getline(std::cin, obj_url);
@@ -296,6 +327,7 @@ int main(int argc, char** argv){
             else{
                 pic_exposition = pic_number = 0;
                 obj_url = "";
+                database.reset();
                 fmt::print("\n\n");
                 continue;
             }
@@ -326,13 +358,14 @@ int main(int argc, char** argv){
             if (!to_clipboard){
                 fmt::print("Press enter to exit");
                 std::cin.ignore(); std::cin.ignore();
-                // two ignores because from some reason the program skips over the first one
+                // two ignores because from some reason the program sometimes skips over the first one
             }
             break;
         }
         else{
             pic_exposition = pic_number = 0;
             obj_url = "";
+            database.reset();
             fmt::print("\n\n");
         }
     }
