@@ -134,22 +134,28 @@ void WindowSetup(){
             window.draw(kvadrat);
         }
 
-        //draw other squares
+        // draw picture areas
         for(int i = 0; i < database.pictures.size(); i++){
             float xd, yd;
             std::tie(xd, yd) = database.pictures[i].offsets();
+
+            // draw picture area shadow
             kvadrat.setPosition(xd-g_telescope_FOV/2, yd-g_telescope_FOV/2);
             kvadrat.setOutlineColor(sf::Color(100, 100, 100));
             kvadrat.setOutlineThickness(3.5f/cam.zoom());
             window.draw(kvadrat);
+
+            // draw pictue area
             kvadrat.setOutlineColor(sf::Color(255, 255, 0));
             kvadrat.setOutlineThickness(2.f/cam.zoom());
             window.draw(kvadrat);
-            sf::Text kvat = database.pictures[i].text();
-            kvat.setScale(1.f/cam.zoom(), 1.f/cam.zoom());
-            kvat.setFont(font);
-            window.draw(kvat);
-
+            
+            // use probtext to print the name of the picture in the middle
+            probText.setString(database.pictures[i].getName());
+            probText.setScale(1.f/cam.zoom(), 1.f/cam.zoom());
+            probText.setFillColor(sf::Color(255, 255, 0));
+            probText.setPosition(xd, yd);
+            window.draw(probText);
         }
 
         //show which square will be deleted if the button is released
@@ -175,13 +181,16 @@ void WindowSetup(){
 
 
         //PROBABILITY TEXT:
+        probText.setFillColor(sf::Color(255, 255, 255));
         probText.setScale(1.f/cam.zoom(), 1.f/cam.zoom());
         probText.setPosition(cam.raOffset()-cam.view_w()*2.5f/7.f, cam.decOffset()+cam.view_h()/2.f);
         //total percentage of captured datapoints
         std::string per_pic = "", total = fmt::format("{:.2f}", database.selectedPercent());
         //percentage per picture
-        for(int i = 0; i < database.pictures.size(); i++)
-            per_pic += fmt::format("{} {:.2f}%\n", database.pictures[i].sign(), database.pictures[i].percent(database.obj_data.size()));
+        for(int i = 0; i < database.pictures.size(); i++){
+            float percent = 100.f * database.pictures[i].containedEphemeris() / database.obj_data.size();
+            per_pic += fmt::format("{} {:.2f}%\n", database.pictures[i].getName(), percent);
+        }
         //set the text
         probText.setString(fmt::format("{}\n= {}%", per_pic, total));
         window.draw(probText);

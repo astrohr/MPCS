@@ -85,7 +85,7 @@ void ObjectDatabase::export_observation_targets(bool copy_cpb){
         //time
         targets += obj_data[ephIndex].time();
 
-        //right ascnension
+        //right ascension
         float ra_whole, ra_min = std::modf(ra, &ra_whole)*60.f, ra_sec = std::modf(ra_min, &ra_min)*60.f;
         targets += fmt::format("{:02.0f} {:02.0f} {:04.1f} ", ra_whole, ra_min, ra_sec);
 

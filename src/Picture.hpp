@@ -1,35 +1,76 @@
 #pragma once
 // Picture.hpp ---------------------------------------------
-// this file is used for easier storage and manipulation of picture data
-// * in this program, the "picture" is a field where the telescope will be taking final images
-
-#include <SFML/Graphics/Text.hpp>
+// this file defines the Picture class meant for easier picture data manipulation
 
 #include "pch.hpp"
 // Precompiled headers this file uses:
-// tuple
+// tuple, string
 
 //----------------------------------------------------------
 
 
 
+// Class for easier storage of the location of a picture area and its properties
 class Picture{
 private:
-    float m_ra, m_dec;
+
+    // Picture right ascension in hours
+    float m_ra;
+    // Picture declination in degrees
+    float m_dec;
+    // ^ These variables are filled in the approx_coords function
+
+    // Offset in arcseconds from the middle 0,0 coordinate
     float m_offsetRa, m_offsetDec;
+
+    // The ammount of Ephemeris objects that are within the picture area
     int m_containedEphemeris;
-    sf::Text m_text;
+
+    // The text that will be displayed with the picture (its name)
+    std::string m_name;
+
 public:
-    const std::tuple<float, float> coords() const;
-    const std::tuple<float, float> offsets() const;
-    const sf::Text text() const;
-    const std::string sign() const;
-    const float percent(int totalEphemeris) const;
 
-    void approx_coords(float centerRa, float centerDec);
+    // The Picture constructor
+    // \param ra Right ascension of the picture (in hours)
+    // \param dec Declination of the picture (in degrees)
+    // \param objNum The ammount of Ephemeris objects within the picture area
+    Picture(float ra, float dec, int objNum)
+    : m_offsetRa(ra), m_offsetDec(dec), m_containedEphemeris(objNum) {}
 
-    void set_sign(std::string sgn);
 
-    Picture(float ra, float dec, int objNum);
+
+    // Offsets getter
+    // \returns tuple with right ascencion in hours and declination (in arcseconds)
+    const std::tuple<float, float> offsets() const
+    { return {m_offsetRa, m_offsetDec}; }
+
+    // Coordinates getter
+    // \returns tuple with right ascencion and declination offsets (in arcseconds)
+    const std::tuple<float, float> coords() const
+    { return {m_ra, m_dec}; }
+
+    // Name getter
+    // \returns the name of the picture
+    const std::string getName() const
+    { return m_name; }
+    
+    // Name setter
+    // \param name the string with the name of the picture object
+    void set_sign(std::string name)
+    { m_name = name; }
+    
+    // Contained Ephemeris getter
+    // \returns the ammount of contained ephemeris
+    const int containedEphemeris() const 
+    { return m_containedEphemeris; }
+
+
+
+    // This function calculates the absolute coordinates of the picture area
+    // The coordinates are stored in private m_ra and m_dec variables
+    // \param centerRa right ascension of 0,0 (in hours)
+    // \param centerDec declination of 0,0 (in degrees)
+    void approx_coords(float& centerRa, float& centerDec);
 
 };

@@ -7,6 +7,8 @@ Whats new in 2.6.0 (22.2.2023)
       after use
     - using external args library to parse args (https://github.com/Taywee/args)
     - args don't need to be ordered now, and you can pass any that you like
+- figured that todo.txt is kinda unnecesarry
+- Improved Picture.hpp/.cpp to be leaner and better documented
 
 -----------------------------------------------------------------------------------------
 Whats new in 2.5.1 (22.2.2023)

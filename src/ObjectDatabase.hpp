@@ -34,9 +34,6 @@ private:
 
     int telescope_FOV;
 
-    //function for nicely formatting the numbers to strings (with leading zeroes)
-    std::string frmt(int num, int digits);
-
     std::string b10_to_b26(int c);
 
     void calculateSelected();
