@@ -118,9 +118,8 @@ void WindowSetup()
         //draw dots
         sf::CircleShape tocka(1.5f/cam.zoom());
         for(int i = 0; i < database.obj_data.size(); i++){
-            // auto [R, G, B] = database.obj_data[i].color(); coming soon
-            // tocka.setFillColor(sf::Color(R, G, B));
-            tocka.setFillColor(database.obj_data[i].color());
+            auto [R, G, B] = database.obj_data[i].color();
+            tocka.setFillColor(sf::Color(R, G, B));
             auto [x, y] = database.obj_data[i].offsets();
             tocka.setPosition(x, y);
             window.draw(tocka);

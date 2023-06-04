@@ -10,7 +10,7 @@ Whats new in 2.6.0
 - figured that todo.txt is kinda unnecessary
 - Replaced the data/variables.txt with a MPCS.ini file
     - added external library for using .ini (https://github.com/mcmtroffaes/inipp)
-- Improved Picture.hpp/.cpp to be leaner and better documented
+- Improved Picture.hpp/.cpp and Ephemeris.hpp/.cpp to be leaner and better documented
 
 -----------------------------------------------------------------------------------------
 Whats new in 2.5.1

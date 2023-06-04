@@ -67,23 +67,22 @@ void ObjectDatabase::export_observation_targets(bool copy_cpb){
     std::string targets = "";
     for(int i = 0; i < pictures.size(); i++){
         pictures[i].approx_coords(m_centerRa, m_centerDec);
-        float ra, dec;
-        std::tie(ra, dec) = pictures[i].coords();
-        float raOff, decOff;
-        std::tie(raOff, decOff) = pictures[i].offsets();
+        auto [ra, dec] = pictures[i].coords();
+        auto [raOff, decOff] = pictures[i].offsets();
         
         int ephIndex = closest_ephemeris_index(raOff, decOff);
-        if (obj_data[ephIndex].time() == "k") obj_data[ephIndex].follow_link();
+        if (!obj_data[ephIndex].linkVisited()) obj_data[ephIndex].follow_link(); // follow link could throw an exception which can crash the program, there is no checking for that here
 
         //name
         targets += fmt::format("* {}", m_name);
         targets += (pictures.size()-1) ? fmt::format("_{}", b10_to_b26(i+1)) : ""; // adds the letter that shows the picture index (if needed)
         
         //magnitude and picture info
-        targets += fmt::format("    {}    {:02} x {:02} sec\r\n", m_magnitude, m_picAmmount, m_picExposure);
+        targets += fmt::format("   {:5.1f}    {:02} x {:02} sec\r\n", obj_data[ephIndex].mag(), m_picAmmount, m_picExposure);
 
         //time
-        targets += obj_data[ephIndex].time();
+        auto [year, month, day, hour, minute] = Ephemeris::JD_to_date(obj_data[ephIndex].timeJD());
+        targets += fmt::format("{:04} {:02} {:02} {:02}{:02}   ", year, month, day, hour, minute);
 
         //right ascension
         float ra_whole, ra_min = std::modf(ra, &ra_whole)*60.f, ra_sec = std::modf(ra_min, &ra_min)*60.f;
@@ -108,8 +107,8 @@ void ObjectDatabase::export_observation_targets(bool copy_cpb){
     }
 }
 
-void ObjectDatabase::insert_data(std::string* str){
-    Ephemeris e(*str);
+void ObjectDatabase::insert_data(std::string& str){
+    Ephemeris e(str);
     obj_data.emplace_back(e);
 }
 
@@ -198,7 +197,7 @@ int ObjectDatabase::fill_database(std::string lynk){
     //saves the data
     for(int i = 0; i < downloaded.size(); i++){
         if (downloaded[i].size() < 80) continue;
-        insert_data(&(downloaded[i]));
+        insert_data(downloaded[i]);
     }
 
     //finding the extremities and using them to set the mean center/egdes
@@ -225,7 +224,6 @@ int ObjectDatabase::fill_database(std::string lynk){
     returnvalue = obj_data[0].follow_link();
     if (returnvalue != 0) return 1;
     std::tie(m_centerRa, m_centerDec) = obj_data[0].coords();
-    m_magnitude = obj_data[0].mag();
     return 0;
 }
 

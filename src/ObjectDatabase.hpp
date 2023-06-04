@@ -26,7 +26,6 @@ private:
     // center is the absolute coordinates of the 0, 0 ephemerid
     float m_centerRa, m_centerDec;
     int m_picExposure, m_picAmmount;
-    std::string m_magnitude;
     // holds the percent of celected ephemeris inside existing pictures
     float selectedPercentage;
     // the name of the object
@@ -56,7 +55,7 @@ public:
 
     void export_observation_targets(bool copy_cpb);
 
-    void insert_data(std::string* str);
+    void insert_data(std::string& str);
 
     void insert_picture(float ra, float dec);
 

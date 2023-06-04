@@ -7,113 +7,180 @@
 
 
 
-const std::tuple<float, float> Ephemeris::coords() const { return {m_ra, m_dec}; }
-const std::tuple<float, float> Ephemeris::offsets() const { return {m_offsetRa, m_offsetDec}; }
-const std::string Ephemeris::mag() const { return m_magnitude; }
-const std::string Ephemeris::time() const { return m_time; }
-const std::string Ephemeris::context() const {
-    return fmt::format("{} {} {} {}{}", m_elong, m_magnitude, m_velocity, m_angle, m_otherData); 
-}
-const sf::Color Ephemeris::color() const { return m_color; }
+Ephemeris::Ephemeris(std::string& raw)
+: m_linkVisited(false)
+{
+    // the raw string should look something like this
+    //      -8     -18      <a href="sample_link">Ephemeris #    3</a> MBA soln
+    //  offsetRa  offsetDec          link           ephemeris num       type
+    // stages:
+    //0       1       2             3           4                    5
 
-void Ephemeris::approx_coords(float centerRa, float centerDec){
-    m_ra = centerRa + (float)m_offsetRa/3600.f/15.f;
-    m_dec = centerDec + (float)m_offsetDec/3600.f;
-    while(m_ra >= 24.f) m_ra -= 24.f;
-    while(m_ra < 0.f) m_ra += 24.f;
-    while(m_dec > 90.f || m_dec < -90.f){
-        if (m_dec > 90.f) m_dec = 180.f-m_dec;
-        if (m_dec < -90.f) m_dec = -180.f-m_dec;
+    raw += ' '; // since we will be checking the character after the current char in the loop, ill add this just in case
+    std::string ra, dec, link, num, type;
+
+    int stage = 0;
+    for (int i = 0; i < raw.size(); i++){
+        if (raw[i] == ' ' && stage != 3) continue;
+
+        if (stage == 0){
+            ra += raw[i];
+            if (raw[i+1] == ' ') stage++;
+        }
+        else if (stage == 1){
+            dec += raw[i];
+            if (raw[i+1] == ' ') stage++;
+        }
+        else if (stage == 2){
+            if (raw[i] == '"') stage++;
+        }
+        else if (stage == 3){
+            link += raw[i];
+            if (raw.size() > i+1 && raw[i+1] == '"') stage++;
+            // the aditional check just to make sure we dont end up out of bounds if string ends during stage 3
+        }
+        else if (stage == 4){
+            if (isdigit(raw[i])) num += raw[i];
+            else if (raw[i] == '>' && raw[i-1] != '"') stage++;
+        }
+        else if (raw[i] != '\n') type += raw[i];
+    }
+
+    // add error checking and custom errors here
+    m_offsetRa = std::stoi(ra);
+    m_offsetDec = std::stoi(dec);
+    m_link = link;
+    m_ephemerisNumber = std::stoi(num);
+    
+    // the color is determined by the type
+    if (type.empty()) m_color = {0, 255, 0};
+    else if (type == "!") m_color = {255, 255, 0};
+    else if (type == "!!") m_color = {255, 0, 0};
+    else if (type == "***") m_color = {255, 255, 255};
+    else if (type == "MBAsoln") m_color = {0, 0, 255};
+    else if (type == "JTrojansoln") m_color = {255, 0, 255};
+    else{
+        fmt::print("Error: object type not found, found only: '{}'\n", type);
+        m_color = {255, 255, 255};
     }
 }
 
-int Ephemeris::follow_link(){
+
+int Ephemeris::follow_link()
+{
     std::vector<std::string> downloaded;
     int returnvalue = get_html(m_link, &downloaded, 4500.0);
 
-    //for now it just looks at the first ephemeris, but that will be changed
-    for (int i = 0; i < downloaded.size(); i++){
-        if (downloaded[i].size() && downloaded[i][0] == '2'){
-            //here we use the fact that on the website all data is always equaly spaced
-            m_time = downloaded[i].substr(0, 18);
-            std::string ra = downloaded[i].substr(18, 10);
-            std::string dec = downloaded[i].substr(29, 9);
-            m_elong = downloaded[i].substr(39, 5);
-            m_magnitude = downloaded[i].substr(46, 4);
-            m_velocity = downloaded[i].substr(52, 6);
-            m_angle = downloaded[i].substr(60, 5);
-            m_otherData = downloaded[i].substr(65, downloaded[i].size()-65);
+    m_linkVisited = true;
 
-            //the following code takes advantade of spaces between numbers in the string
-            std::stringstream streamRa(ra), streamDec(dec);
-            
-            float ra_whole, ra_min, ra_sec;
-            float dec_whole, dec_min, dec_sec;
-            
-            //here thanks to whitespaces, each number is placed in its variable
-            streamRa >> ra_whole >> ra_min >> ra_sec;
-            streamDec >> dec_whole >> dec_min >> dec_sec;
+    // get a reference to the first line that contains ephemeris data 
+    std::string* data = nullptr;
+    for (int i = 0; i < downloaded.size(); i++)
+        if (!downloaded[i].empty() && downloaded[i][0] == '2')
+            data = &downloaded[i];
 
-            //and here they are added together into a single number for simplicity
-            m_ra = ra_whole + ra_min/60.f + ra_sec/3600.f;
-            m_dec = (abs(dec_whole) + dec_min/60.f + dec_sec/3600.f) * (abs(dec_whole)/dec_whole);
+    if (data == nullptr){
+        fmt::print("Error: No data found on the Ephemeris link");
+        // throw a custom exception here (no Ephemeris data or sth)
+        return 1;
+    }
 
-            m_context = downloaded[i];
-            break;
+    // This is the layout of the ephemeris data
+    //
+    // Date       UT      R.A. (J2000) Decl.  Elong.  V        Motion     Object     Sun         Moon
+    //             h m                                      "/min   P.A.  Azi. Alt.  Alt.  Phase Dist. Alt.
+    // 2023 06 04 0302   21 42 32.6 +09 16 59 100.9  22.1    0.31  007.1  337  +52   -03    1.00  081  +00    <-- line we look at
+    
+    // that is perfect for stringstreams
+    std::stringstream ss_check(*data);
+    std::string temp;
+    // we first check if every element is a number
+    while(ss_check >> temp){
+        try{
+            std::stof(temp);
+        }
+        catch (std::exception& e) {
+            fmt::print("Warning: bad data found for an ephemeris {}: \n\t{}\n", m_ephemerisNumber, *data);
+            // put a custom exception here
+            return 1;
         }
     }
+
+    // if all is good, refill the stringstream and analyze it
+    std::stringstream ss(*data);
+
+    // first time
+    int year, month, day, hour_and_min, hour, min;
+    year = (ss >> temp) ? std::stoi(temp) : 0;
+    month = (ss >> temp) ? std::stoi(temp) : 0;
+    day = (ss >> temp) ? std::stoi(temp) : 0;
+    hour_and_min = (ss >> temp) ? std::stoi(temp) : 0;
+    if (temp.length() == 4){
+        hour = hour_and_min / 100;
+        min = hour_and_min % 100;
+    }
+    else{
+        hour = hour_and_min;
+        min = 0;
+    }
+    m_JDtime = this->date_to_JD(year, month, day, hour, min);
+
+    // then right ascension
+    int ra_whole, ra_min; float ra_sec;
+    ra_whole = (ss >> temp) ? std::stoi(temp) : 0;
+    ra_min = (ss >> temp) ? std::stoi(temp) : 0;
+    ra_sec = (ss >> temp) ? std::stof(temp) : 0.f;
+    m_ra = (float)ra_whole + ra_min/60.f + ra_sec/3600.f;
+
+    // then declination
+    int dec_whole, dec_min, dec_sec;
+    dec_whole = (ss >> temp) ? std::stoi(temp) : 0;
+    dec_min = (ss >> temp) ? std::stoi(temp) : 0;
+    dec_sec = (ss >> temp) ? std::stoi(temp) : 0;
+    m_dec = ((float)abs(dec_whole) + dec_min/60.f + dec_sec/3600.f) * ((float)abs(dec_whole)/dec_whole);
+
+    // then elongation
+    m_elong = (ss >> temp) ? std::stof(temp) : 0.f;
+
+    // and magnitude
+    m_magnitude = (ss >> temp) ? std::stof(temp) : 0.f;
+
+    // velocity
+    m_velocity = (ss >> temp) ? std::stof(temp) : 0.f;
+
+    // angle 
+    m_angle = (ss >> temp) ? std::stof(temp) : 0.f;
+
+    // you might think this above is excessive iffing, but i want to avoid the proram crashing if sstream returns ""
+
+    // this is going to be removed soon
+    m_otherData = data->substr(65, data->size()-65);
+
     return 0;
 }
 
-//the constructor is passed the string that describes the ephemeris in the source and parses trough it
-Ephemeris::Ephemeris(std::string raw){
-    int i = 0;
+std::tuple<int, int, int, int, int> Ephemeris::JD_to_date(double JD)
+{
+    // https://en.wikipedia.org/wiki/Julian_day#Julian_or_Gregorian_calendar_from_Julian_day_number
+    int var1 = 4*((int)(JD+0.5) + 1401 + (((4*(int)(JD+0.5)+274277)/146097)*3)/4 - 38) + 3;
+    int var2 = 5*(var1%1461/4) + 2;
 
-    // getting the offsets
-    std::string n1 = "", n2 = "";
-    while(raw[i] != '<'){
-        if (raw[i] == '-' || raw[i] == '+'){
-            if (n1.empty()) n1 += raw[i];
-            else n2 += raw[i];
-        }
-        else if (raw[i] != ' '){
-            if (n2.empty()) n1 += raw[i];
-            else n2 += raw[i];
-        }
-        i++;
-    }
-    std::stringstream stream1(n1), stream2(n2);
-    stream1 >> m_offsetRa; stream2 >> m_offsetDec;
-    while(raw[i-1] != '"') i++;
-    
-    //getting the link of the ephemeris
-    while(raw[i] != '"'){
-        m_link += raw[i];
-        i++;
-    }
-    while(raw[i-2] != '#') i++;
+    int day = (var2%153)/5 + 1;
+    int month = (var2/153+2)%12 + 1;
+    int year = var1/1461 - 4716 + (14-month)/12;
 
-    //getting the number of the ephemeris
-    m_ephemerisNumber = 0;
-    while(raw[i] != '<'){
-        m_ephemerisNumber = m_ephemerisNumber*10 + (raw[i]-'0');
-        i++;
-    }
-    while(raw[i-1] != '>') i++;
+    double temp, remainder = modf(JD, &temp);
+    if (remainder > 0.5) remainder -= 0.5;
+    else remainder += 0.5;
+    int secs = (int)(remainder * 86400);
+    int hour = secs / 3600;
+    int min = secs % 3600 / 60;
 
-    //getting the category
-    int cat = 0;
-    while(raw[i] != '\n'){
-        cat++; 
-        i++;
-    }
-    
-    if (cat == 0) m_color = sf::Color(0, 255, 0);
-    else if (cat == 2) m_color = sf::Color(255, 255, 0);
-    else if (cat == 3) m_color = sf::Color(255, 0, 0);
-    else if (cat == 4) m_color = sf::Color(255, 255, 255);
-    else if (cat == 11) m_color = sf::Color(0, 0, 255);
-    else m_color = sf::Color(255, 0, 255);
-    
-    m_time = "k"; //this just means the link hasnt been followed yet
+    return {year, month, day, hour, min};
+}
+
+double Ephemeris::date_to_JD(int year, int month, int day, int hour, int minute)
+{
+    // https://en.wikipedia.org/wiki/Julian_day#Converting_Gregorian_calendar_date_to_Julian_Day_Number
+    return ((1461*(year+4800+(month-14)/12))/4+(367*(month-2-12*((month-14)/12)))/12-(3*((year+4900+(month-14)/12)/100))/4+day-32075)+(hour-12.0)/24.0+minute/1440.0;
 }
