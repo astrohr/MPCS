@@ -3,13 +3,13 @@ Whats new in 2.6.0 (22.2.2023)
 
 - removed src/CMakeLists.txt and put its contents inside toplevel CMakeLists
 - improved arguments and argument parsing
-    - added [-x|--exit <bool>] argument which is true if you want to exitthe program
+    - added [-x|--exit <bool>] argument which is true if you want to exit the program
       after use
     - using external args library to parse args (https://github.com/Taywee/args)
     - args don't need to be ordered now, and you can pass any that you like
-- figured that todo.txt is kinda unnecesarry
+- figured that todo.txt is kinda unnecessary
 - Replaced the data/variables.txt with a MPCS.ini file
-    - added external libary for using .ini (https://github.com/mcmtroffaes/inipp)
+    - added external library for using .ini (https://github.com/mcmtroffaes/inipp)
 - Improved Picture.hpp/.cpp to be leaner and better documented
 
 -----------------------------------------------------------------------------------------
@@ -34,7 +34,7 @@ Whats new in version 2.4
 
 - added changelog :)
 - broke up the code into multiple files for developer friendlieness
-- get_html now keeps trying to reach a link for some ammount of time and adapts itself to
+- get_html now keeps trying to reach a link for some amount of time and adapts itself to
   curl error 35 (SSL error)
 - Added precompiled headers :D
 - Download meter has been changed due to performance issues
