@@ -65,17 +65,17 @@ void WindowSetup()
                 else if (event.key.code == sf::Keyboard::C) database.clear_pictures();
                 else if (event.key.code == sf::Keyboard::U) database.undo_picture();
                 else if (event.key.code == sf::Keyboard::R) cam.reset_position(g_telescope_FOV, &database);
-                else if (event.key.code == sf::Keyboard::H){
-                    fmt::print("\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n\n",
-                    "Left Click to add an observation target",
-                    "Right Click to remove an observation target",
-                    "Q to exit the window and confirm the selection",
-                    "R to reset the view",
-                    "U to undo an observation target",
-                    "C to remove all observation targets",
-                    "You can zoom in and out with the scroll wheel",
-                    "Arrow keys for panning the view");
-                }
+                else if (event.key.code == sf::Keyboard::H)
+                    fmt::print(
+                        "\nLeft Click to add an observation target\n"
+                        "Right Click to remove an observation target\n"
+                        "Q to exit the window and confirm the selection\n"
+                        "R to reset the view\n"
+                        "U to undo an observation target\n"
+                        "C to remove all observation targets\n"
+                        "You can zoom in and out with the scroll wheel\n"
+                        "Arrow keys for panning the view\n\n"
+                    );
             }
             else if(event.type == sf::Event::Resized){
                 cam.change_dimensions(event.size.width, event.size.height);
@@ -83,15 +83,13 @@ void WindowSetup()
             }
             else if (event.type == sf::Event::MouseButtonPressed){
                 if (event.mouseButton.button == sf::Mouse::Left){
-                    double xd, yd;
-                    std::tie(xd, yd) = cam.px_to_off(event.mouseButton.x, event.mouseButton.y);
+                    auto [xd, yd] = cam.px_to_off(event.mouseButton.x, event.mouseButton.y);
                     database.insert_picture(xd, yd);
                 }
             }
             else if (event.type == sf::Event::MouseButtonReleased){
                 if (event.mouseButton.button == sf::Mouse::Right){
-                    double xd, yd;
-                    std::tie(xd, yd) = cam.px_to_off(event.mouseButton.x, event.mouseButton.y);
+                    auto [xd, yd] = cam.px_to_off(event.mouseButton.x, event.mouseButton.y);
                     database.remove_picture(database.closest_picture_index(xd, yd));
                 }
             }
@@ -120,9 +118,10 @@ void WindowSetup()
         //draw dots
         sf::CircleShape tocka(1.5f/cam.zoom());
         for(int i = 0; i < database.obj_data.size(); i++){
+            // auto [R, G, B] = database.obj_data[i].color(); coming soon
+            // tocka.setFillColor(sf::Color(R, G, B));
             tocka.setFillColor(database.obj_data[i].color());
-            double x, y;
-            std::tie(x, y) = database.obj_data[i].offsets();
+            auto [x, y] = database.obj_data[i].offsets();
             tocka.setPosition(x, y);
             window.draw(tocka);
         }
@@ -139,8 +138,7 @@ void WindowSetup()
 
         // draw picture areas
         for(int i = 0; i < database.pictures.size(); i++){
-            float xd, yd;
-            std::tie(xd, yd) = database.pictures[i].offsets();
+            auto [xd, yd] = database.pictures[i].offsets();
 
             // draw picture area shadow
             kvadrat.setPosition(xd-g_telescope_FOV/2, yd-g_telescope_FOV/2);
@@ -164,8 +162,7 @@ void WindowSetup()
         //show which square will be deleted if the button is released
         if (sf::Mouse::isButtonPressed(sf::Mouse::Right) && !database.pictures.empty()){
             int ind = database.closest_picture_index(mouseRa, mouseDec);
-            float xd, yd;
-            std::tie(xd, yd) = database.pictures[ind].offsets();
+            auto [xd, yd] = database.pictures[ind].offsets();
             sf::Vertex line[] = {
                 sf::Vertex(sf::Vector2f(mouseRa, mouseDec)), 
                 sf::Vertex(sf::Vector2f(xd, yd))
