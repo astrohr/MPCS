@@ -7,18 +7,23 @@
 
 
 
-void Picture::approx_coords(float& centerRa, float& centerDec){
-    // Add the values together
-    m_ra = centerRa + (float)m_offsetRa/3600.f/15.f;
-    m_dec = centerDec + (float)m_offsetDec/3600.f;
+void Picture::approx_coords(float& centerRa, float& centerDec)
+{    
+    // get the value of m_ra from offset
+    m_ra = centerRa + m_offsetRa/3600.f/15.f;
+    // make sure that the values make sense
+    // eg. -25h is actually 23h
+    if (m_ra < 0) m_ra = 24.f - std::fmod(-m_ra, 24);
+    else m_ra = std::fmod(m_ra, 24);
 
-    // Make sure that the values of right ascension are possible
-    while(m_ra >= 24.f) m_ra -= 24.f;
-    while(m_ra < 0.f) m_ra += 24.f;
-
-    // Make sure that te values of declination are posible
-    while(m_dec > 90.f || m_dec < -90.f){
-        if (m_dec > 90.f) m_dec = 180.f-m_dec;
-        if (m_dec < -90.f) m_dec = -180.f-m_dec;
-    }
+    // get the value of m_dec relative to offset
+    m_dec = centerDec + m_offsetDec/3600.f;
+    // make sure the value is in range 0-360 degrees
+    if (m_dec < 0) m_dec = 360.f - std::fmod(-m_dec, 360.f);
+    else m_dec = std::fmod(m_dec, 360.f);
+    // convert 0-360 degree range to -180 to 180 range
+    if (m_dec >= 270.f) m_dec = 270.f-m_dec;
+    else if (m_dec >= 90.f) m_dec = 180.f-m_dec;
+    else;
+    
 }
