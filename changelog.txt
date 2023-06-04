@@ -1,5 +1,5 @@
 -----------------------------------------------------------------------------------------
-Whats new in 2.6.0 (22.2.2023)
+Whats new in 2.6.0 
 
 - removed src/CMakeLists.txt and put its contents inside toplevel CMakeLists
 - improved arguments and argument parsing
@@ -13,7 +13,7 @@ Whats new in 2.6.0 (22.2.2023)
 - Improved Picture.hpp/.cpp to be leaner and better documented
 
 -----------------------------------------------------------------------------------------
-Whats new in 2.5.1 (22.2.2023)
+Whats new in 2.5.1
 
 - fixed some logical inconsistencies across the code
 - added todo.txt
@@ -21,7 +21,7 @@ Whats new in 2.5.1 (22.2.2023)
 - fixed the bug where 1 digit declination would print +9 instead of +09
 
 -----------------------------------------------------------------------------------------
-Whats new in 2.5 (22.2.2023)
+Whats new in 2.5
 
 - this version is a hotfix for the issue that had been occurring for the past week with
   coordinates not being generated properly due to non functional links on the site
@@ -30,7 +30,7 @@ Whats new in 2.5 (22.2.2023)
   (links are now hardcoded)
 
 -----------------------------------------------------------------------------------------
-Whats new in version 2.4
+Whats new in 2.4
 
 - added changelog :)
 - broke up the code into multiple files for developer friendlieness
