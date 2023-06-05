@@ -249,9 +249,9 @@ int main(int argc, char** argv)
     // string containing the version of the MPCS
     std::string version;
     #ifdef MPCS_VERSION_MICRO
-        version = fmt::format("MPCSolver {}.{}.{}\n\n", MPCS_VERSION_MAJOR, MPCS_VERSION_MINOR, MPCS_VERSION_MICRO);
+        version = fmt::format("MPCSolver {}.{}.{}", MPCS_VERSION_MAJOR, MPCS_VERSION_MINOR, MPCS_VERSION_MICRO);
     #else
-        version = fmt::format("MPCSolver {}.{}\n\n", MPCS_VERSION_MAJOR, MPCS_VERSION_MINOR);
+        version = fmt::format("MPCSolver {}.{}", MPCS_VERSION_MAJOR, MPCS_VERSION_MINOR);
     #endif
 
     std::string obj_url = "";
@@ -259,7 +259,7 @@ int main(int argc, char** argv)
     bool to_clipboard = false, close_after = false;
 
     // Argument parser
-    args::ArgumentParser parser("MPCS - Minor Planet Center Solver", version);
+    args::ArgumentParser parser("MPCS - Minor Planet Center Solver", version + '\n');
     // arguments
     args::HelpFlag help(parser, "help", "Display this message", {'h', "help"});
     args::ValueFlag<std::string> url(parser, "url", "the url to the object offsets link", {'u', "url"});
@@ -272,7 +272,7 @@ int main(int argc, char** argv)
     // try parsing arguments
     try{
         parser.ParseCLI(argc, argv);
-        fmt::print(version);
+        fmt::print("{}\n", version);
     } 
     // if parsing fails, print help message and inform user of the error
     catch (args::Help) {

@@ -57,7 +57,8 @@ private:
 
 public:
 
-    // the constructor is passed the string that describes the ephemeris in the source and parses trough it
+    // Ephemeris constructor
+    // \param raw string containing data about the ephemeris from the object offsets link
     Ephemeris(std::string& raw);
 
 
@@ -112,6 +113,5 @@ public:
     // function for converting JD time to dates
     // \returns Julian day time
     static double date_to_JD(int year, int month, int day, int hour, int minute);
-
 
 };
