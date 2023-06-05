@@ -1,11 +1,11 @@
+//----------------------------------------------------------
+
 #pragma once
-// net.hpp -------------------------------------------------
-// this file controls the curl requsts that the program executes
+
+#include "pch.hpp"
 
 #include <curl/curl.h>
 #include <SFML/System/Clock.hpp>
-
-#include "pch.hpp"
 
 //----------------------------------------------------------
 

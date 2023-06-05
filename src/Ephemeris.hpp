@@ -1,6 +1,6 @@
+//----------------------------------------------------------
+
 #pragma once
-// Ephemeris.hpp -------------------------------------------
-// this header defines the ephemeris class meant for easier Ephemeris data manipulation
 
 #include "pch.hpp"
 

@@ -1,5 +1,4 @@
-// Picture.cpp ---------------------------------------------
-// this file defines all things declared in Picture.hpp
+//----------------------------------------------------------
 
 #include "Picture.hpp"
 

@@ -1,6 +1,6 @@
-// cmakevars.h.in ------------------------------------------
-// this file interact with cmake and is used to set some variables trough cmake
-// this simplifies code :D
+//----------------------------------------------------------
+
+#pragma once
 
 //----------------------------------------------------------
 

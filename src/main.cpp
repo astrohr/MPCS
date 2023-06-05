@@ -1,11 +1,10 @@
-// main.cpp ------------------------------------------------
-// This is the main file, it regulates the flow of the program, and the UI
+//----------------------------------------------------------
+
+#include "pch.hpp"
 
 #include <SFML/Graphics.hpp>
 #include <inipp/inipp.h>
 #include <args.hxx>
-
-#include "pch.hpp"
 
 #include "src/cmakevars.h"
 #include "Camera.hpp"

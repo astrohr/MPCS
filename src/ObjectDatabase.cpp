@@ -1,5 +1,4 @@
-// ObjectDatabase.cpp --------------------------------------
-// this file defines all things declared in ObjectDatabase.hpp
+//----------------------------------------------------------
 
 #include "ObjectDatabase.hpp"
 

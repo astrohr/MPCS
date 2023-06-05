@@ -1,5 +1,4 @@
-// net.cpp -------------------------------------------------
-// this file defines all things declared in net.hpp
+//----------------------------------------------------------
 
 #include "net.hpp"
 

@@ -1,5 +1,4 @@
-// Ephemeris.cpp -------------------------------------------
-// this file defines all things declared in Ephemeris.hpp
+//----------------------------------------------------------
 
 #include "Ephemeris.hpp"
 

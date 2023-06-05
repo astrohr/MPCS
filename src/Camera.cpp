@@ -1,5 +1,4 @@
-// Camera.cpp ----------------------------------------------
-// this file defines all things from Camera.hpp
+//----------------------------------------------------------
 
 #include "Camera.hpp"
 

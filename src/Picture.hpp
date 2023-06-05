@@ -1,6 +1,6 @@
+//----------------------------------------------------------
+
 #pragma once
-// Picture.hpp ---------------------------------------------
-// this file defines the Picture class meant for easier picture data manipulation
 
 #include "pch.hpp"
 

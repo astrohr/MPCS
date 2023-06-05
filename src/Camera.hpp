@@ -1,6 +1,5 @@
 #pragma once
-// Camera.hpp ----------------------------------------------
-// this file controls the camera in the UI
+//----------------------------------------------------------
 
 #include "pch.hpp"
 

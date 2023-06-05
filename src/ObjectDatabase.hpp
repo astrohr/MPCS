@@ -1,9 +1,10 @@
+//----------------------------------------------------------
+
 #pragma once
-// ObjectDatabase.hpp --------------------------------------
-// this file defines the class that is used for manipulating all of the data (ephemeris, pictures, object information etc)
-#include <SFML/Window/Clipboard.hpp>
 
 #include "pch.hpp"
+
+#include <SFML/Window/Clipboard.hpp>
 
 #include "Ephemeris.hpp"
 #include "Picture.hpp"
