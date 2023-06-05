@@ -25,10 +25,10 @@ void WindowSetup()
     sf::ContextSettings settings;
     settings.antialiasingLevel = 8;
     sf::VideoMode desktop = sf::VideoMode::getDesktopMode();
-    sf::RenderWindow window(sf::VideoMode(cam.window_w(), cam.window_h(), desktop.bitsPerPixel), database.name(), sf::Style::Default, settings);
+    sf::RenderWindow window(sf::VideoMode(cam.getWindow_W(), cam.getWindow_H(), desktop.bitsPerPixel), database.name(), sf::Style::Default, settings);
     window.setFramerateLimit(60);
 
-    sf::View view(sf::Vector2f(cam.raOffset(), cam.decOffset()), sf::Vector2f(cam.view_w(), cam.view_h()));
+    sf::View view(sf::Vector2f(cam.raOffset(), cam.decOffset()), sf::Vector2f(cam.getView_W(), cam.getView_H()));
     view.rotate(180);
 
     sf::Font font; 
@@ -59,7 +59,7 @@ void WindowSetup()
                 if (event.key.code == sf::Keyboard::Q) window.close();
                 else if (event.key.code == sf::Keyboard::C) database.clear_pictures();
                 else if (event.key.code == sf::Keyboard::U) database.undo_picture();
-                else if (event.key.code == sf::Keyboard::R) cam.reset_position(g_telescope_FOV, &database);
+                else if (event.key.code == sf::Keyboard::R) cam.reset_position(g_telescope_FOV, database);
                 else if (event.key.code == sf::Keyboard::H)
                     fmt::print(
                         "\nLeft Click to add an observation target\n"
@@ -73,8 +73,8 @@ void WindowSetup()
                     );
             }
             else if(event.type == sf::Event::Resized){
-                cam.change_dimensions(event.size.width, event.size.height);
-                cam.reset_position(g_telescope_FOV, &database);
+                cam.setDimensions(event.size.width, event.size.height);
+                cam.reset_position(g_telescope_FOV, database);
             }
             else if (event.type == sf::Event::MouseButtonPressed){
                 if (event.mouseButton.button == sf::Mouse::Left){
@@ -103,7 +103,7 @@ void WindowSetup()
 
 
         window.clear();
-        view.setSize(sf::Vector2f(cam.view_w(), cam.view_h()));
+        view.setSize(sf::Vector2f(cam.getView_W(), cam.getView_H()));
         view.setCenter(cam.raOffset(), cam.decOffset());
         window.setView(view);
 
@@ -111,7 +111,7 @@ void WindowSetup()
         std::tie(mouseRa, mouseDec) = cam.px_to_off(pos.x, pos.y);
 
         //draw dots
-        sf::CircleShape tocka(1.5f/cam.zoom());
+        sf::CircleShape tocka(1.5f/cam.getZoom());
         for(int i = 0; i < database.obj_data.size(); i++){
             auto [R, G, B] = database.obj_data[i].getColor();
             tocka.setFillColor(sf::Color(R, G, B));
@@ -121,7 +121,7 @@ void WindowSetup()
         }
 
         //setup the square projection settings
-        kvadrat.setOutlineThickness(2.f/cam.zoom());
+        kvadrat.setOutlineThickness(2.f/cam.getZoom());
 
         //draw a blue square on cursor location
         if (fokus){
@@ -137,17 +137,17 @@ void WindowSetup()
             // draw picture area shadow
             kvadrat.setPosition(xd-g_telescope_FOV/2, yd-g_telescope_FOV/2);
             kvadrat.setOutlineColor(sf::Color(100, 100, 100));
-            kvadrat.setOutlineThickness(3.5f/cam.zoom());
+            kvadrat.setOutlineThickness(3.5f/cam.getZoom());
             window.draw(kvadrat);
 
             // draw pictue area
             kvadrat.setOutlineColor(sf::Color(255, 255, 0));
-            kvadrat.setOutlineThickness(2.f/cam.zoom());
+            kvadrat.setOutlineThickness(2.f/cam.getZoom());
             window.draw(kvadrat);
             
             // use probtext to print the name of the picture in the middle
             probText.setString(database.pictures[i].getName());
-            probText.setScale(1.f/cam.zoom(), 1.f/cam.zoom());
+            probText.setScale(1.f/cam.getZoom(), 1.f/cam.getZoom());
             probText.setFillColor(sf::Color(255, 255, 0));
             probText.setPosition(xd, yd);
             window.draw(probText);
@@ -165,8 +165,8 @@ void WindowSetup()
         }
 
         //INFO TEXT:
-        infoText.setScale(1.f/cam.zoom(), 1.f/cam.zoom());
-        infoText.setPosition(cam.raOffset()+cam.view_w()/2.f, cam.decOffset()+cam.view_h()/2.f);
+        infoText.setScale(1.f/cam.getZoom(), 1.f/cam.getZoom());
+        infoText.setPosition(cam.raOffset()+cam.getView_W()/2.f, cam.decOffset()+cam.getView_H()/2.f);
         //the percentage that shows datapoints within the current cursor area
         std::string capturePercent = fmt::format("{:.2f}%", (float)database.ephemeris_in_picture(mouseRa, mouseDec)/database.obj_data.size()*100.f);
         //set the string to RA & DEC of the mouse and the capturePercent value
@@ -176,8 +176,8 @@ void WindowSetup()
 
         //PROBABILITY TEXT:
         probText.setFillColor(sf::Color(255, 255, 255));
-        probText.setScale(1.f/cam.zoom(), 1.f/cam.zoom());
-        probText.setPosition(cam.raOffset()-cam.view_w()*2.5f/7.f, cam.decOffset()+cam.view_h()/2.f);
+        probText.setScale(1.f/cam.getZoom(), 1.f/cam.getZoom());
+        probText.setPosition(cam.raOffset()-cam.getView_W()*2.5f/7.f, cam.decOffset()+cam.getView_H()/2.f);
         //total percentage of captured datapoints
         std::string per_pic = "", total = fmt::format("{:.2f}", database.selectedPercent());
         //percentage per picture
@@ -298,7 +298,7 @@ int main(int argc, char** argv)
     try{
         unsigned int W, H;
         defaultVariables(W, H);
-        cam.change_dimensions(W, H);
+        cam.setDimensions(W, H);
     }
     catch (std::exception& e){
         fmt::print("Error: {} \n\n", e.what());
@@ -325,7 +325,7 @@ int main(int argc, char** argv)
         }
 
         database.set_FOV(g_telescope_FOV);
-        cam.reset_position(g_telescope_FOV, &database);
+        cam.reset_position(g_telescope_FOV, database);
         
         fmt::print("\nObject: {}\n", database.name());
 
