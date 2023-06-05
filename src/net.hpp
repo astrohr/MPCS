@@ -6,10 +6,6 @@
 #include <SFML/System/Clock.hpp>
 
 #include "pch.hpp"
-// Precompiled headers this file uses:
-// fmt/core.h
-// algorithm, cmath
-// vector, string, map
 
 //----------------------------------------------------------
 

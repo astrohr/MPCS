@@ -3,9 +3,6 @@
 // this header defines the ephemeris class meant for easier Ephemeris data manipulation
 
 #include "pch.hpp"
-// Precompiled headers used in this file:
-// sstream
-// vector, string, tuple
 
 #include "net.hpp"
 

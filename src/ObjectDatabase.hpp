@@ -4,10 +4,6 @@
 #include <SFML/Window/Clipboard.hpp>
 
 #include "pch.hpp"
-// Precompiled headers this file uses:
-// fmt/core.h
-// cfloat, cmath
-// string, vector, tuple
 
 #include "Ephemeris.hpp"
 #include "Picture.hpp"

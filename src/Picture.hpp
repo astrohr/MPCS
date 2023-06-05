@@ -3,8 +3,6 @@
 // this file defines the Picture class meant for easier picture data manipulation
 
 #include "pch.hpp"
-// Precompiled headers this file uses:
-// tuple, string
 
 //----------------------------------------------------------
 

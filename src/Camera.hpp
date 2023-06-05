@@ -3,9 +3,6 @@
 // this file controls the camera in the UI
 
 #include "pch.hpp"
-// Precompiled headers in this file:
-// cmath
-// tuple
 
 #include "ObjectDatabase.hpp"
 

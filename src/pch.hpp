@@ -5,22 +5,21 @@
 //----------------------------------------------------------
 
 
-
 //streams
-#include <iostream>     //main
-#include <fstream>      //main
-#include <sstream>      //main, Ephemeris
+#include <iostream>
+#include <fstream>
+#include <sstream>
 
 //functionalities
-#include <algorithm>    //net
-#include <cfloat>       //ObjectDatabase
-#include <cmath>        //main, net, Camera, ObjectDatabase
+#include <algorithm>
+#include <cfloat>
+#include <cmath>
 
 //data structures
-#include <vector>       //main, net, Ephemeris, ObjectDatabase
-#include <string>       //main, net, Ephemeris, ObjectDatabase
-#include <tuple>        //main, Ephemeris, Picture, Camera, ObjectDatabase
-#include <map>          //net
+#include <vector>
+#include <string>
+#include <tuple>
+#include <map>
 
 //external libs
-#include <fmt/core.h>   //main, net, ObjectDatabase
+#include <fmt/core.h>

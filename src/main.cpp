@@ -6,10 +6,6 @@
 #include <args.hxx>
 
 #include "pch.hpp"
-// Precompiled headers this file uses:
-// iostream, fstream, sstream
-// cmath
-// vector, string, tuple
 
 #include "src/cmakevars.h"
 #include "Camera.hpp"
