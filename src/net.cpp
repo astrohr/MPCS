@@ -12,15 +12,15 @@ std::vector<std::string> g_allowed_links = {
     "http://cgi.minorplanetcenter.net/",
 };
 
-static size_t progress_callback(void* progcall, double dltotal, double dlnow, double ultotal, double ulnow){
-    char prog; int progamm = *((int*)progcall);
+static size_t progress_callback(void* clientp, double dltotal, double dlnow, double ultotal, double ulnow){
+    char prog; int progamm = *((int*)clientp);
     if (progamm==0) prog = '|';
     else if (progamm==1) prog = '/';
     else if (progamm==2) prog = '-';
     else prog = '\\';
     fmt::print("\rDownloading data... {}       ", prog);
     //ammount ++, mod 4
-    (*((int*)progcall))=(progamm+1)%4;
+    (*((int*)clientp))=(progamm+1)%4;
     return 0;
 }
 
@@ -62,10 +62,10 @@ int get_html(std::string link, std::vector<std::string>* userdata, int milis/*=1
         curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, read_curl_data);
         curl_easy_setopt(curl, CURLOPT_WRITEDATA, userdata);
         curl_easy_setopt(curl, CURLOPT_NOPROGRESS, FALSE);
-        curl_easy_setopt(curl, CURLOPT_PROGRESSFUNCTION, progress_callback);
         curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, (long)1);
         int progcall = 0; // measures how many times progressdata function is called, mod 4
-        curl_easy_setopt(curl, CURLOPT_PROGRESSDATA, (void*)&progcall);
+        curl_easy_setopt(curl, CURLOPT_XFERINFOFUNCTION, progress_callback);
+        curl_easy_setopt(curl, CURLOPT_XFERINFODATA, (void*)&progcall);
         curl_easy_setopt(curl, CURLOPT_URL, link.c_str());
 
         CURLcode res = curl_easy_perform(curl); //execute request
