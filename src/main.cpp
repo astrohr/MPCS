@@ -118,9 +118,9 @@ void WindowSetup()
         //draw dots
         sf::CircleShape tocka(1.5f/cam.zoom());
         for(int i = 0; i < database.obj_data.size(); i++){
-            auto [R, G, B] = database.obj_data[i].color();
+            auto [R, G, B] = database.obj_data[i].getColor();
             tocka.setFillColor(sf::Color(R, G, B));
-            auto [x, y] = database.obj_data[i].offsets();
+            auto [x, y] = database.obj_data[i].getOffsets();
             tocka.setPosition(x, y);
             window.draw(tocka);
         }
@@ -137,7 +137,7 @@ void WindowSetup()
 
         // draw picture areas
         for(int i = 0; i < database.pictures.size(); i++){
-            auto [xd, yd] = database.pictures[i].offsets();
+            auto [xd, yd] = database.pictures[i].getOffsets();
 
             // draw picture area shadow
             kvadrat.setPosition(xd-g_telescope_FOV/2, yd-g_telescope_FOV/2);
@@ -161,7 +161,7 @@ void WindowSetup()
         //show which square will be deleted if the button is released
         if (sf::Mouse::isButtonPressed(sf::Mouse::Right) && !database.pictures.empty()){
             int ind = database.closest_picture_index(mouseRa, mouseDec);
-            auto [xd, yd] = database.pictures[ind].offsets();
+            auto [xd, yd] = database.pictures[ind].getOffsets();
             sf::Vertex line[] = {
                 sf::Vertex(sf::Vector2f(mouseRa, mouseDec)), 
                 sf::Vertex(sf::Vector2f(xd, yd))
@@ -187,7 +187,7 @@ void WindowSetup()
         std::string per_pic = "", total = fmt::format("{:.2f}", database.selectedPercent());
         //percentage per picture
         for(int i = 0; i < database.pictures.size(); i++){
-            float percent = 100.f * database.pictures[i].containedEphemeris() / database.obj_data.size();
+            float percent = 100.f * database.pictures[i].getContainedEphemeris() / database.obj_data.size();
             per_pic += fmt::format("{} {:.2f}%\n", database.pictures[i].getName(), percent);
         }
         //set the text

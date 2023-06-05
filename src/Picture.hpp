@@ -42,12 +42,12 @@ public:
 
     // Offsets getter
     // \returns tuple with right ascencion in hours and declination (in arcseconds)
-    const std::tuple<float, float> offsets() const
+    const std::tuple<float, float> getOffsets() const
     { return {m_offsetRa, m_offsetDec}; }
 
     // Coordinates getter
     // \returns tuple with right ascencion and declination offsets (in arcseconds)
-    const std::tuple<float, float> coords() const
+    const std::tuple<float, float> getCoords() const
     { return {m_ra, m_dec}; }
 
     // Name getter
@@ -57,12 +57,12 @@ public:
     
     // Name setter
     // \param name the string with the name of the picture object
-    void set_sign(std::string name)
+    void setSign(std::string name)
     { m_name = name; }
     
     // Contained Ephemeris getter
     // \returns the ammount of contained ephemeris
-    const int containedEphemeris() const 
+    const int getContainedEphemeris() const 
     { return m_containedEphemeris; }
 
 

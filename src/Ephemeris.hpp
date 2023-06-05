@@ -65,32 +65,32 @@ public:
 
     // Coordinates getter
     // \returns tuple with coordinates
-    const std::tuple<float, float> coords() const
+    const std::tuple<float, float> getCoords() const
     { return {m_ra, m_dec}; }
 
     // Offsets getter
     // \returns tuple with offsets
-    const std::tuple<float, float> offsets() const
+    const std::tuple<float, float> getOffsets() const
     { return {m_offsetRa, m_offsetDec}; }
 
     // Magnitude getter
     // \returns string with magnitude data
-    const float mag() const
+    const float getMag() const
     { return m_magnitude; }
 
     // Time getter
     // \returns JD time of the ephemeris
-    const double timeJD() const
+    const double getJDTime() const
     { return m_JDtime; }
 
     // Context getter
     // \returns string with time data
-    const std::string context() const
+    const std::string getContext() const
     { return fmt::format("{:5.1f} {:5.1f} {:7.2f}  {:05.1f}{}", m_elong, m_magnitude, m_velocity, m_angle, m_otherData); }
 
     // Color getter
     // \returns the RGB color tuple of the ephemeris
-    const std::tuple<int, int, int> color() const
+    const std::tuple<int, int, int> getColor() const
     { return m_color; }
 
     // function that tells has ephemeris link beeen visited

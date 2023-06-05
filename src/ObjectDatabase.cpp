@@ -27,11 +27,11 @@ void ObjectDatabase::calculateSelected(){
     //making a test for every datapoint
     for(int i = 0; i < obj_data.size(); i++){
         float ephRa, ephDec;    //datapoint coords init
-        std::tie(ephRa, ephDec) = obj_data[i].offsets();
+        std::tie(ephRa, ephDec) = obj_data[i].getOffsets();
         //here we check if the datapoint is within any picture areas
         for(int j = 0; j < pictures.size(); j++){
             float picRa, picDec;    //pic coords init
-            std::tie(picRa, picDec) = pictures[j].offsets();
+            std::tie(picRa, picDec) = pictures[j].getOffsets();
             //the check
             if (abs(picRa-ephRa) < telescope_FOV/2.f && abs(picDec-ephDec) < telescope_FOV/2.f){
                 covered_amm++;
@@ -57,7 +57,7 @@ const int ObjectDatabase::ephemeris_in_picture(float ra, float dec){
     int num = 0;
     for(int i = 0; i < obj_data.size(); i++){
         float ephRa, ephDec;
-        std::tie(ephRa, ephDec) = obj_data[i].offsets();
+        std::tie(ephRa, ephDec) = obj_data[i].getOffsets();
         if (abs(ephRa-ra) < telescope_FOV/2.f && abs(ephDec-dec) < telescope_FOV/2.f) num++;
     }
     return num;
@@ -67,8 +67,8 @@ void ObjectDatabase::export_observation_targets(bool copy_cpb){
     std::string targets = "";
     for(int i = 0; i < pictures.size(); i++){
         pictures[i].approx_coords(m_centerRa, m_centerDec);
-        auto [ra, dec] = pictures[i].coords();
-        auto [raOff, decOff] = pictures[i].offsets();
+        auto [ra, dec] = pictures[i].getCoords();
+        auto [raOff, decOff] = pictures[i].getOffsets();
         
         int ephIndex = closest_ephemeris_index(raOff, decOff);
         if (!obj_data[ephIndex].linkVisited()) obj_data[ephIndex].follow_link(); // follow link could throw an exception which can crash the program, there is no checking for that here
@@ -78,10 +78,10 @@ void ObjectDatabase::export_observation_targets(bool copy_cpb){
         targets += (pictures.size()-1) ? fmt::format("_{}", b10_to_b26(i+1)) : ""; // adds the letter that shows the picture index (if needed)
         
         //magnitude and picture info
-        targets += fmt::format("   {:5.1f}    {:02} x {:02} sec\r\n", obj_data[ephIndex].mag(), m_picAmmount, m_picExposure);
+        targets += fmt::format("   {:5.1f}    {:02} x {:02} sec\r\n", obj_data[ephIndex].getMag(), m_picAmmount, m_picExposure);
 
         //time
-        auto [year, month, day, hour, minute] = Ephemeris::JD_to_date(obj_data[ephIndex].timeJD());
+        auto [year, month, day, hour, minute] = Ephemeris::JD_to_date(obj_data[ephIndex].getJDTime());
         targets += fmt::format("{:04} {:02} {:02} {:02}{:02}   ", year, month, day, hour, minute);
 
         //right ascension
@@ -93,7 +93,7 @@ void ObjectDatabase::export_observation_targets(bool copy_cpb){
         targets += fmt::format("{:+03.0f} {:02.0f} {:02.0f} ", dec_whole, dec_min, dec_sec);
 
         //other data
-        targets += obj_data[ephIndex].context()+"\r\n\r\n";
+        targets += obj_data[ephIndex].getContext()+"\r\n\r\n";
     }
     if (targets.size()){
         fmt::print("\nObservation targets for {}:\n\n{}", m_name, targets);
@@ -116,7 +116,7 @@ void ObjectDatabase::insert_picture(float ra, float dec){
     int num = ephemeris_in_picture(ra, dec);
     Picture p(ra, dec, num);
     pictures.emplace_back(p);
-    pictures[pictures.size()-1].set_sign(b10_to_b26(pictures.size()));
+    pictures[pictures.size()-1].setSign(b10_to_b26(pictures.size()));
     calculateSelected();
 }
 
@@ -124,7 +124,7 @@ void ObjectDatabase::remove_picture(int index){
     if (!pictures.size()) return;
     pictures.erase(pictures.begin() + index);
     for(int i = 0; i < pictures.size(); i++)
-        pictures[i].set_sign(b10_to_b26(i+1));
+        pictures[i].setSign(b10_to_b26(i+1));
     calculateSelected();
 }
 
@@ -143,7 +143,7 @@ const int ObjectDatabase::closest_ephemeris_index(float ra, float dec){
     float x, y, d = FLT_MAX;
     int ind;
     for(int i = 0; i < obj_data.size(); i++){
-        std::tie(x, y) = obj_data[i].offsets();
+        std::tie(x, y) = obj_data[i].getOffsets();
         float newd = sqrt(pow(ra-x, 2) + pow(dec-y, 2));
         if (newd < d){
             d = newd;
@@ -157,7 +157,7 @@ const int ObjectDatabase::closest_picture_index(float ra, float dec){
     float x, y, d = FLT_MAX;
     int ind;
     for(int i = 0; i < pictures.size(); i++){
-        std::tie(x, y) = pictures[i].offsets();
+        std::tie(x, y) = pictures[i].getOffsets();
         float newd = sqrt(pow(ra-x, 2) + pow(dec-y, 2));
         if (newd < d){
             d = newd;
@@ -205,7 +205,7 @@ int ObjectDatabase::fill_database(std::string lynk){
     int minDec = INT_MAX, maxDec = INT_MIN;
     for(int i = 0; i < obj_data.size(); i++){
         int ra, dec;
-        std::tie(ra, dec) = obj_data[i].offsets();
+        std::tie(ra, dec) = obj_data[i].getOffsets();
         if (ra < minRa) minRa = ra;
         if (ra > maxRa) maxRa = ra;
         if (dec < minDec) minDec = dec;
@@ -223,7 +223,7 @@ int ObjectDatabase::fill_database(std::string lynk){
     //here we use the fact that the first element has offsets of 0, 0
     returnvalue = obj_data[0].follow_link();
     if (returnvalue != 0) return 1;
-    std::tie(m_centerRa, m_centerDec) = obj_data[0].coords();
+    std::tie(m_centerRa, m_centerDec) = obj_data[0].getCoords();
     return 0;
 }
 
