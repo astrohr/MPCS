@@ -69,6 +69,6 @@ public:
     // The coordinates are stored in private m_ra and m_dec variables
     // \param centerRa right ascension of 0,0 (in hours)
     // \param centerDec declination of 0,0 (in degrees)
-    void approx_coords(float& centerRa, float& centerDec);
+    void approxCoords(float& centerRa, float& centerDec);
 
 };

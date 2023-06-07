@@ -6,7 +6,7 @@
 
 
 
-void Picture::approx_coords(float& centerRa, float& centerDec)
+void Picture::approxCoords(float& centerRa, float& centerDec)
 {    
     // get the value of m_ra from offset
     m_ra = centerRa + m_offsetRa/3600.f/15.f;

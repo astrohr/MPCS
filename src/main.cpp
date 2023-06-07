@@ -11,12 +11,9 @@
 
 //----------------------------------------------------------
 
-
-
-int g_telescope_FOV;   //telescope_FOV in arcseconds
-
 ObjectDatabase database;
 Camera cam;
+
 
 
 void WindowSetup()
@@ -45,7 +42,7 @@ void WindowSetup()
     probText.setCharacterSize(20);
     probText.setRotation(180.f);
     
-    sf::RectangleShape kvadrat(sf::Vector2f(g_telescope_FOV, g_telescope_FOV));
+    sf::RectangleShape kvadrat(sf::Vector2f(database.getFOV(), database.getFOV()));
     kvadrat.setFillColor(sf::Color::Transparent);
 
     bool fokus = true;                      //is window focused?
@@ -59,7 +56,7 @@ void WindowSetup()
                 if (event.key.code == sf::Keyboard::Q) window.close();
                 else if (event.key.code == sf::Keyboard::C) database.clear_pictures();
                 else if (event.key.code == sf::Keyboard::U) database.undo_picture();
-                else if (event.key.code == sf::Keyboard::R) cam.reset_position(g_telescope_FOV, database);
+                else if (event.key.code == sf::Keyboard::R) cam.reset_position(database.getFOV(), database);
                 else if (event.key.code == sf::Keyboard::H)
                     fmt::print(
                         "\nLeft Click to add an observation target\n"
@@ -74,7 +71,7 @@ void WindowSetup()
             }
             else if(event.type == sf::Event::Resized){
                 cam.setDimensions(event.size.width, event.size.height);
-                cam.reset_position(g_telescope_FOV, database);
+                cam.reset_position(database.getFOV(), database);
             }
             else if (event.type == sf::Event::MouseButtonPressed){
                 if (event.mouseButton.button == sf::Mouse::Left){
@@ -126,7 +123,7 @@ void WindowSetup()
         //draw a blue square on cursor location
         if (fokus){
             kvadrat.setOutlineColor(sf::Color(0, 255, 255));
-            kvadrat.setPosition(mouseRa-g_telescope_FOV/2, mouseDec-g_telescope_FOV/2);
+            kvadrat.setPosition(mouseRa-database.getFOV()/2, mouseDec-database.getFOV()/2);
             window.draw(kvadrat);
         }
 
@@ -135,7 +132,7 @@ void WindowSetup()
             auto [xd, yd] = database.pictures[i].getOffsets();
 
             // draw picture area shadow
-            kvadrat.setPosition(xd-g_telescope_FOV/2, yd-g_telescope_FOV/2);
+            kvadrat.setPosition(xd-database.getFOV()/2, yd-database.getFOV()/2);
             kvadrat.setOutlineColor(sf::Color(100, 100, 100));
             kvadrat.setOutlineThickness(3.5f/cam.getZoom());
             window.draw(kvadrat);
@@ -179,7 +176,7 @@ void WindowSetup()
         probText.setScale(1.f/cam.getZoom(), 1.f/cam.getZoom());
         probText.setPosition(cam.raOffset()-cam.getView_W()*2.5f/7.f, cam.decOffset()+cam.getView_H()/2.f);
         //total percentage of captured datapoints
-        std::string per_pic = "", total = fmt::format("{:.2f}", database.selectedPercent());
+        std::string per_pic = "", total = fmt::format("{:.2f}", database.calculateSelected());
         //percentage per picture
         for(int i = 0; i < database.pictures.size(); i++){
             float percent = 100.f * database.pictures[i].getContainedEphemeris() / database.obj_data.size();
@@ -198,7 +195,8 @@ void WindowSetup()
 // this function parses the MPCS.ini file
 // \param[out] W window width 
 // \param[out] H window height 
-void defaultVariables(unsigned int& W, unsigned int& H)
+// \param[out] FOV telescope FOV
+void defaultVariables(unsigned int& W, unsigned int& H, unsigned int& FOV)
 {
     std::ifstream ReadFile("MPCS.ini");
     if (!ReadFile.is_open())
@@ -225,11 +223,11 @@ void defaultVariables(unsigned int& W, unsigned int& H)
             "Defaulting to H = {}\n", H
         );
     }
-    if (!inipp::get_value(ini.sections["Telescope"], "FOV", g_telescope_FOV)){
-        g_telescope_FOV = 2500;
+    if (!inipp::get_value(ini.sections["Telescope"], "FOV", FOV)){
+        FOV = 2500;
         fmt::print(
             "Warning: Telescope FOV not properly specified in MPCS.ini!\n"
-            "Defaulting to FOV = {}\n", g_telescope_FOV
+            "Defaulting to FOV = {}\n", FOV
         );
     }
 
@@ -238,7 +236,7 @@ void defaultVariables(unsigned int& W, unsigned int& H)
 }
 
 
-// args syntax: ./MPCS [-u|--url <str>] [-e|--exposition <int>] [-n|--number <int>] [-f|--fov <int>] [-c|--copy] [-x|--exit]
+// args syntax: ./MPCS [-u|--url <str>] [-e|--exposition <int>] [-n|--number <int>] [-c|--copy] [-x|--exit]
 int main(int argc, char** argv)
 {
     // string containing the version of the MPCS
@@ -260,7 +258,6 @@ int main(int argc, char** argv)
     args::ValueFlag<std::string> url(parser, "url", "the url to the object offsets link", {'u', "url"});
     args::ValueFlag<int> exposition(parser, "exposition", "the exposition duration (seconds)", {'e', "expositon"});
     args::ValueFlag<int> number(parser, "number", "number of pictures to be taken", {'n', "number"});
-    args::ValueFlag<int> fov(parser, "fov", "fov of the telescope", {'f', "fov"});
     args::Flag copy(parser, "copy", "copy to clipboard", {'c', "copy"});
     args::Flag exit(parser, "exit", "exit the program after use", {'x', "exit"});
 
@@ -289,16 +286,16 @@ int main(int argc, char** argv)
     if (url) obj_url = args::get(url);
     if (exposition) pic_exposition = args::get(exposition);
     if (number) pic_number = args::get(number);
-    if (fov) g_telescope_FOV = args::get(fov); 
     if (exit) close_after = true; 
     // if no parameters were passed, assume to_clipboard to be true
-    if (copy || (!url && !exposition && !number && !fov && !exit)) to_clipboard = true; 
+    if (copy || (!url && !exposition && !number && !exit)) to_clipboard = true; 
 
     // read the default variables
     try{
-        unsigned int W, H;
-        defaultVariables(W, H);
+        unsigned int W, H, FOV;
+        defaultVariables(W, H, FOV);
         cam.setDimensions(W, H);
+        database.set_FOV(FOV);
     }
     catch (std::exception& e){
         fmt::print("Error: {} \n\n", e.what());
@@ -324,8 +321,7 @@ int main(int argc, char** argv)
             }
         }
 
-        database.set_FOV(g_telescope_FOV);
-        cam.reset_position(g_telescope_FOV, database);
+        cam.reset_position(database.getFOV(), database);
         
         fmt::print("\nObject: {}\n", database.name());
 
@@ -333,7 +329,7 @@ int main(int argc, char** argv)
             fmt::print("Insert the ammount of pictures: ");
             std::cin >> pic_number;
         }
-        database.set_ammount(pic_number);
+        database.set_amount(pic_number);
 
         if (!pic_exposition){
             fmt::print("Insert the exposure length (in seconds): ");
