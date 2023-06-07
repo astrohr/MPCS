@@ -1,16 +1,17 @@
 -----------------------------------------------------------------------------------------
 Whats new in 2.6.0 
 
-- removed src/CMakeLists.txt and put its contents inside toplevel CMakeLists
+- Added a zlib license
 - improved arguments and argument parsing
-    - added [-x|--exit <bool>] argument which is true if you want to exit the program
+    - added [-x|--exit] argument which is true if you want to exit the program
       after use
+    - removed [-f|--fov] argument
     - using external args library to parse args (https://github.com/Taywee/args)
     - args don't need to be ordered now, and you can pass any that you like
-- figured that todo.txt is kinda unnecessary
 - Replaced the data/variables.txt with a MPCS.ini file
     - added external library for using .ini (https://github.com/mcmtroffaes/inipp)
-- Improved Picture.hpp/.cpp and Ephemeris.hpp/.cpp to be leaner and better documented
+- Improved the codebase to be leaner and better documented
+- figured that todo.txt is kinda unnecessary 
 
 -----------------------------------------------------------------------------------------
 Whats new in 2.5.1
