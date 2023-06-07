@@ -6,6 +6,14 @@ MPCS stands for "Minor Planet Center Solver"
 ## Requirements for building
 Cmake version 3.20 and above, & 
 C++ compiler
+As for the depencencies, you can find them in the 'submodules' folder
+
+## Dependencies
+- [SFML 2.5.x](https://github.com/SFML/SFML/tree/2.5.x)
+- [libcurl](https://github.com/curl/curl)
+- [fmt](https://github.com/fmtlib/fmt)
+- [args](https://github.com/Taywee/args)
+- [inipp](https://github.com/mcmtroffaes/inipp)
 
 ## How to build
 You need to clone the repo, after that you have to configure the file using cmake and compile it with the cmake configuration (you can see example commands in build.sh)
