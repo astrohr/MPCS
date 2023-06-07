@@ -42,30 +42,20 @@ public:
     const float decOffset() const
     { return m_offsetDec; }
 
-    // Camera window width getter
-    // \returns winow width that camera object considers relevant
-    const unsigned int getWindow_W() const
-    { return m_width; }
+    // Camera window size getter
+    // \returns winow width and height that camera object considers relevant
+    const std::tuple<unsigned int, unsigned int> getWindowSize() const
+    { return {m_width, m_height}; }
     
-    // Camera window height getter
-    // \returns winow height that camera object considers relevant
-    const unsigned int getWindow_H() const
-    { return m_height; }
-
+    // Apparent view size getter
+    // \returns "the size of the width and height"
+    const std::tuple<float, float> getView() const
+    { return {m_width/m_zoomFactor, m_height/m_zoomFactor}; }
+    
     // Camera zoom getter
     // \returns the value of the camera zoom
     const float getZoom() const
     { return m_zoomFactor; }
-    
-    // Apparent view width getter
-    // \returns how "the size of the width"
-    const float getView_W() const
-    { return m_width/m_zoomFactor; }
-    
-    // Apparent view height getter
-    // \returns how "the size of the height"
-    const float getView_H() const
-    { return m_height/m_zoomFactor; }
 
     // Setter for window dimensions
     // \param W width

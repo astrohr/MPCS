@@ -19,10 +19,14 @@ void WindowSetup(ObjectDatabase& database, Camera& cam)
     sf::ContextSettings settings;
     settings.antialiasingLevel = 8;
     sf::VideoMode desktop = sf::VideoMode::getDesktopMode();
-    sf::RenderWindow window(sf::VideoMode(cam.getWindow_W(), cam.getWindow_H(), desktop.bitsPerPixel), database.name(), sf::Style::Default, settings);
+    auto [window_W, window_H] = cam.getWindowSize();
+    sf::RenderWindow window(sf::VideoMode(window_W, window_H, desktop.bitsPerPixel), database.name(), sf::Style::Default, settings);
     window.setFramerateLimit(60);
 
-    sf::View view(sf::Vector2f(cam.raOffset(), cam.decOffset()), sf::Vector2f(cam.getView_W(), cam.getView_H()));
+    // the dimensions of the view window
+    auto [view_W, view_H] = cam.getView();
+    
+    sf::View view(sf::Vector2f(cam.raOffset(), cam.decOffset()), sf::Vector2f(view_W, view_H));
     view.rotate(180);
 
     sf::Font font; 
@@ -47,9 +51,10 @@ void WindowSetup(ObjectDatabase& database, Camera& cam)
     while(window.isOpen()){
         //Event processing 
         sf::Event event;
-        while(window.pollEvent(event)){
+        while(window.pollEvent(event))
+        {
             if(event.type == sf::Event::Closed) window.close();
-            else if(event.type == sf::Event::KeyPressed) {
+            else if(event.type == sf::Event::KeyPressed){
                 if (event.key.code == sf::Keyboard::Q) window.close();
                 else if (event.key.code == sf::Keyboard::C) database.clear_pictures();
                 else if (event.key.code == sf::Keyboard::U) database.undo_picture();
@@ -97,7 +102,8 @@ void WindowSetup(ObjectDatabase& database, Camera& cam)
 
 
         window.clear();
-        view.setSize(sf::Vector2f(cam.getView_W(), cam.getView_H()));
+        std::tie(view_W, view_H) = cam.getView(); // tie variables since their calls do computation
+        view.setSize(sf::Vector2f(view_W, view_H));
         view.setCenter(cam.raOffset(), cam.decOffset());
         window.setView(view);
 
@@ -119,14 +125,16 @@ void WindowSetup(ObjectDatabase& database, Camera& cam)
         kvadrat.setOutlineThickness(2.f/cam.getZoom());
 
         //draw a blue square on cursor location
-        if (fokus){
+        if (fokus)
+        {
             kvadrat.setOutlineColor(sf::Color(0, 255, 255));
             kvadrat.setPosition(mouseRa-database.getFOV()/2, mouseDec-database.getFOV()/2);
             window.draw(kvadrat);
         }
 
         // draw picture areas
-        for(int i = 0; i < database.getPicAm(); i++){
+        for(int i = 0; i < database.getPicAm(); i++)
+        {
             auto [xd, yd] = database.getPic(i).getOffsets();
 
             // draw picture area shadow
@@ -149,7 +157,8 @@ void WindowSetup(ObjectDatabase& database, Camera& cam)
         }
 
         //show which square will be deleted if the button is released
-        if (sf::Mouse::isButtonPressed(sf::Mouse::Right) && !database.getPicAm() != 0){
+        if (sf::Mouse::isButtonPressed(sf::Mouse::Right) && !database.getPicAm() != 0)
+        {
             int ind = database.closest_picture_index(mouseRa, mouseDec);
             auto [xd, yd] = database.getPic(ind).getOffsets();
             sf::Vertex line[] = {
@@ -161,7 +170,7 @@ void WindowSetup(ObjectDatabase& database, Camera& cam)
 
         //INFO TEXT:
         infoText.setScale(1.f/cam.getZoom(), 1.f/cam.getZoom());
-        infoText.setPosition(cam.raOffset()+cam.getView_W()/2.f, cam.decOffset()+cam.getView_H()/2.f);
+        infoText.setPosition(cam.raOffset()+view_W/2.f, cam.decOffset()+view_H/2.f);
         //the percentage that shows datapoints within the current cursor area
         std::string capturePercent = fmt::format("{:.2f}%", (float)database.ephemeris_in_picture(mouseRa, mouseDec)/database.getEphAm()*100.f);
         //set the string to RA & DEC of the mouse and the capturePercent value
@@ -172,7 +181,7 @@ void WindowSetup(ObjectDatabase& database, Camera& cam)
         //PROBABILITY TEXT:
         probText.setFillColor(sf::Color(255, 255, 255));
         probText.setScale(1.f/cam.getZoom(), 1.f/cam.getZoom());
-        probText.setPosition(cam.raOffset()-cam.getView_W()*2.5f/7.f, cam.decOffset()+cam.getView_H()/2.f);
+        probText.setPosition(cam.raOffset()-view_W*2.5f/7.f, cam.decOffset()+view_H/2.f);
         //total percentage of captured datapoints
         std::string per_pic = "", total = fmt::format("{:.2f}", database.calculateSelected());
         //percentage per picture
