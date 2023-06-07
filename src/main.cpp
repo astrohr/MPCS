@@ -33,15 +33,10 @@ void WindowSetup(ObjectDatabase& database, Camera& cam)
     if (!font.loadFromFile("resources/arial.ttf"))
         fmt::print("Font not found, using default font\n");
 
-    sf::Text infoText;
-    infoText.setFont(font);
-    infoText.setCharacterSize(20);
-    infoText.setRotation(180.f);
-
-    sf::Text probText;
-    probText.setFont(font);
-    probText.setCharacterSize(20);
-    probText.setRotation(180.f);
+    sf::Text text;
+    text.setFont(font);
+    text.setCharacterSize(20);
+    text.setRotation(180.f);
     
     sf::RectangleShape kvadrat(sf::Vector2f(database.getFOV(), database.getFOV()));
     kvadrat.setFillColor(sf::Color::Transparent);
@@ -148,12 +143,12 @@ void WindowSetup(ObjectDatabase& database, Camera& cam)
             kvadrat.setOutlineThickness(2.f/cam.getZoom());
             window.draw(kvadrat);
             
-            // use probtext to print the name of the picture in the middle
-            probText.setString(database.getPic(i).getName());
-            probText.setScale(1.f/cam.getZoom(), 1.f/cam.getZoom());
-            probText.setFillColor(sf::Color(255, 255, 0));
-            probText.setPosition(xd, yd);
-            window.draw(probText);
+            // use text to print the name of the picture in the middle
+            text.setString(database.getPic(i).getName());
+            text.setScale(1.f/cam.getZoom(), 1.f/cam.getZoom());
+            text.setFillColor(sf::Color(255, 255, 0));
+            text.setPosition(xd, yd);
+            window.draw(text);
         }
 
         //show which square will be deleted if the button is released
@@ -168,20 +163,11 @@ void WindowSetup(ObjectDatabase& database, Camera& cam)
             window.draw(line, 2, sf::Lines);
         }
 
-        //INFO TEXT:
-        infoText.setScale(1.f/cam.getZoom(), 1.f/cam.getZoom());
-        infoText.setPosition(cam.raOffset()+view_W/2.f, cam.decOffset()+view_H/2.f);
-        //the percentage that shows datapoints within the current cursor area
-        std::string capturePercent = fmt::format("{:.2f}%", (float)database.ephemeris_in_picture(mouseRa, mouseDec)/database.getEphAm()*100.f);
-        //set the string to RA & DEC of the mouse and the capturePercent value
-        infoText.setString(fmt::format("Offsets:\nRa: {:.2f}\nDec: {:.2f}\n\n{}", mouseRa, mouseDec, capturePercent));
-        window.draw(infoText);
-
 
         //PROBABILITY TEXT:
-        probText.setFillColor(sf::Color(255, 255, 255));
-        probText.setScale(1.f/cam.getZoom(), 1.f/cam.getZoom());
-        probText.setPosition(cam.raOffset()-view_W*2.5f/7.f, cam.decOffset()+view_H/2.f);
+        text.setFillColor(sf::Color(255, 255, 255));
+        text.setScale(1.f/cam.getZoom(), 1.f/cam.getZoom());
+        text.setPosition(cam.raOffset()-view_W*2.5f/7.f, cam.decOffset()+view_H/2.f);
         //total percentage of captured datapoints
         std::string per_pic = "", total = fmt::format("{:.2f}", database.calculateSelected());
         //percentage per picture
@@ -190,8 +176,17 @@ void WindowSetup(ObjectDatabase& database, Camera& cam)
             per_pic += fmt::format("{} {:.2f}%\n", database.getPic(i).getName(), percent);
         }
         //set the text
-        probText.setString(fmt::format("{}\n= {}%", per_pic, total));
-        window.draw(probText);
+        text.setString(fmt::format("{}\n= {}%", per_pic, total));
+        window.draw(text);
+
+        //INFO TEXT:
+        text.setScale(1.f/cam.getZoom(), 1.f/cam.getZoom());
+        text.setPosition(cam.raOffset()+view_W/2.f, cam.decOffset()+view_H/2.f);
+        //the percentage that shows datapoints within the current cursor area
+        std::string capturePercent = fmt::format("{:.2f}%", (float)database.ephemeris_in_picture(mouseRa, mouseDec)/database.getEphAm()*100.f);
+        //set the string to RA & DEC of the mouse and the capturePercent value
+        text.setString(fmt::format("Offsets:\nRa: {:.2f}\nDec: {:.2f}\n\n{}", mouseRa, mouseDec, capturePercent));
+        window.draw(text);
 
         
         window.display();
