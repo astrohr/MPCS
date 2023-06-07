@@ -106,10 +106,11 @@ void WindowSetup(ObjectDatabase& database, Camera& cam)
 
         //draw dots
         sf::CircleShape tocka(1.5f/cam.getZoom());
-        for(int i = 0; i < database.obj_data.size(); i++){
-            auto [R, G, B] = database.obj_data[i].getColor();
+        for(int i = 0; i < database.getEphAm(); i++)
+        {
+            auto [R, G, B] = database.getEph(i).getColor();
             tocka.setFillColor(sf::Color(R, G, B));
-            auto [x, y] = database.obj_data[i].getOffsets();
+            auto [x, y] = database.getEph(i).getOffsets();
             tocka.setPosition(x, y);
             window.draw(tocka);
         }
@@ -125,8 +126,8 @@ void WindowSetup(ObjectDatabase& database, Camera& cam)
         }
 
         // draw picture areas
-        for(int i = 0; i < database.pictures.size(); i++){
-            auto [xd, yd] = database.pictures[i].getOffsets();
+        for(int i = 0; i < database.getPicAm(); i++){
+            auto [xd, yd] = database.getPic(i).getOffsets();
 
             // draw picture area shadow
             kvadrat.setPosition(xd-database.getFOV()/2, yd-database.getFOV()/2);
@@ -140,7 +141,7 @@ void WindowSetup(ObjectDatabase& database, Camera& cam)
             window.draw(kvadrat);
             
             // use probtext to print the name of the picture in the middle
-            probText.setString(database.pictures[i].getName());
+            probText.setString(database.getPic(i).getName());
             probText.setScale(1.f/cam.getZoom(), 1.f/cam.getZoom());
             probText.setFillColor(sf::Color(255, 255, 0));
             probText.setPosition(xd, yd);
@@ -148,9 +149,9 @@ void WindowSetup(ObjectDatabase& database, Camera& cam)
         }
 
         //show which square will be deleted if the button is released
-        if (sf::Mouse::isButtonPressed(sf::Mouse::Right) && !database.pictures.empty()){
+        if (sf::Mouse::isButtonPressed(sf::Mouse::Right) && !database.getPicAm() != 0){
             int ind = database.closest_picture_index(mouseRa, mouseDec);
-            auto [xd, yd] = database.pictures[ind].getOffsets();
+            auto [xd, yd] = database.getPic(ind).getOffsets();
             sf::Vertex line[] = {
                 sf::Vertex(sf::Vector2f(mouseRa, mouseDec)), 
                 sf::Vertex(sf::Vector2f(xd, yd))
@@ -162,7 +163,7 @@ void WindowSetup(ObjectDatabase& database, Camera& cam)
         infoText.setScale(1.f/cam.getZoom(), 1.f/cam.getZoom());
         infoText.setPosition(cam.raOffset()+cam.getView_W()/2.f, cam.decOffset()+cam.getView_H()/2.f);
         //the percentage that shows datapoints within the current cursor area
-        std::string capturePercent = fmt::format("{:.2f}%", (float)database.ephemeris_in_picture(mouseRa, mouseDec)/database.obj_data.size()*100.f);
+        std::string capturePercent = fmt::format("{:.2f}%", (float)database.ephemeris_in_picture(mouseRa, mouseDec)/database.getEphAm()*100.f);
         //set the string to RA & DEC of the mouse and the capturePercent value
         infoText.setString(fmt::format("Offsets:\nRa: {:.2f}\nDec: {:.2f}\n\n{}", mouseRa, mouseDec, capturePercent));
         window.draw(infoText);
@@ -175,9 +176,9 @@ void WindowSetup(ObjectDatabase& database, Camera& cam)
         //total percentage of captured datapoints
         std::string per_pic = "", total = fmt::format("{:.2f}", database.calculateSelected());
         //percentage per picture
-        for(int i = 0; i < database.pictures.size(); i++){
-            float percent = 100.f * database.pictures[i].getContainedEphemeris() / database.obj_data.size();
-            per_pic += fmt::format("{} {:.2f}%\n", database.pictures[i].getName(), percent);
+        for(int i = 0; i < database.getPicAm(); i++){
+            float percent = 100.f * database.getPic(i).getContainedEphemeris() / database.getEphAm();
+            per_pic += fmt::format("{} {:.2f}%\n", database.getPic(i).getName(), percent);
         }
         //set the text
         probText.setString(fmt::format("{}\n= {}%", per_pic, total));

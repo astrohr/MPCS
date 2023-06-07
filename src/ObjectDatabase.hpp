@@ -16,6 +16,7 @@
 
 class ObjectDatabase{
 private:
+
     // the exposure of the pictures
     int m_picExposure;
     // the amount of the pictures
@@ -27,18 +28,20 @@ private:
     // object name
     std::string m_name;
 
+    // this one is quite self explainatory, isnt it?
     unsigned int m_telescope_FOV;
 
     // function for converting numbers to characters (in a base 26 way)
     std::string b10_to_b26(int c);
 
+    // ephemerides storage
+    std::vector<Ephemeris> m_ephemerides;
+    
+    // picture area storage
+    std::vector<Picture> m_pictures;
+
 public:
-    std::vector<Ephemeris> obj_data;
-    std::vector<Picture> pictures;
 
-
-    
-    
     ObjectDatabase() = default;
 
     
@@ -63,7 +66,25 @@ public:
     void set_amount(int& am)
     { m_picAmount = am; }
 
+    // Returns the amount of ephemerides
+    const int getEphAm() const
+    { return m_ephemerides.size(); }
 
+    // Returns the amount of pictures
+    const int getPicAm() const
+    { return m_pictures.size(); }
+
+    // Grab the picture reference by index
+    // \param index
+    const Picture& getPic(int& index) const
+    { return m_pictures[index]; }
+
+    // Grab the ephemeris reference by index
+    // \param index
+    const Ephemeris& getEph(int& index) const
+    { return m_ephemerides[index]; }
+
+    
 
     // Calculates the number of ephemerides covered by a single picture
     const int ephemeris_in_picture(float& ra, float& dec);

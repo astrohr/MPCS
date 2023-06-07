@@ -25,11 +25,11 @@ const float ObjectDatabase::calculateSelected() const
 {
     int covered_amm = 0;
     // making a test for every datapoint
-    for(auto dpoint : obj_data){
+    for(auto dpoint : m_ephemerides){
         auto [ephRa, ephDec] = dpoint.getOffsets();
 
         // here we check if the datapoint is within any picture areas
-        for(auto pic : pictures){
+        for(auto pic : m_pictures){
             auto [picRa, picDec] = pic.getOffsets();
 
             // the check
@@ -40,15 +40,15 @@ const float ObjectDatabase::calculateSelected() const
         }
     }
 
-    return covered_amm * 100.f / obj_data.size();
+    return covered_amm * 100.f / m_ephemerides.size();
 }
 
 const int ObjectDatabase::ephemeris_in_picture(float& ra, float& dec)
 {
     // locations are in offset arcseconds
     int num = 0;
-    for(int i = 0; i < obj_data.size(); i++){
-        auto [ephRa, ephDec] = obj_data[i].getOffsets();
+    for(int i = 0; i < m_ephemerides.size(); i++){
+        auto [ephRa, ephDec] = m_ephemerides[i].getOffsets();
         if (abs(ephRa-ra) < m_telescope_FOV/2.f && abs(ephDec-dec) < m_telescope_FOV/2.f) num++;
     }
     return num;
@@ -57,24 +57,24 @@ const int ObjectDatabase::ephemeris_in_picture(float& ra, float& dec)
 void ObjectDatabase::export_observation_targets(bool copy_cpb)
 {
     std::string targets;
-    for(int i = 0; i < pictures.size(); i++)
+    for(int i = 0; i < m_pictures.size(); i++)
     {
-        pictures[i].approxCoords(m_centerRa, m_centerDec);
-        auto [ra, dec] = pictures[i].getCoords();
-        auto [raOff, decOff] = pictures[i].getOffsets();
+        m_pictures[i].approxCoords(m_centerRa, m_centerDec);
+        auto [ra, dec] = m_pictures[i].getCoords();
+        auto [raOff, decOff] = m_pictures[i].getOffsets();
         
         int ephIndex = closest_ephemeris_index(raOff, decOff);
-        if (!obj_data[ephIndex].linkVisited()) obj_data[ephIndex].follow_link(); // follow link could throw an exception which can crash the program, there is no checking for that here
+        if (!m_ephemerides[ephIndex].linkVisited()) m_ephemerides[ephIndex].follow_link(); // follow link could throw an exception which can crash the program, there is no checking for that here
 
         // name
         targets += fmt::format("* {}", m_name);
-        targets += (pictures.size()-1) ? fmt::format("_{}", b10_to_b26(i+1)) : ""; // adds the letter that shows the picture index (if needed)
+        targets += (m_pictures.size()-1) ? fmt::format("_{}", b10_to_b26(i+1)) : ""; // adds the letter that shows the picture index (if needed)
         
         // magnitude and picture info
-        targets += fmt::format("   {:5.1f}    {:02} x {:02} sec\r\n", obj_data[ephIndex].getMag(), m_picAmount, m_picExposure);
+        targets += fmt::format("   {:5.1f}    {:02} x {:02} sec\r\n", m_ephemerides[ephIndex].getMag(), m_picAmount, m_picExposure);
 
         // time
-        auto [year, month, day, hour, minute] = Ephemeris::JD_to_date(obj_data[ephIndex].getJDTime());
+        auto [year, month, day, hour, minute] = Ephemeris::JD_to_date(m_ephemerides[ephIndex].getJDTime());
         targets += fmt::format("{:04} {:02} {:02} {:02}{:02}   ", year, month, day, hour, minute);
 
         // right ascension
@@ -86,7 +86,7 @@ void ObjectDatabase::export_observation_targets(bool copy_cpb)
         targets += fmt::format("{:+03.0f} {:02.0f} {:02.0f} ", dec_whole, dec_min, dec_sec);
 
         // other data
-        targets += obj_data[ephIndex].getContext()+"\r\n\r\n"; // \r\n because thats how newline is saved in the clipboard
+        targets += m_ephemerides[ephIndex].getContext()+"\r\n\r\n"; // \r\n because thats how newline is saved in the clipboard
     }
     
     if (targets.size())
@@ -105,41 +105,41 @@ void ObjectDatabase::export_observation_targets(bool copy_cpb)
 void ObjectDatabase::insert_data(std::string& str)
 {
     Ephemeris e(str);
-    obj_data.emplace_back(e);
+    m_ephemerides.emplace_back(e);
 }
 
 void ObjectDatabase::insert_picture(float& ra, float& dec)
 {
     int num = ephemeris_in_picture(ra, dec);
     Picture p(ra, dec, num);
-    pictures.emplace_back(p);
-    pictures[pictures.size()-1].setSign(b10_to_b26(pictures.size()));
+    m_pictures.emplace_back(p);
+    m_pictures[m_pictures.size()-1].setSign(b10_to_b26(m_pictures.size()));
 }
 
 void ObjectDatabase::remove_picture(int index)
 {   
-    if (!pictures.size()) return;
-    pictures.erase(pictures.begin() + index);
-    for(int i = 0; i < pictures.size(); i++)
-        pictures[i].setSign(b10_to_b26(i+1));
+    if (!m_pictures.size()) return;
+    m_pictures.erase(m_pictures.begin() + index);
+    for(int i = 0; i < m_pictures.size(); i++)
+        m_pictures[i].setSign(b10_to_b26(i+1));
 }
 
 void ObjectDatabase::undo_picture()
 {
-    if (!pictures.empty()) pictures.pop_back();
+    if (!m_pictures.empty()) m_pictures.pop_back();
 }
 
 void ObjectDatabase::clear_pictures()
 {
-    pictures.clear();
+    m_pictures.clear();
 }
 
 const int ObjectDatabase::closest_ephemeris_index(float& ra, float& dec)
 {
     float d = FLT_MAX;
     int ind;
-    for(int i = 0; i < obj_data.size(); i++){
-        auto [x, y] = obj_data[i].getOffsets();
+    for(int i = 0; i < m_ephemerides.size(); i++){
+        auto [x, y] = m_ephemerides[i].getOffsets();
         float newd = sqrt(pow(ra-x, 2) + pow(dec-y, 2));
         if (newd < d){
             d = newd;
@@ -153,8 +153,8 @@ const int ObjectDatabase::closest_picture_index(float& ra, float& dec)
 {
     float d = FLT_MAX;
     int ind;
-    for(int i = 0; i < pictures.size(); i++){
-        auto [x, y] = pictures[i].getOffsets();
+    for(int i = 0; i < m_pictures.size(); i++){
+        auto [x, y] = m_pictures[i].getOffsets();
         float newd = sqrt(pow(ra-x, 2) + pow(dec-y, 2));
         if (newd < d){
             d = newd;
@@ -166,9 +166,9 @@ const int ObjectDatabase::closest_picture_index(float& ra, float& dec)
 
 void ObjectDatabase::reset()
 {
-    obj_data.clear();
+    m_ephemerides.clear();
     m_name.clear();
-    pictures.clear();
+    m_pictures.clear();
 }
 
 const std::tuple<float, float> ObjectDatabase::getCenter(int* minRa_ptr, int* maxRa_ptr, int* minDec_ptr, int* maxDec_ptr) const
@@ -176,7 +176,7 @@ const std::tuple<float, float> ObjectDatabase::getCenter(int* minRa_ptr, int* ma
     // finding the extremities and using them to set the mean center/egdes
     int minRa = INT_MAX, maxRa = INT_MIN;
     int minDec = INT_MAX, maxDec = INT_MIN;
-    for(auto dpoint : obj_data){
+    for(auto dpoint : m_ephemerides){
         auto [ra, dec] = dpoint.getOffsets();
         if (ra < minRa) minRa = ra;
         if (ra > maxRa) maxRa = ra;
@@ -239,19 +239,19 @@ int ObjectDatabase::fill_database(std::string& link)
         insert_data(downloaded[i]);
     }
 
-    if (obj_data.empty()){
+    if (m_ephemerides.empty()){
         // throw custom error here
         fmt::print("Error: provided link has no data\n");
         return 1;
     }
 
     // here we use the fact that the first element has offsets of 0, 0
-    returnvalue = obj_data[0].follow_link();
+    returnvalue = m_ephemerides[0].follow_link();
     if (returnvalue != 0){
         // more custom errors
         return 1;
     }
 
-    std::tie(m_centerRa, m_centerDec) = obj_data[0].getCoords();
+    std::tie(m_centerRa, m_centerDec) = m_ephemerides[0].getCoords();
     return 0;
 }
