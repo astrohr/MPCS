@@ -11,12 +11,9 @@
 
 //----------------------------------------------------------
 
-ObjectDatabase database;
-Camera cam;
 
 
-
-void WindowSetup()
+void WindowSetup(ObjectDatabase& database, Camera& cam)
 {
     //init window
     sf::ContextSettings settings;
@@ -290,6 +287,10 @@ int main(int argc, char** argv)
     // if no parameters were passed, assume to_clipboard to be true
     if (copy || (!url && !exposition && !number && !exit)) to_clipboard = true; 
 
+    // create the camera and the database
+    ObjectDatabase database;
+    Camera cam;
+
     // read the default variables
     try{
         unsigned int W, H, FOV;
@@ -337,7 +338,7 @@ int main(int argc, char** argv)
         }
         database.set_exposure(pic_exposition);
 
-        WindowSetup();
+        WindowSetup(database, cam);
 
         database.export_observation_targets(to_clipboard);
         
