@@ -43,7 +43,8 @@ void WindowSetup(ObjectDatabase& database, Camera& cam)
 
     bool fokus = true;                      //is window focused?
     float mouseRa = 0.f, mouseDec = 0.f;    //where is the mouse?
-    while(window.isOpen()){
+    while(window.isOpen())
+    {
         //Event processing 
         sf::Event event;
         while(window.pollEvent(event))
@@ -107,11 +108,11 @@ void WindowSetup(ObjectDatabase& database, Camera& cam)
 
         //draw dots
         sf::CircleShape tocka(1.5f/cam.getZoom());
-        for(int i = 0; i < database.getEphAm(); i++)
+        for(auto eph : database.getEphs())
         {
-            auto [R, G, B] = database.getEph(i).getColor();
+            auto [R, G, B] = eph.getColor();
             tocka.setFillColor(sf::Color(R, G, B));
-            auto [x, y] = database.getEph(i).getOffsets();
+            auto [x, y] = eph.getOffsets();
             tocka.setPosition(x, y);
             window.draw(tocka);
         }
@@ -128,9 +129,9 @@ void WindowSetup(ObjectDatabase& database, Camera& cam)
         }
 
         // draw picture areas
-        for(int i = 0; i < database.getPicAm(); i++)
+        for(auto pic : database.getPics())
         {
-            auto [xd, yd] = database.getPic(i).getOffsets();
+            auto [xd, yd] = pic.getOffsets();
 
             // draw picture area shadow
             kvadrat.setPosition(xd-database.getFOV()/2, yd-database.getFOV()/2);
@@ -144,7 +145,7 @@ void WindowSetup(ObjectDatabase& database, Camera& cam)
             window.draw(kvadrat);
             
             // use text to print the name of the picture in the middle
-            text.setString(database.getPic(i).getName());
+            text.setString(pic.getName());
             text.setScale(1.f/cam.getZoom(), 1.f/cam.getZoom());
             text.setFillColor(sf::Color(255, 255, 0));
             text.setPosition(xd, yd);
@@ -152,10 +153,10 @@ void WindowSetup(ObjectDatabase& database, Camera& cam)
         }
 
         //show which square will be deleted if the button is released
-        if (sf::Mouse::isButtonPressed(sf::Mouse::Right) && !database.getPicAm() != 0)
+        if (sf::Mouse::isButtonPressed(sf::Mouse::Right) && !database.getPics().empty())
         {
             int ind = database.closest_picture_index(mouseRa, mouseDec);
-            auto [xd, yd] = database.getPic(ind).getOffsets();
+            auto [xd, yd] = database.getPics()[ind].getOffsets();
             sf::Vertex line[] = {
                 sf::Vertex(sf::Vector2f(mouseRa, mouseDec)), 
                 sf::Vertex(sf::Vector2f(xd, yd))
@@ -171,9 +172,10 @@ void WindowSetup(ObjectDatabase& database, Camera& cam)
         //total percentage of captured datapoints
         std::string per_pic = "", total = fmt::format("{:.2f}", database.calculateSelected());
         //percentage per picture
-        for(int i = 0; i < database.getPicAm(); i++){
-            float percent = 100.f * database.getPic(i).getContainedEphemeris() / database.getEphAm();
-            per_pic += fmt::format("{} {:.2f}%\n", database.getPic(i).getName(), percent);
+        for(auto pic : database.getPics())
+        {
+            float percent = 100.f * pic.getContainedEphemeris() / database.getEphs().size();
+            per_pic += fmt::format("{} {:.2f}%\n", pic.getName(), percent);
         }
         //set the text
         text.setString(fmt::format("{}\n= {}%", per_pic, total));
@@ -183,7 +185,7 @@ void WindowSetup(ObjectDatabase& database, Camera& cam)
         text.setScale(1.f/cam.getZoom(), 1.f/cam.getZoom());
         text.setPosition(cam.raOffset()+view_W/2.f, cam.decOffset()+view_H/2.f);
         //the percentage that shows datapoints within the current cursor area
-        std::string capturePercent = fmt::format("{:.2f}%", (float)database.ephemeris_in_picture(mouseRa, mouseDec)/database.getEphAm()*100.f);
+        std::string capturePercent = fmt::format("{:.2f}%", database.ephemeris_in_picture(mouseRa, mouseDec)*100.f/database.getEphs().size());
         //set the string to RA & DEC of the mouse and the capturePercent value
         text.setString(fmt::format("Offsets:\nRa: {:.2f}\nDec: {:.2f}\n\n{}", mouseRa, mouseDec, capturePercent));
         window.draw(text);

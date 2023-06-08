@@ -67,22 +67,12 @@ public:
     { m_picAmount = am; }
 
     // Returns the amount of ephemerides
-    const int getEphAm() const
-    { return m_ephemerides.size(); }
+    const std::vector<Ephemeris>& getEphs() const
+    { return m_ephemerides; }
 
     // Returns the amount of pictures
-    const int getPicAm() const
-    { return m_pictures.size(); }
-
-    // Grab the picture reference by index
-    // \param index
-    const Picture& getPic(int& index) const
-    { return m_pictures[index]; }
-
-    // Grab the ephemeris reference by index
-    // \param index
-    const Ephemeris& getEph(int& index) const
-    { return m_ephemerides[index]; }
+    const std::vector<Picture>& getPics() const
+    { return m_pictures; }
 
     
 
