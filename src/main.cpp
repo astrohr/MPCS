@@ -33,13 +33,19 @@ void WindowSetup(ObjectDatabase& database, Camera& cam)
     if (!font.loadFromFile("resources/arial.ttf"))
         fmt::print("Font not found, using default font\n");
 
+
+    // text object for rendering text
     sf::Text text;
     text.setFont(font);
     text.setCharacterSize(20);
     text.setRotation(180.f);
     
+    // rectangle object for drawing all rectangles
     sf::RectangleShape kvadrat(sf::Vector2f(database.getFOV(), database.getFOV()));
     kvadrat.setFillColor(sf::Color::Transparent);
+
+    // circle shape for drawing all dots
+    sf::CircleShape tocka;
 
     bool fokus = true;                      //is window focused?
     float mouseRa = 0.f, mouseDec = 0.f;    //where is the mouse?
@@ -97,17 +103,25 @@ void WindowSetup(ObjectDatabase& database, Camera& cam)
         if (sf::Keyboard::isKeyPressed(sf::Keyboard::Up)) cam.pan_camera(0, 1);
 
 
+
+        // update the situation to represent potential input changes
         window.clear();
         std::tie(view_W, view_H) = cam.getView(); // tie variables since their calls do computation
         view.setSize(sf::Vector2f(view_W, view_H));
         view.setCenter(cam.raOffset(), cam.decOffset());
         window.setView(view);
 
+        // remember mouse position
         sf::Vector2i pos = sf::Mouse::getPosition(window);
         std::tie(mouseRa, mouseDec) = cam.px_to_off(pos.x, pos.y);
 
+        // set sizes
+        text.setScale(1.f/cam.getZoom(), 1.f/cam.getZoom());
+        kvadrat.setOutlineThickness(2.f/cam.getZoom());
+        tocka.setRadius(1.5f/cam.getZoom());
+
+
         //draw dots
-        sf::CircleShape tocka(1.5f/cam.getZoom());
         for(auto eph : database.getEphs())
         {
             auto [R, G, B] = eph.getColor();
@@ -116,9 +130,6 @@ void WindowSetup(ObjectDatabase& database, Camera& cam)
             tocka.setPosition(x, y);
             window.draw(tocka);
         }
-
-        //setup the square projection settings
-        kvadrat.setOutlineThickness(2.f/cam.getZoom());
 
         //draw a blue square on cursor location
         if (fokus)
@@ -132,9 +143,9 @@ void WindowSetup(ObjectDatabase& database, Camera& cam)
         for(auto pic : database.getPics())
         {
             auto [xd, yd] = pic.getOffsets();
+            kvadrat.setPosition(xd-database.getFOV()/2, yd-database.getFOV()/2);
 
             // draw picture area shadow
-            kvadrat.setPosition(xd-database.getFOV()/2, yd-database.getFOV()/2);
             kvadrat.setOutlineColor(sf::Color(100, 100, 100));
             kvadrat.setOutlineThickness(3.5f/cam.getZoom());
             window.draw(kvadrat);
@@ -146,7 +157,6 @@ void WindowSetup(ObjectDatabase& database, Camera& cam)
             
             // use text to print the name of the picture in the middle
             text.setString(pic.getName());
-            text.setScale(1.f/cam.getZoom(), 1.f/cam.getZoom());
             text.setFillColor(sf::Color(255, 255, 0));
             text.setPosition(xd, yd);
             window.draw(text);
@@ -167,7 +177,6 @@ void WindowSetup(ObjectDatabase& database, Camera& cam)
 
         //PROBABILITY TEXT:
         text.setFillColor(sf::Color(255, 255, 255));
-        text.setScale(1.f/cam.getZoom(), 1.f/cam.getZoom());
         text.setPosition(cam.raOffset()-view_W*2.5f/7.f, cam.decOffset()+view_H/2.f);
         //total percentage of captured datapoints
         std::string per_pic = "", total = fmt::format("{:.2f}", database.calculateSelected());
@@ -182,7 +191,6 @@ void WindowSetup(ObjectDatabase& database, Camera& cam)
         window.draw(text);
 
         //INFO TEXT:
-        text.setScale(1.f/cam.getZoom(), 1.f/cam.getZoom());
         text.setPosition(cam.raOffset()+view_W/2.f, cam.decOffset()+view_H/2.f);
         //the percentage that shows datapoints within the current cursor area
         std::string capturePercent = fmt::format("{:.2f}%", database.ephemeris_in_picture(mouseRa, mouseDec)*100.f/database.getEphs().size());
