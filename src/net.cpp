@@ -40,7 +40,7 @@ size_t read_curl_data(char* ptr, size_t size, size_t nmemb, std::vector<std::str
     return bytes; // returns the number of bytes passed to the function
 }
 
-int get_html(std::string link, std::vector<std::string>* userdata, int milis/*=10000*/){
+bool get_html(std::string& link, std::vector<std::string>& userdata, int milis){
     // Check if the link type is allowed by comparing to the strings in g_allowed_links
     bool match = false;
     for(int i = 0; i < g_allowed_links.size() && !match; i++)
@@ -48,7 +48,8 @@ int get_html(std::string link, std::vector<std::string>* userdata, int milis/*=1
     
     if (!match){
         fmt::print("Error: link not allowed\n");
-        return 2;
+        // throw exception here
+        return 1;
     }
 
     std::map<CURLcode, int> responsovi;
@@ -56,11 +57,11 @@ int get_html(std::string link, std::vector<std::string>* userdata, int milis/*=1
     //the loop that keeeps trying to connect to a site for some ammount of time
     while(clock.getElapsedTime().asMilliseconds() < milis){
         //prepare userdata fo writing in it
-        userdata->emplace_back("");
+        userdata.emplace_back("");
         //setting up the curl request
         CURL *curl = curl_easy_init();
         curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, read_curl_data);
-        curl_easy_setopt(curl, CURLOPT_WRITEDATA, userdata);
+        curl_easy_setopt(curl, CURLOPT_WRITEDATA, &userdata);
         curl_easy_setopt(curl, CURLOPT_NOPROGRESS, FALSE);
         curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, (long)1);
         int progcall = 0; // measures how many times progressdata function is called, mod 4
@@ -83,19 +84,21 @@ int get_html(std::string link, std::vector<std::string>* userdata, int milis/*=1
         fmt::print(" {:.1f} s   ", (milis/1000)-clock.getElapsedTime().asSeconds());
 
         //clear userdata since the request failed and we have to retry
-        userdata->clear();
+        userdata.clear();
     }
     
-    int returnvalue = 0;
     //if there is CURLE_OK, all is fine
-    if (responsovi.find(CURLE_OK) != responsovi.end()) fmt::print("\rDownload success :D          \n");
+    if (responsovi.find(CURLE_OK) != responsovi.end())
+        fmt::print("\rDownload success :D          \n");
     else{
         // if there is no CURLE_OK, show errors that happened during the download
+        // throw exception here
         fmt::print("\rDownload failed, errors are:   \n");
         for (auto x : responsovi)
             fmt::print("{} times: {}\n", x.second, curl_easy_strerror(x.first));
-        returnvalue = 1;
+        return 1;
     }
-    return returnvalue;
+
+    return 0;
 }
 

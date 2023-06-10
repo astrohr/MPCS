@@ -68,7 +68,7 @@ Ephemeris::Ephemeris(std::string& raw)
 int Ephemeris::follow_link()
 {
     std::vector<std::string> downloaded;
-    int returnvalue = get_html(m_link, &downloaded, 4500.0);
+    int returnvalue = get_html(m_link, downloaded, 4500.0);
 
     m_linkVisited = true;
 

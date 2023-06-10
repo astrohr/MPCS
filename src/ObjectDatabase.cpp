@@ -228,7 +228,7 @@ int ObjectDatabase::fill_database(std::string& link)
 
     // downloads the data off the internet
     std::vector<std::string> downloaded;
-    int returnvalue = get_html(link, &downloaded, 375000.0);
+    int returnvalue = get_html(link, downloaded, 375000.0);
     if (returnvalue != 0){
         return 1;
     }
