@@ -22,32 +22,36 @@ if (WIN32)
     set(CURL_USE_SCHANNEL ON)
 endif()
 
-add_subdirectory(submodules/SFML/)
-add_subdirectory(submodules/curl/)
-add_subdirectory(submodules/fmt/)
+# set path variables so its easier to read
+set(SUBMODULES "${PROJECT_SOURCE_DIR}/submodules")
+set(SRC "${PROJECT_SOURCE_DIR}/src")
+
+add_subdirectory("${SUBMODULES}/SFML")
+add_subdirectory("${SUBMODULES}/curl")
+add_subdirectory("${SUBMODULES}/fmt")
 
 set (CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
 
-configure_file(src/cmakevars.h.in src/cmakevars.h)
+configure_file("${SRC}/cmakevars.h.in" "${PROJECT_BINARY_DIR}/src/cmakevars.h")
 
-add_executable(${PROJECT_NAME} 
-    src/main.cpp
-    src/Camera.cpp
-    src/net.cpp
-    src/ObjectDatabase.cpp
-    src/Ephemeris.cpp
-    src/Picture.cpp
+add_executable(${PROJECT_NAME}
+    "${SRC}/main.cpp"
+    "${SRC}/Camera.cpp"
+    "${SRC}/net.cpp"
+    "${SRC}/ObjectDatabase.cpp"
+    "${SRC}/Ephemeris.cpp"
+    "${SRC}/Picture.cpp"
 )
 
-target_precompile_headers(${PROJECT_NAME} PRIVATE src/pch.hpp)
+target_precompile_headers(${PROJECT_NAME} PRIVATE "${SRC}/pch.hpp")
 
-target_include_directories(${PROJECT_NAME}
-    PUBLIC submodules/SFML/include
-    PUBLIC submodules/curl/include
-    PUBLIC submodules/fmt/include
-    PUBLIC submodules/args
-    PUBLIC submodules/inipp
-    PUBLIC "${PROJECT_BINARY_DIR}"
+target_include_directories(${PROJECT_NAME} PUBLIC
+    "${SUBMODULES}/SFML/include"
+    "${SUBMODULES}/curl/include"
+    "${SUBMODULES}/fmt/include"
+    "${SUBMODULES}/args"
+    "${SUBMODULES}/inipp"
+    "${PROJECT_BINARY_DIR}"
 )
 
 target_link_libraries(${PROJECT_NAME}
