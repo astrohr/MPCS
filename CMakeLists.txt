@@ -69,3 +69,7 @@ if(NOT EXISTS "./build/MPCS.ini")
     file(COPY "./MPCS.ini" DESTINATION ".")
     message("> MPCS.ini copied")
 endif()
+
+
+unset(SUBMODULES)
+unset(SRC)
