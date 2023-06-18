@@ -12,23 +12,22 @@ set(BUILD_TESTING OFF)
 
 set(SFML_BUILD_AUDIO OFF)
 set(SFML_BUILD_NETWORK OFF)
+if (WIN32)
+    set(SFML_USE_STATIC_STD_LIBS ON)
+endif()
 
 set(BUILD_CURL_EXE OFF) 
 set(CURL_STATICLIB ON)
 set(HTTP_ONLY ON)
+set(CURL_ENABLE_SSL ON)
 if (WIN32)
     add_definitions(-DCURL_STATICLIB)
+    set(CURL_USE_SCHANNEL ON)
 endif()
 
 set(CMAKE_BUILD_FLAGS "-O3")
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED TRUE)
-
-set(CURL_ENABLE_SSL ON)
-if (WIN32)
-    set(SFML_USE_STATIC_STD_LIBS ON)
-    set(CURL_USE_SCHANNEL ON)
-endif()
 
 # set path variables so its easier to read
 set(SUBMODULES "${PROJECT_SOURCE_DIR}/submodules")
