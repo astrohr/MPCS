@@ -7,11 +7,19 @@ if(NOT EXISTS "./build")
     message("> build folder created")
 endif()
 
+set(BUILD_SHARED_LIBS OFF)
+set(BUILD_TESTING OFF)
+
 set(SFML_BUILD_AUDIO OFF)
 set(SFML_BUILD_NETWORK OFF)
-set(BUILD_SHARED_LIBS OFF)
+
 set(BUILD_CURL_EXE OFF) 
-set(BUILD_TESTING OFF)
+set(CURL_STATICLIB ON)
+set(HTTP_ONLY ON)
+if (WIN32)
+    add_definitions(-DCURL_STATICLIB)
+endif()
+
 set(CMAKE_BUILD_FLAGS "-O3")
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED TRUE)
@@ -55,7 +63,7 @@ target_include_directories(${PROJECT_NAME} PUBLIC
 )
 
 target_link_libraries(${PROJECT_NAME}
-    "sfml-system;sfml-window;sfml-graphics;libcurl;fmt"
+    "libcurl;sfml-system;sfml-window;sfml-graphics;fmt"
 )
 
 #copy the resources
