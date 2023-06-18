@@ -360,8 +360,7 @@ int main(int argc, char** argv)
         if (close_after){
             if (!to_clipboard){
                 fmt::print("Press enter to exit");
-                std::cin.ignore(); std::cin.ignore();
-                // two ignores because from some reason the program sometimes skips over the first one
+                std::cin.ignore();
             }
             break;
         }
