@@ -10,7 +10,9 @@
 //----------------------------------------------------------
 
 
-// the links that the program is allowed to go to esentially
+// net.cpp
+
+// the links that the program is allowed to go to
 extern std::vector<std::string> g_allowed_links;
 
 // https://curl.se/libcurl/c/CURLOPT_PROGRESSFUNCTION.html
@@ -28,3 +30,4 @@ size_t read_curl_data(char* ptr, size_t size, size_t nmemb, std::vector<std::str
 bool get_html(std::string& link, std::vector<std::string>& userdata, int milis = 10000);
 // due to the requirements of this program, userdata is a vector where each string represents a single line
 // that makes code somewhat more concise
+

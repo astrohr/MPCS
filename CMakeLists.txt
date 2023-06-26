@@ -44,7 +44,7 @@ configure_file("${SRC}/cmakevars.h.in" "${PROJECT_BINARY_DIR}/src/cmakevars.h")
 add_executable(${PROJECT_NAME}
     "${SRC}/main.cpp"
     "${SRC}/Camera.cpp"
-    "${SRC}/net.cpp"
+    "${SRC}/utils/net.cpp"
     "${SRC}/ObjectDatabase.cpp"
     "${SRC}/Ephemeris.cpp"
     "${SRC}/Picture.cpp"
@@ -59,6 +59,8 @@ target_include_directories(${PROJECT_NAME} PUBLIC
     "${SUBMODULES}/args"
     "${SUBMODULES}/inipp"
     "${PROJECT_BINARY_DIR}"
+    "${SRC}"
+    "${SRC}/utils"
 )
 
 target_link_libraries(${PROJECT_NAME}
