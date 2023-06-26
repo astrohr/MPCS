@@ -137,6 +137,7 @@ public:
 
     // the command that fills the database from the object offsets link
     // \param link object offsets link
+    // \return 0 all is ok, 1 if a retryable exception occured, 2 if user should not try again
     int fill_database(std::string& link);
 
 };

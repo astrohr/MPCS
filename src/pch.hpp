@@ -15,6 +15,7 @@
 #include <cfloat>
 #include <cmath>
 #include <regex>
+#include <stdexcept>
 
 //data structures
 #include <vector>

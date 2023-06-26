@@ -5,13 +5,14 @@
 //----------------------------------------------------------
 
 
-
 std::vector<std::string> g_allowed_links = {
     "https://cgi.minorplanetcenter.net/",
     "https://www.minorplanetcenter.net/",
     "http://cgi.minorplanetcenter.net/",
 };
 
+
+// https://curl.se/libcurl/c/CURLOPT_PROGRESSFUNCTION.html
 static size_t progress_callback(void* clientp, double dltotal, double dlnow, double ultotal, double ulnow){
     char prog; int progamm = *((int*)clientp);
     if (progamm==0) prog = '|';
@@ -24,6 +25,8 @@ static size_t progress_callback(void* clientp, double dltotal, double dlnow, dou
     return 0;
 }
 
+// functions that reads data from a url location
+// https://curl.se/libcurl/c/CURLOPT_WRITEFUNCTION.html
 size_t read_curl_data(char* ptr, size_t size, size_t nmemb, std::vector<std::string>* userdata){
     size_t bytes = size*nmemb;
 
@@ -40,17 +43,15 @@ size_t read_curl_data(char* ptr, size_t size, size_t nmemb, std::vector<std::str
     return bytes; // returns the number of bytes passed to the function
 }
 
-bool get_html(std::string& link, std::vector<std::string>& userdata, int milis){
+void utils::get_html(std::string& link, std::vector<std::string>& userdata, int milis){
     // Check if the link type is allowed by comparing to the strings in g_allowed_links
     bool match = false;
     for(int i = 0; i < g_allowed_links.size() && !match; i++)
         if (link.substr(0, g_allowed_links[i].size()) == g_allowed_links[i]) match = true;
     
-    if (!match){
-        fmt::print("Error: link not allowed\n");
-        // throw exception here
-        return 1;
-    }
+    if (!match)
+        throw utils::ForbiddenLink(fmt::format("Link \"{}\" is not allowed", link));
+
 
     std::map<CURLcode, int> responsovi;
     sf::Clock clock;
@@ -91,14 +92,11 @@ bool get_html(std::string& link, std::vector<std::string>& userdata, int milis){
     if (responsovi.find(CURLE_OK) != responsovi.end())
         fmt::print("\rDownload success :D          \n");
     else{
-        // if there is no CURLE_OK, show errors that happened during the download
-        // throw exception here
-        fmt::print("\rDownload failed, errors are:   \n");
+        std::string error = "\rDownload fail:\n";
         for (auto x : responsovi)
-            fmt::print("{} times: {}\n", x.second, curl_easy_strerror(x.first));
-        return 1;
-    }
+            error += fmt::format("{} times: {}\n", x.second, curl_easy_strerror(x.first));
 
-    return 0;
+        throw utils::DownloadFail(error);
+    }
 }
 

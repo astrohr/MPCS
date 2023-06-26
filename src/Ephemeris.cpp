@@ -45,11 +45,16 @@ Ephemeris::Ephemeris(std::string& raw)
         else if (raw[i] != '\n') type += raw[i];
     }
 
-    // add error checking and custom errors here
-    m_offsetRa = std::stoi(ra);
-    m_offsetDec = std::stoi(dec);
+    try{
+        m_offsetRa = std::stoi(ra);
+        m_offsetDec = std::stoi(dec);
+        m_ephemerisNumber = std::stoi(num);
+    }
+    catch (std::exception& e) {
+        throw utils::ConstructorFail(fmt::format("Bad data provided for ephemeris {}\nprovided: {}", m_ephemerisNumber, raw));
+    }
+
     m_link = link;
-    m_ephemerisNumber = std::stoi(num);
     
     // the color is determined by the type
     if (type.empty()) m_color = {0, 255, 0};
@@ -68,7 +73,18 @@ Ephemeris::Ephemeris(std::string& raw)
 int Ephemeris::follow_link()
 {
     std::vector<std::string> downloaded;
-    int returnvalue = get_html(m_link, downloaded, 4500.0);
+
+    try{
+        utils::get_html(m_link, downloaded, 4500.0);
+    }
+    catch (utils::DownloadFail& e) {
+        fmt::print("Warning: {}\n", e.what());
+        return 1;
+    }
+    catch (utils::ForbiddenLink& e) {
+        fmt::print("Warning: {}\n", e.what());
+        return 2;
+    }
 
     m_linkVisited = true;
 
@@ -79,9 +95,8 @@ int Ephemeris::follow_link()
             data = &downloaded[i];
 
     if (data == nullptr){
-        fmt::print("Error: No data found on the Ephemeris link");
-        // throw a custom exception here (no Ephemeris data or sth)
-        return 1;
+        fmt::print("Warning: No data found on the Ephemeris link");
+        return 3;
     }
 
     // This is the layout of the ephemeris data
@@ -100,8 +115,7 @@ int Ephemeris::follow_link()
         }
         catch (std::exception& e) {
             fmt::print("Warning: bad data found for an ephemeris {}: \n\t{}\n", m_ephemerisNumber, *data);
-            // put a custom exception here
-            return 1;
+            return 3;
         }
     }
 

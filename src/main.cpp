@@ -327,10 +327,17 @@ int main(int argc, char** argv)
         
         int greska = database.fill_database(obj_url);
         if (greska){
-            if (close_after) break;
+            bool retry = false;
+            if (greska == 1){
+                fmt::print("Link interaction failed, retry? (y/n): ");
+                std::string s; std::cin >> s;
+                if (!s.empty() && (s[0] == 'y' || s[0] == 'Y')) retry = true;
+            }
+
+            if (close_after && !retry) break;
             else{
+                if (!retry) obj_url = "";
                 pic_exposition = pic_number = 0;
-                obj_url = "";
                 database.reset();
                 fmt::print("\n\n");
                 continue;

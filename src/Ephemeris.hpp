@@ -98,6 +98,8 @@ public:
 
     // This function follows the link that is provided by the constructor and pulls the data from it
     // for now it just looks at the first ephemeris, but that will be changed
+    // \return 0 - all is ok
+    // \return 1 - download fail occured, 2 - forbidden link, 3 - bad data
     int follow_link();
     
 

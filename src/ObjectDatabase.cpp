@@ -64,7 +64,11 @@ void ObjectDatabase::export_observation_targets(bool copy_cpb)
         auto [raOff, decOff] = m_pictures[i].getOffsets();
         
         int ephIndex = closest_ephemeris_index(raOff, decOff);
-        if (!m_ephemerides[ephIndex].linkVisited()) m_ephemerides[ephIndex].follow_link(); // follow link could throw an exception which can crash the program, there is no checking for that here
+        if (!m_ephemerides[ephIndex].linkVisited()){
+            int r = m_ephemerides[ephIndex].follow_link();
+            // make sure we dont crash a program with a link that does not work
+            if (r != 0) continue;
+        }
 
         // name
         targets += fmt::format("* {}", m_name);
@@ -104,8 +108,13 @@ void ObjectDatabase::export_observation_targets(bool copy_cpb)
 
 void ObjectDatabase::insert_data(std::string& str)
 {
-    Ephemeris e(str);
-    m_ephemerides.emplace_back(e);
+    try{
+        Ephemeris eph(str);
+        m_ephemerides.emplace_back(eph);
+    }
+    catch (utils::ConstructorFail& e){
+        fmt::print("Warning: Ephemeris Construction failed: \n{}\n", e.what());
+    }
 }
 
 void ObjectDatabase::insert_picture(float& ra, float& dec)
@@ -216,20 +225,22 @@ int ObjectDatabase::fill_database(std::string& link)
         m_name = match.str(1);
     }
     else {
-        // throw a custom error here
         fmt::print(
             "Error: provided link has no object name\n"
             "Regex Search found:\n"
         );
         for (auto m : match)
             fmt::print("{} \n", m.str());
-        return 1;
+        return 2;
     }
 
     // downloads the data off the internet
     std::vector<std::string> downloaded;
-    int returnvalue = get_html(link, downloaded, 375000.0);
-    if (returnvalue != 0){
+    try{
+        utils::get_html(link, downloaded, 375000.0);
+    }
+    catch (std::exception& e) {
+        fmt::print("Error: {}", e.what());
         return 1;
     }
 
@@ -240,17 +251,14 @@ int ObjectDatabase::fill_database(std::string& link)
     }
 
     if (m_ephemerides.empty()){
-        // throw custom error here
         fmt::print("Error: provided link has no data\n");
         return 1;
     }
 
     // here we use the fact that the first element has offsets of 0, 0
-    returnvalue = m_ephemerides[0].follow_link();
-    if (returnvalue != 0){
-        // more custom errors
-        return 1;
-    }
+    int r =  m_ephemerides[0].follow_link();
+    // if an error occured return 1
+    if (r != 0) return 1;
 
     std::tie(m_centerRa, m_centerDec) = m_ephemerides[0].getCoords();
     return 0;
