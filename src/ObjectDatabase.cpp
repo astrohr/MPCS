@@ -237,7 +237,7 @@ int ObjectDatabase::fill_database(std::string& link)
     // downloads the data off the internet
     std::vector<std::string> downloaded;
     try{
-        utils::get_html(link, downloaded, 375000.0);
+        utils::get_html(link, downloaded);
     }
     catch (std::exception& e) {
         fmt::print("Error: {}", e.what());
