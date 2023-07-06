@@ -11,7 +11,8 @@ Whats new in 2.6.0
 - Replaced the data/variables.txt with a MPCS.ini file
     - added external library for using .ini (https://github.com/mcmtroffaes/inipp)
 - Improved the codebase to be leaner and better documented
-- figured that todo.txt is kinda unnecessary 
+- figured that todo.txt is kinda unnecessary
+- Error handling improved
 
 -----------------------------------------------------------------------------------------
 Whats new in 2.5.1
