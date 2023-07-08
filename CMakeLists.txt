@@ -59,14 +59,69 @@ target_link_libraries(${PROJECT_NAME}
     "libcurl;sfml-system;sfml-window;sfml-graphics;fmt"
 )
 
-#copy the resources
+#copy the resources to the build folder
 if(NOT EXISTS "./build/resources")
     file(COPY "./resources" DESTINATION ".")
     message("> Resources copied")
 endif()
-
 #copy MPCS.ini
 if(NOT EXISTS "./build/MPCS.ini")
     file(COPY "./MPCS.ini" DESTINATION ".")
     message("> MPCS.ini copied")
 endif()
+
+#install rules
+#binary
+install(
+    TARGETS ${PROJECT_NAME}
+    DESTINATION "bin"
+)
+#resources
+install(
+    DIRECTORY "resources"
+    DESTINATION "."
+)
+#MPCS.ini
+install(
+    FILES "MPCS.ini"
+    DESTINATION "."
+)
+
+# for mingw, copy dlls
+if (MINGW)
+    get_filename_component(Mingw_Path ${CMAKE_CXX_COMPILER} PATH)
+
+    # i swear, the existence of this command annoys me so much, cant WAIT to figure a way to REMOVE it
+    # if someone starts defending libcurl just show them dis
+    set(CMAKE_INSTALL_SYSTEM_RUNTIME_LIBS 
+        ${Mingw_Path}/libwinpthread-1.dll 
+        ${Mingw_Path}/libssh2-1.dll
+        ${Mingw_Path}/libidn2-0.dll 
+        ${Mingw_Path}/libpsl-5.dll
+        ${Mingw_Path}/zlib1.dll
+        ${Mingw_Path}/libiconv-2.dll
+        ${Mingw_Path}/libintl-8.dll
+        ${Mingw_Path}/libunistring-2.dll
+        ${Mingw_Path}/libcrypto-1_1-x64.dll
+    )
+endif()
+
+if (CMAKE_INSTALL_SYSTEM_RUNTIME_LIBS)
+    install(PROGRAMS ${CMAKE_INSTALL_SYSTEM_RUNTIME_LIBS} DESTINATION bin COMPONENT System)
+endif()
+
+#CPack installer setup
+include(InstallRequiredSystemLibraries)
+set(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_CURRENT_SOURCE_DIR}/LICENSE.txt")
+set(CPACK_PACKAGE_VERSION_MAJOR "${MPCS_VERSION_MAJOR}")
+set(CPACK_PACKAGE_VERSION_MINOR "${MPCS_VERSION_MINOR}")
+set(CPACK_PACKAGE_VERSION_PATCH "${MPCS_VERSION_PATCH}")
+set(CPACK_PACKAGE_HOMEPAGE_URL "https://github.com/astrohr/MPCS")
+if (WIN32)
+    set(CPACK_GENERATOR ZIP)
+    set(CPACK_SOURCE_GENERATOR ZIP)
+else()
+    set(CPACK_GENERATOR TGZ)
+    set(CPACK_SOURCE_GENERATOR TGZ)
+endif()
+include(CPack)

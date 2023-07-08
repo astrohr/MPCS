@@ -29,8 +29,9 @@ void WindowSetup(ObjectDatabase& database, Camera& cam)
     sf::View view(sf::Vector2f(cam.raOffset(), cam.decOffset()), sf::Vector2f(view_W, view_H));
     view.rotate(180);
 
-    sf::Font font; 
-    if (!font.loadFromFile("resources/arial.ttf"))
+    sf::Font font;
+    // dont worry that this will end up throwing a warning (sometimes)
+    if (!font.loadFromFile("../resources/arial.ttf") && !font.loadFromFile("resources/arial.ttf"))
         fmt::print("Font not found, using default font\n");
 
 
@@ -211,11 +212,14 @@ void WindowSetup(ObjectDatabase& database, Camera& cam)
 void defaultVariables(unsigned int& W, unsigned int& H, unsigned int& FOV)
 {
     std::ifstream ReadFile("MPCS.ini");
-    if (!ReadFile.is_open())
-        fmt::print(
-            "Warning: MPCS.ini does not exist, or isnt in the right directory!\n\n"
-        );
-
+    if (!ReadFile.is_open()){
+        ReadFile.open("../MPCS.ini");
+        if (!ReadFile.is_open()){
+            fmt::print(
+                "Warning: MPCS.ini does not exist, or isnt in the right directory!\n\n"
+            );
+        }
+    }
     // initialize inipp
     inipp::Ini<char> ini;
 

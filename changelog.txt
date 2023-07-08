@@ -1,5 +1,5 @@
 -----------------------------------------------------------------------------------------
-Whats new in 2.6.0 
+Whats new in 2.6.0 [Release]
 
 - Added a zlib license
 - improved arguments and argument parsing
@@ -13,6 +13,14 @@ Whats new in 2.6.0
 - Improved the codebase to be leaner and better documented
 - figured that todo.txt is kinda unnecessary
 - Error handling improved
+- First actual release
+- Added cmake paramters that allow to install a program and distribute it
+
+Some important notes:
+- version 2.6 is intended to be the last version of MPCS 2, however, it will still
+  get patch level updates
+- this version will separate into its own branch (2.6.x)
+- all further development will be directed towards MPCS 3 (new main branch)
 
 -----------------------------------------------------------------------------------------
 Whats new in 2.5.1
