@@ -17,8 +17,8 @@ A desktop program for solving the Minor Planet Center uncertainty maps of near E
     - [Running the program](#running-the-program)
     - [Extracting data](#extracting-data)
  - [Configuring](#configuring)
- - [Installing from binary](#installing-from-binary)
- - [Builing from source](#building-from-source)
+ - [Installing from binary](#installing-from-the-binary)
+ - [Building from source](#building-from-source)
     - [Installing from source](#installing-from-source)
  - [Dependencies](#dependencies)
  - [License](#license)
@@ -32,11 +32,11 @@ Please do note that as of right now, this program is largely untested on linux a
 
 # Requirements
 **For running:** a computer that's preferably from this century but it may be fine if its not
-**For building:** c++ compiler, [cmake](https://cmake.org/) version 3.20 or higher, [git](https://git-scm.com/), and [NSIS2](https://nsis.sourceforge.io/Main_Page) (optional)
+**For building:** C++ compiler, [CMake](https://cmake.org/) version 3.20 or higher, [git](https://git-scm.com/), and [NSIS2](https://nsis.sourceforge.io/Main_Page) (optional)
 If you are building from windows [MSYS2](https://www.msys2.org/) is recommended
 
 # How to use
-MPCS was made to be simple to use, so yeah, theres that
+MPCS was made to be simple to use, so yeah, there's that
 #### Getting the data
 Go to [the NEO index](https://www.minorplanetcenter.net/iau/NEO/toconfirm_tabular.html), pick the objects and insert your position. Then click on "Get ephemerides"
 
@@ -55,7 +55,7 @@ Its also worth noting that MPCS can be ran with arguments from the command line,
 
 #### Extracting data
 
-When MPCS runs it will ask you for the data about the object you want to observe, which includes the offsets URL, exposition of the pictures and their amount
+When MPCS runs it will ask you for the data about the object you want to observe, which includes the offsets URL, exposure of the pictures and their amount
 
 When you provide all information you will be prompted with an interactive uncertainty map where you will select the areas you want to take pictures on the map
 You can press H and the controls will get printed to the terminal
@@ -68,7 +68,7 @@ The observation locations will get printed to the console and copied to the clip
 # Configuring
 
 You can configure the program in `resources/MPCS.ini`
-The parameters you can configure are window height, width and the telescope FOV
+The parameters you can configure are window height(H), width(W) and the telescope FOV
 
 # Installing from the binary
 Installing from the binary is as simple as going to the [releases tab](https://github.com/astrohr/MPCS/releases) and downloading the release you want
@@ -76,7 +76,7 @@ The wizard :mage: will walk you through the installation, this way you also get 
 Keep in mind that the binary will be located in the `bin` folder of the install location and will be named `MPCS.exe`
 
 # Building from source
-**Obtaining source**
+**Obtaining the source**
 `git clone --recursive https://github.com/astrohr/MPCS.git ./MPCS`
 ^ due to submoduling, it is *crucial* you do a recursive clone
 
@@ -95,7 +95,7 @@ mingw32-make
 And a fully functional executable should appear in your build folder :D
 
 #### Installing from source
-While just building the program will create a working executable, it is recommended that you finish the instalation process by running `cmake --install .` from an elevated terminal inside the build folder, this will populate the directories that are meant to be populated for regular program instalation
+While just building the program will create a working executable, it is recommended that you finish the installation process by running `cmake --install .` from an elevated terminal inside the build folder, this will populate the directories that are meant to be populated for regular program instalkation
 
 If, however, you want to export the project outside the system used for building you have two options 
 
@@ -123,6 +123,6 @@ This program is released under the [zlib](https://en.wikipedia.org/wiki/Zlib_Lic
 ---
 
 # The future
-This is MPCS version 2, the work on this branch has been ended, however the work still continues on other branches (version 3 as of writing this)
+This is MPCS version 2, the work on this branch has ended, however the work still continues on other branches (version 3 as of writing this)
 Version 3 is intended to be simpler to use and have a vastly improved functionality, so keep an eye on it! :eyes:
 
