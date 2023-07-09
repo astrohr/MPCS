@@ -89,12 +89,20 @@ int Ephemeris::follow_link()
     m_linkVisited = true;
 
     // get a reference to the first line that contains ephemeris data 
-    std::string* data = nullptr;
+    std::string data;
     for (int i = 0; i < downloaded.size(); i++)
         if (!downloaded[i].empty() && downloaded[i][0] == '2')
-            data = &downloaded[i];
+            data = downloaded[i];
+        
+    // remove the text from the end of the string
+    for(int i = data.size()-1; i >=0; i--){
+        if (isdigit(data[i])){
+            data = data.substr(0, i+1);
+            break;
+        }
+    }
 
-    if (data == nullptr){
+    if (data.empty()){
         fmt::print("Warning: No data found on the Ephemeris link");
         return 3;
     }
@@ -103,10 +111,10 @@ int Ephemeris::follow_link()
     //
     // Date       UT      R.A. (J2000) Decl.  Elong.  V        Motion     Object     Sun         Moon
     //             h m                                      "/min   P.A.  Azi. Alt.  Alt.  Phase Dist. Alt.
-    // 2023 06 04 0302   21 42 32.6 +09 16 59 100.9  22.1    0.31  007.1  337  +52   -03    1.00  081  +00  [type]
+    // 2023 06 04 0302   21 42 32.6 +09 16 59 100.9  22.1    0.31  007.1  337  +52   -03    1.00  081  +00  [ommited text]
     
     // that is perfect for stringstreams
-    std::stringstream ss_check((*data).substr(0, 100)); // substr to ommit the textfrom the end of the string
+    std::stringstream ss_check(data);
     std::string temp;
     // we first check if every element is a number
     while(ss_check >> temp){
@@ -114,13 +122,13 @@ int Ephemeris::follow_link()
             std::stof(temp);
         }
         catch (std::exception& e) {
-            fmt::print("Warning: bad data found for an ephemeris {}: \n\t{}\n", m_ephemerisNumber, *data);
+            fmt::print("Warning: bad data found for an ephemeris {}: \n\t{}\n", m_ephemerisNumber, data);
             return 3;
         }
     }
 
     // if all is good, refill the stringstream and analyze it
-    std::stringstream ss((*data).substr(0, 100));
+    std::stringstream ss(data);
 
     // first time
     int year, month, day, hour_and_min, hour, min;
@@ -167,8 +175,9 @@ int Ephemeris::follow_link()
     // you might think this above is excessive iffing, but i want to avoid the proram crashing if sstream returns ""
 
     // this is going to be removed soon
-    m_otherData = data->substr(65, data->size()-65);
-
+    if (data.size() >= 65){
+        m_otherData = data.substr(65, data.size()-65);
+    }
     return 0;
 }
 
