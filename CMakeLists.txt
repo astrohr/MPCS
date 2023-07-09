@@ -76,6 +76,10 @@ install(
     DIRECTORY "resources"
     DESTINATION "."
 )
+install(
+    FILES "LICENSE.txt"
+    DESTINATION "."
+)
 
 # for mingw, copy dlls
 if (MINGW)
@@ -107,11 +111,4 @@ set(CPACK_PACKAGE_VERSION_MAJOR "${MPCS_VERSION_MAJOR}")
 set(CPACK_PACKAGE_VERSION_MINOR "${MPCS_VERSION_MINOR}")
 set(CPACK_PACKAGE_VERSION_PATCH "${MPCS_VERSION_PATCH}")
 set(CPACK_PACKAGE_HOMEPAGE_URL "https://github.com/astrohr/MPCS")
-if (WIN32)
-    set(CPACK_GENERATOR ZIP)
-    set(CPACK_SOURCE_GENERATOR ZIP)
-else()
-    set(CPACK_GENERATOR TGZ)
-    set(CPACK_SOURCE_GENERATOR TGZ)
-endif()
 include(CPack)
