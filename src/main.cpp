@@ -252,7 +252,7 @@ void defaultVariables(unsigned int& W, unsigned int& H, unsigned int& FOV)
 }
 
 
-// args syntax: ./MPCS [-u|--url <str>] [-e|--exposition <int>] [-n|--number <int>] [-c|--copy] [-x|--exit]
+// args syntax: ./MPCS [-u|--url <str>] [-e|--exposition <int>] [-n|--number <int>] [-c|--copy] [-x|--exit] [-f|--fov <int>]
 int main(int argc, char** argv)
 {
     // string containing the version of the MPCS
@@ -262,6 +262,22 @@ int main(int argc, char** argv)
     #else
         version = fmt::format("MPCSolver {}.{}", MPCS_VERSION_MAJOR, MPCS_VERSION_MINOR);
     #endif
+
+    // create the camera and the database
+    ObjectDatabase database;
+    Camera cam;
+
+    // read the default variables
+    try{
+        unsigned int W, H, FOV;
+        defaultVariables(W, H, FOV);
+        cam.setDimensions(W, H);
+        database.set_FOV(FOV);
+    }
+    catch (std::exception& e){
+        fmt::print("Error: {} \n\n", e.what());
+        return 1;
+    }
 
     std::string obj_url = "";
     int pic_exposition=0, pic_number=0;
@@ -274,6 +290,7 @@ int main(int argc, char** argv)
     args::ValueFlag<std::string> url(parser, "url", "the url to the object offsets link", {'u', "url"});
     args::ValueFlag<int> exposition(parser, "exposition", "the exposition duration (seconds)", {'e', "expositon"});
     args::ValueFlag<int> number(parser, "number", "number of pictures to be taken", {'n', "number"});
+    args::ValueFlag<int> fov(parser, "FOV", "telescope FOV", {'f', "fov"});
     args::Flag copy(parser, "copy", "copy to clipboard", {'c', "copy"});
     args::Flag exit(parser, "exit", "exit the program after use", {'x', "exit"});
 
@@ -302,25 +319,14 @@ int main(int argc, char** argv)
     if (url) obj_url = args::get(url);
     if (exposition) pic_exposition = args::get(exposition);
     if (number) pic_number = args::get(number);
+    if (fov){
+        unsigned int FOV = args::get(fov);
+        fmt::print("FOV at {}\n", FOV);
+        database.set_FOV(FOV);
+    }
     if (exit) close_after = true; 
     // if no parameters were passed, assume to_clipboard to be true
     if (copy || (!url && !exposition && !number && !exit)) to_clipboard = true; 
-
-    // create the camera and the database
-    ObjectDatabase database;
-    Camera cam;
-
-    // read the default variables
-    try{
-        unsigned int W, H, FOV;
-        defaultVariables(W, H, FOV);
-        cam.setDimensions(W, H);
-        database.set_FOV(FOV);
-    }
-    catch (std::exception& e){
-        fmt::print("Error: {} \n\n", e.what());
-        return 1;
-    }
 
     while(true)
     {

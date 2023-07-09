@@ -5,7 +5,6 @@ Whats new in 2.6.0 [Release]
 - improved arguments and argument parsing
     - added [-x|--exit] argument which is true if you want to exit the program
       after use
-    - removed [-f|--fov] argument
     - using external args library to parse args (https://github.com/Taywee/args)
     - args don't need to be ordered now, and you can pass any that you like
 - Replaced the data/variables.txt with a MPCS.ini file
