@@ -103,10 +103,10 @@ int Ephemeris::follow_link()
     //
     // Date       UT      R.A. (J2000) Decl.  Elong.  V        Motion     Object     Sun         Moon
     //             h m                                      "/min   P.A.  Azi. Alt.  Alt.  Phase Dist. Alt.
-    // 2023 06 04 0302   21 42 32.6 +09 16 59 100.9  22.1    0.31  007.1  337  +52   -03    1.00  081  +00    <-- line we look at
+    // 2023 06 04 0302   21 42 32.6 +09 16 59 100.9  22.1    0.31  007.1  337  +52   -03    1.00  081  +00  [type]
     
     // that is perfect for stringstreams
-    std::stringstream ss_check(*data);
+    std::stringstream ss_check((*data).substr(0, 100)); // substr to ommit the textfrom the end of the string
     std::string temp;
     // we first check if every element is a number
     while(ss_check >> temp){
@@ -120,7 +120,7 @@ int Ephemeris::follow_link()
     }
 
     // if all is good, refill the stringstream and analyze it
-    std::stringstream ss(*data);
+    std::stringstream ss((*data).substr(0, 100));
 
     // first time
     int year, month, day, hour_and_min, hour, min;
