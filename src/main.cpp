@@ -211,9 +211,9 @@ void WindowSetup(ObjectDatabase& database, Camera& cam)
 // \param[out] FOV telescope FOV
 void defaultVariables(unsigned int& W, unsigned int& H, unsigned int& FOV)
 {
-    std::ifstream ReadFile("MPCS.ini");
+    std::ifstream ReadFile("../resources/MPCS.ini");
     if (!ReadFile.is_open()){
-        ReadFile.open("../MPCS.ini");
+        ReadFile.open("./resources/MPCS.ini");
         if (!ReadFile.is_open()){
             fmt::print(
                 "Warning: MPCS.ini does not exist, or isnt in the right directory!\n\n"

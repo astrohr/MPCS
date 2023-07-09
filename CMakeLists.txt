@@ -64,11 +64,6 @@ if(NOT EXISTS "./build/resources")
     file(COPY "./resources" DESTINATION ".")
     message("> Resources copied")
 endif()
-#copy MPCS.ini
-if(NOT EXISTS "./build/MPCS.ini")
-    file(COPY "./MPCS.ini" DESTINATION ".")
-    message("> MPCS.ini copied")
-endif()
 
 #install rules
 #binary
@@ -79,11 +74,6 @@ install(
 #resources
 install(
     DIRECTORY "resources"
-    DESTINATION "."
-)
-#MPCS.ini
-install(
-    FILES "MPCS.ini"
     DESTINATION "."
 )
 
