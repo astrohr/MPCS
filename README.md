@@ -60,7 +60,7 @@ If you choose to run it from the terminal, make sure you are in its directory, o
 
 Its also worth noting that MPCS can be ran with arguments from the command line, you can get the list of arguments by running `MPCS --help`
 
-### Extracting data
+## Extracting data
 
 When MPCS runs it will ask you for the data about the object you want to observe, which includes the offsets URL, exposure of the pictures and their amount
 
