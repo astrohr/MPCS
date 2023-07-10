@@ -2,7 +2,7 @@
 
 [![forthebadge](https://forthebadge.com/images/badges/made-with-c-plus-plus.svg)](https://forthebadge.com) [![forthebadge](https://forthebadge.com/images/badges/powered-by-electricity.svg)](https://forthebadge.com)
 
-![Static Badge](https://img.shields.io/badge/trusted_by-2_observatories-red) ![Static Badge](https://img.shields.io/badge/version-2.6.0-green) 
+![Static Badge](https://img.shields.io/badge/running_in-2_observatories-red) ![Static Badge](https://img.shields.io/badge/version-2.6.0-green) 
 
 A desktop program for solving the Minor Planet Center uncertainty maps of near Earth objects (NEOs) :star2:
 
@@ -27,6 +27,8 @@ A desktop program for solving the Minor Planet Center uncertainty maps of near E
 # The purpose
 MPCS is a program created to simplify the interactions between the official [Minor planet center](https://www.minorplanetcenter.net/iau/NEO/toconfirm_tabular.html) website for NEO objects and systems using it
 
+In short, you provide the object you want to observe to the program and it displays its uncertainty map to you, the map is interactive so you can click on it and the picture location coordinates for the telescope will get calculated
+
 MPCS stands for Minor Planet Center Solver
 
 :telescope: This program is used in [Višnjan Observatory](https://en.astro.hr/) and in Farra Observatory :telescope:
@@ -36,9 +38,9 @@ Please do note that as of right now, this program is largely untested on linux a
 # Requirements
 **For running:** a computer that's preferably from this century but it may be fine if its not
 
-**For building:** C++ compiler, [CMake](https://cmake.org/) version 3.20 or higher, [git](https://git-scm.com/), and [NSIS2](https://nsis.sourceforge.io/Main_Page) (optional)
+**For building:** C++ compiler, a buildsystem (for example mingw), [CMake](https://cmake.org/) version 3.20 or higher, [git](https://git-scm.com/), and [NSIS2](https://nsis.sourceforge.io/Main_Page) (optional)
 
-If you are building from windows [MSYS2](https://www.msys2.org/) is recommended
+Note that there are known to be some errors when using clang, so g++ is recommended. The easiest way to get both mingw and g++ on windows is trough [MSYS2](https://www.msys2.org/) and the instructions in [building from source](#building-from-source) are modeled after that
 
 # How to use
 MPCS was made to be simple to use, so yeah, there's that
@@ -88,27 +90,29 @@ The wizard :mage: will walk you through the installation, this way you also get 
 Keep in mind that the binary will be located in the `bin` folder of the install location and will be named `MPCS.exe`
 
 # Building from source
-**Obtaining the source**
+**Obtaining the source** :scroll:
 
 `git clone --recursive https://github.com/astrohr/MPCS.git ./MPCS`
 
 ^ due to submoduling, it is *crucial* you do a recursive clone
 
-**Building**
+**Building** :gear:
 
 Create the build directory and run the cmake command for generating makefiles
 ```
 mkdir build
 cmake -S . -B ./build -G "MinGW Makefiles" -DCMAKE_BUILD_TYPE=Release
 ```
-^ please do note that -G is dependent on the makefile interpreter that you will use, I am using MinGW from MSYS2 ([which i recommend](#requirements)), you can see all generators by running `cmake --help`
+^ please do note that -G is dependent on the build system that you will use, here its MinGW from MSYS2, you can see all generators by running `cmake --help`
 
 After cmake generates makefiles, run them
 ```
 cd ./build
 mingw32-make
 ```
-And a fully functional executable should appear in your build folder :D
+^ again, mingw is the buildsystem we use, for some this command may be a simple `make`
+
+And a fully functional executable should appear in your build folder :smile:
 
 ## Installing from source
 While just building the program will create a working executable, it is recommended that you finish the installation process by running `cmake --install .` from an elevated terminal inside the build folder, this will populate the directories that are meant to be populated for regular program installation
@@ -135,7 +139,7 @@ Wonderful open source projects that make this project possible:
 - [args](https://github.com/Taywee/args)
 - [inipp](https://github.com/mcmtroffaes/inipp)
 
-huge thanks and respect to their devs <3
+huge thanks and respect to their devs :heart:
 
 # License
 This program is released under the [zlib](https://en.wikipedia.org/wiki/Zlib_License) license
@@ -145,5 +149,5 @@ This program is released under the [zlib](https://en.wikipedia.org/wiki/Zlib_Lic
 # The future
 This is MPCS version 2, the work on this branch has ended, however the work still continues on other branches (version 3 as of writing this)
 
-Version 3 is intended to be simpler to use and have a vastly improved functionality, so keep an eye on it! :eyes:
+Version 3 aims to be simpler to use, more portable and have a vastly improved functionality, so keep an eye on it! :eyes:
 
