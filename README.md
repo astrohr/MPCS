@@ -40,7 +40,7 @@ Please do note that as of right now, this program is largely untested on linux a
 
 **For building:** C++ compiler, a buildsystem (for example mingw), [CMake](https://cmake.org/) version 3.20 or higher, [git](https://git-scm.com/), and [NSIS2](https://nsis.sourceforge.io/Main_Page) (optional)
 
-Note that there are known to be some errors when using clang, so g++ is recommended. The easiest way to get both mingw and g++ on windows is trough [MSYS2](https://www.msys2.org/) and the instructions in [building from source](#building-from-source) are modeled after that
+If you are building on a Windows machine, using [MSYS2](https://www.msys2.org/) to get the compiler and the build system is highly recommended.
 
 # How to use
 MPCS was made to be simple to use, so yeah, there's that
@@ -103,14 +103,14 @@ Create the build directory and run the cmake command for generating makefiles
 mkdir build
 cmake -S . -B ./build -G "MinGW Makefiles" -DCMAKE_BUILD_TYPE=Release
 ```
-^ please do note that -G is dependent on the build system that you will use, here its MinGW from MSYS2, you can see all generators by running `cmake --help`
+^ please do note that -G is dependent on the build system that you will use, here its MinGW, you can see all generators by running `cmake --help`
 
 After cmake generates makefiles, run them
 ```
 cd ./build
 mingw32-make
 ```
-^ again, mingw is the buildsystem we use, for some this command may be a simple `make`
+^ again, mingw is the buildsystem we use
 
 And a fully functional executable should appear in your build folder :smile:
 
