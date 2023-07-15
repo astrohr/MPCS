@@ -3,12 +3,6 @@ cmake_minimum_required(VERSION 3.20)
 # project init
 project(MPCS VERSION 2.6.0)
 
-# make build folder
-if(NOT EXISTS "./build")
-    file(MAKE_DIRECTORY "build")
-    message("> build folder created")
-endif()
-
 # set important vars
 set(BUILD_SHARED_LIBS OFF)
 set(BUILD_TESTING OFF)
