@@ -9,7 +9,7 @@ set(BUILD_TESTING OFF)
 set(CMAKE_BUILD_FLAGS "-O3")
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED TRUE)
-set (CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
 
 # set sfml vars
 set(SFML_BUILD_AUDIO OFF)
@@ -78,20 +78,18 @@ install(
 # for mingw, copy dlls
 if (MINGW)
     get_filename_component(Mingw_Path ${CMAKE_CXX_COMPILER} PATH)
-
-    # i swear, the existence of this command annoys me so much, cant WAIT to figure a way to REMOVE it
-    # if someone starts defending libcurl just show them dis
-    set(CMAKE_INSTALL_SYSTEM_RUNTIME_LIBS 
-        ${Mingw_Path}/libwinpthread-1.dll 
-        ${Mingw_Path}/libssh2-1.dll
-        ${Mingw_Path}/libidn2-0.dll 
-        ${Mingw_Path}/libpsl-5.dll
-        ${Mingw_Path}/zlib1.dll
-        ${Mingw_Path}/libiconv-2.dll
-        ${Mingw_Path}/libintl-8.dll
-        ${Mingw_Path}/libunistring-2.dll
-        ${Mingw_Path}/libcrypto-1_1-x64.dll
+    file(GLOB RUNTIME_LIBS 
+        "${Mingw_Path}/libunistring*.dll"
+        "${Mingw_Path}/libcrypto*.dll"
+        "${Mingw_Path}/libwinpthread*.dll "
+        "${Mingw_Path}/libssh*.dll"
+        "${Mingw_Path}/libidn*.dll"
+        "${Mingw_Path}/libpsl*.dll"
+        "${Mingw_Path}/zlib*.dll"
+        "${Mingw_Path}/libiconv*.dll"
+        "${Mingw_Path}/libintl*.dll"
     )
+    set(CMAKE_INSTALL_SYSTEM_RUNTIME_LIBS ${RUNTIME_LIBS})
 endif()
 
 if (CMAKE_INSTALL_SYSTEM_RUNTIME_LIBS)
