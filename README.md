@@ -134,7 +134,7 @@ All of the following dependencies are submoduled in this version, so cloning the
 
 Wonderful open source projects that make this project possible:
 - [SFML 2.5.x](https://github.com/SFML/SFML/tree/2.5.x)
-- [libcurl](https://github.com/curl/curl)
+- [libcpr](https://github.com/libcpr/cpr)
 - [fmt](https://github.com/fmtlib/fmt)
 - [args](https://github.com/Taywee/args)
 - [inipp](https://github.com/mcmtroffaes/inipp)
