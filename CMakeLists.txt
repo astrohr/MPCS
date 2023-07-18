@@ -40,9 +40,29 @@ if(NOT cpr_POPULATED)
     add_subdirectory(${cpr_SOURCE_DIR} ${cpr_BINARY_DIR} EXCLUDE_FROM_ALL)
 endif()
 
+# add inipp
+FetchContent_Declare(inipp
+    GIT_REPOSITORY https://github.com/mcmtroffaes/inipp
+    GIT_TAG c61e699682d3f1091209c2179f1d03f5fc593327 # develop branch Feb 3 2022
+)
+FetchContent_MakeAvailable(inipp)
+
+# add args
+FetchContent_Declare(args
+    GIT_REPOSITORY https://github.com/Taywee/args
+    GIT_TAG 6.4.6
+)
+FetchContent_MakeAvailable(args)
+
+# add libfmt
+FetchContent_Declare(fmt
+    GIT_REPOSITORY https://github.com/fmtlib/fmt
+    GIT_TAG 10.0.0
+)
+FetchContent_MakeAvailable(fmt)
+
 # add submodules
 add_subdirectory("submodules/SFML")
-add_subdirectory("submodules/fmt")
 
 # create executable
 add_executable(${PROJECT_NAME})
@@ -52,15 +72,15 @@ add_subdirectory("src")
 
 # include submodules
 target_include_directories(${PROJECT_NAME} PUBLIC
+    # cmake expects the dependencies to have an include folder for headers, these projects dont so i place include path manually
+    "${PROJECT_BINARY_DIR}/_deps/args-src/"
+    "${PROJECT_BINARY_DIR}/_deps/inipp-src/"
     "submodules/SFML/include"
-    "submodules/fmt/include"
-    "submodules/args"
-    "submodules/inipp"
 )
 
 # link all libraries to the executable
 target_link_libraries(${PROJECT_NAME}
-    "cpr::cpr;sfml-system;sfml-window;sfml-graphics;fmt"
+    "cpr::cpr;sfml-system;sfml-window;sfml-graphics;fmt::fmt"
 )
 
 #copy the resources to the build folder

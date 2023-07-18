@@ -1,12 +1,3 @@
 [submodule "submodules/SFML"]
 	path = submodules/SFML
 	url = https://github.com/SFML/SFML
-[submodule "submodules/fmt"]
-	path = submodules/fmt
-	url = https://github.com/fmtlib/fmt
-[submodule "submodules/args"]
-	path = submodules/args
-	url = https://github.com/Taywee/args
-[submodule "submodules/inipp"]
-	path = submodules/inipp
-	url = https://github.com/mcmtroffaes/inipp
