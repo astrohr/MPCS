@@ -7,9 +7,6 @@
 [submodule "submodules/args"]
 	path = submodules/args
 	url = https://github.com/Taywee/args
-[submodule "submodules/curl"]
-	path = submodules/curl
-	url = https://github.com/curl/curl
 [submodule "submodules/inipp"]
 	path = submodules/inipp
 	url = https://github.com/mcmtroffaes/inipp

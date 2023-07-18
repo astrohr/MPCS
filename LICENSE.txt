@@ -21,9 +21,9 @@ SFML 2.5.x
  - zlib license
  - (https://github.com/SFML/SFML/tree/2.5.x)
 
-libcurl
+libcpr
  - MIT license
- - (https://github.com/curl/curl)
+ - (https://github.com/libcpr/cpr)
 
 libfmt
  - MIT license

@@ -38,7 +38,7 @@ Please do note that as of right now, this program is largely untested on linux a
 # Requirements
 **For running:** a computer that's preferably from this century but it may be fine if its not
 
-**For building:** C++ compiler, a buildsystem (for example mingw), [CMake](https://cmake.org/) version 3.20 or higher, [git](https://git-scm.com/), and [NSIS2](https://nsis.sourceforge.io/Main_Page) (optional)
+**For building:** C++ compiler, a buildsystem (for example mingw), [CMake](https://cmake.org/) version 3.24 or higher, [git](https://git-scm.com/), and [NSIS2](https://nsis.sourceforge.io/Main_Page) (optional)
 
 If you are building on a Windows machine, using [MSYS2](https://www.msys2.org/) to get the compiler and the build system is highly recommended.
 

@@ -1,7 +1,7 @@
-cmake_minimum_required(VERSION 3.20)
+cmake_minimum_required(VERSION 3.24)
 
 # project init
-project(MPCS VERSION 2.6.0)
+project(MPCS VERSION 3.0.0)
 
 # set important vars
 set(BUILD_SHARED_LIBS OFF)
@@ -9,7 +9,11 @@ set(BUILD_TESTING OFF)
 set(CMAKE_BUILD_FLAGS "-O3")
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED TRUE)
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
+
+if(WIN32) # Install dlls in the same directory as the executable on Windows
+    set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
+    set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
+endif()
 
 # set sfml vars
 set(SFML_BUILD_AUDIO OFF)
@@ -18,19 +22,26 @@ if (WIN32)
     set(SFML_USE_STATIC_STD_LIBS ON)
 endif()
 
-# set curl vars
-set(BUILD_CURL_EXE OFF) 
-set(CURL_STATICLIB ON)
-set(HTTP_ONLY ON)
-set(CURL_ENABLE_SSL ON)
-if (WIN32)
-    add_definitions(-DCURL_STATICLIB)
-    set(CURL_USE_SCHANNEL ON)
+include(FetchContent)
+
+# add libcpr
+FetchContent_Declare(cpr 
+    GIT_REPOSITORY https://github.com/libcpr/cpr.git
+    GIT_TAG 1.10.4 
+    FIND_PACKAGE_ARGS NAMES cpr
+)
+
+# since no large data is being sent, zlib isnt needed
+# this also doesnt work all that well, so yeah, definetely a TODO
+set(CURL_ZLIB OFF)
+
+if(NOT cpr_POPULATED)
+    FetchContent_Populate(cpr)
+    add_subdirectory(${cpr_SOURCE_DIR} ${cpr_BINARY_DIR} EXCLUDE_FROM_ALL)
 endif()
 
 # add submodules
 add_subdirectory("submodules/SFML")
-add_subdirectory("submodules/curl")
 add_subdirectory("submodules/fmt")
 
 # create executable
@@ -42,7 +53,6 @@ add_subdirectory("src")
 # include submodules
 target_include_directories(${PROJECT_NAME} PUBLIC
     "submodules/SFML/include"
-    "submodules/curl/include"
     "submodules/fmt/include"
     "submodules/args"
     "submodules/inipp"
@@ -50,7 +60,7 @@ target_include_directories(${PROJECT_NAME} PUBLIC
 
 # link all libraries to the executable
 target_link_libraries(${PROJECT_NAME}
-    "libcurl;sfml-system;sfml-window;sfml-graphics;fmt"
+    "cpr::cpr;sfml-system;sfml-window;sfml-graphics;fmt"
 )
 
 #copy the resources to the build folder
@@ -75,25 +85,24 @@ install(
     DESTINATION "."
 )
 
-# for mingw, copy dlls
-if (MINGW)
-    get_filename_component(Mingw_Path ${CMAKE_CXX_COMPILER} PATH)
-    file(GLOB RUNTIME_LIBS 
-        "${Mingw_Path}/libunistring*.dll"
-        "${Mingw_Path}/libcrypto*.dll"
-        "${Mingw_Path}/libwinpthread*.dll "
-        "${Mingw_Path}/libssh*.dll"
-        "${Mingw_Path}/libidn*.dll"
-        "${Mingw_Path}/libpsl*.dll"
-        "${Mingw_Path}/zlib*.dll"
-        "${Mingw_Path}/libiconv*.dll"
-        "${Mingw_Path}/libintl*.dll"
-    )
-    set(CMAKE_INSTALL_SYSTEM_RUNTIME_LIBS ${RUNTIME_LIBS})
-endif()
+# for windows systems, copy dlls to the bin folder
+if (WIN32)
+    if (MINGW)
+        get_filename_component(Mingw_Path ${CMAKE_CXX_COMPILER} PATH)
+        file(GLOB RUNTIME_LIBS 
+            "${Mingw_Path}/libcrypto*.dll"
+            "${Mingw_Path}/libwinpthread*.dll"
+            "${Mingw_Path}/libssh*.dll"
+            "${Mingw_Path}/zlib*.dll"
+        )
+        set(CMAKE_INSTALL_SYSTEM_RUNTIME_LIBS ${RUNTIME_LIBS})
+    endif()
 
-if (CMAKE_INSTALL_SYSTEM_RUNTIME_LIBS)
-    install(PROGRAMS ${CMAKE_INSTALL_SYSTEM_RUNTIME_LIBS} DESTINATION bin COMPONENT System)
+    if (CMAKE_INSTALL_SYSTEM_RUNTIME_LIBS)
+        install(PROGRAMS ${CMAKE_INSTALL_SYSTEM_RUNTIME_LIBS} DESTINATION bin COMPONENT System)
+    else()
+        message("No required runtime libs found!")
+    endif()
 endif()
 
 #CPack installer setup
