@@ -1,0 +1,44 @@
+UNCERTAINTY OFFSETS FOR XYZ LINK EXPLAINED
+
+https://cgi.minorplanetcenter.net/cgi-bin/uncertaintymap.cgi?
+Obj=P11BEt9&
+//id
+JD=2459898.243056&
+//time
+Form=Y&
+Ext=VAR&
+//dnt
+OC=L01&
+META=apm12
+
+
+// ^ send them a mail about the things you dont know the meaning of
+
+VARIANT ORBIT LINK EXPLAINED
+
+https://cgi.minorplanetcenter.net/cgi-bin/confirmeph.cgi?
+Obj01=P11BEt9&
+//id
+VO=00001&
+//variant orbit, ako je broj veci od max onda je automatski set na 1
+//ovo provjeravaj tako da pamtis zadnji, as tamo je najmanja sansa da nes bude isto
+JD=2459898.244587&
+//vrijeme u nekom utc formatu di je 1 = 1 dan
+obscode=L01&
+//obv
+raty=a&
+dmot=p&
+Parallax=1&
+//dnt
+int=2&
+// 0 je razmaci od sat vremena
+// 1 je pol
+// 2 je 10 min
+// 3 je 1 min
+mot=m
+//dnt
+
+
+LIST OF ALL OBJECTS
+
+https://www.minorplanetcenter.net/iau/NEO/neocp.txt
