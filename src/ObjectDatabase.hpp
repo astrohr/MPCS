@@ -4,8 +4,6 @@
 
 #include "pch.hpp"
 
-#include <SFML/Window/Clipboard.hpp>
-
 #include "Ephemeris.hpp"
 #include "Picture.hpp"
 #include "utils/utils.hpp"

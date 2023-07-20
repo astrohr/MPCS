@@ -2,7 +2,6 @@
 
 #include "pch.hpp"
 
-#include <SFML/Graphics.hpp>
 #include <inipp/inipp.h>
 #include <args.hxx>
 
