@@ -1,6 +1,7 @@
 # add sources and a precompiled header
 target_sources(${PROJECT_NAME} PUBLIC
     "main.cpp"
+    "window.cpp"
     "Camera.cpp"
     "ObjectDatabase.cpp"
     "Ephemeris.cpp"
