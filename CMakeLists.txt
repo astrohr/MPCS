@@ -33,6 +33,20 @@ if(NOT cpr_POPULATED)
     add_subdirectory(${cpr_SOURCE_DIR} ${cpr_BINARY_DIR} EXCLUDE_FROM_ALL)
 endif()
 
+# add glfw
+FetchContent_Declare(glfw
+    GIT_REPOSITORY https://github.com/glfw/glfw
+    GIT_TAG 3.3.8
+)
+FetchContent_MakeAvailable(glfw)
+
+# add glew-cmake
+FetchContent_Declare(glew
+    GIT_REPOSITORY https://github.com/Perlmint/glew-cmake
+    GIT_TAG 9758219375d923a008feef93c0955931d801740f # master branch Jun 26 2023
+)
+FetchContent_MakeAvailable(glew)
+
 # add inipp
 FetchContent_Declare(inipp
     GIT_REPOSITORY https://github.com/mcmtroffaes/inipp
