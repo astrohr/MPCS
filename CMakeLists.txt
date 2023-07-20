@@ -15,13 +15,6 @@ if(WIN32) # Install dlls in the same directory as the executable on Windows
     set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
 endif()
 
-# set sfml vars
-set(SFML_BUILD_AUDIO OFF)
-set(SFML_BUILD_NETWORK OFF)
-if (WIN32)
-    set(SFML_USE_STATIC_STD_LIBS ON)
-endif()
-
 include(FetchContent)
 
 # add libcpr
@@ -61,9 +54,6 @@ FetchContent_Declare(fmt
 )
 FetchContent_MakeAvailable(fmt)
 
-# add submodules
-add_subdirectory("submodules/SFML")
-
 # create executable
 add_executable(${PROJECT_NAME})
 
@@ -80,7 +70,7 @@ target_include_directories(${PROJECT_NAME} PUBLIC
 
 # link all libraries to the executable
 target_link_libraries(${PROJECT_NAME}
-    "cpr::cpr;sfml-system;sfml-window;sfml-graphics;fmt::fmt"
+    "cpr::cpr;fmt::fmt"
 )
 
 #copy the resources to the build folder
