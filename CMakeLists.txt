@@ -24,12 +24,13 @@ FetchContent_Declare(cpr
     FIND_PACKAGE_ARGS NAMES cpr
 )
 
-# since no large data is being sent, zlib isnt needed
-# this also doesnt work all that well, so yeah, definetely a TODO
-set(CURL_ZLIB OFF)
-
+FetchContent_GetProperties(cpr)
 if(NOT cpr_POPULATED)
     FetchContent_Populate(cpr)
+
+    set(CURL_ZLIB OFF CACHE INTERNAL "" FORCE)
+    set(BUILD_CURL_EXE OFF CACHE INTERNAL "" FORCE)
+
     add_subdirectory(${cpr_SOURCE_DIR} ${cpr_BINARY_DIR} EXCLUDE_FROM_ALL)
 endif()
 
@@ -37,15 +38,36 @@ endif()
 FetchContent_Declare(glfw
     GIT_REPOSITORY https://github.com/glfw/glfw
     GIT_TAG 3.3.8
+    FIND_PACKAGE_ARGS NAMES glfw glfw3 libglfw libglfw3
 )
-FetchContent_MakeAvailable(glfw)
+
+FetchContent_GetProperties(glfw)
+if(NOT glfw_POPULATED)
+    FetchContent_Populate(glfw)
+
+    set(GLFW_BUILD_EXAMPLES OFF CACHE INTERNAL "" FORCE)
+    set(GLFW_BUILD_TESTS OFF CACHE INTERNAL "" FORCE)
+    set(GLFW_BUILD_DOCS OFF CACHE INTERNAL "" FORCE)
+    set(GLFW_INSTALL OFF CACHE INTERNAL "" FORCE)
+    set(ONLY_LIBS ON CACHE INTERNAL "" FORCE)
+
+    add_subdirectory(${glfw_SOURCE_DIR} ${glfw_BINARY_DIR})
+endif()
 
 # add glew-cmake
 FetchContent_Declare(glew
     GIT_REPOSITORY https://github.com/Perlmint/glew-cmake
     GIT_TAG 9758219375d923a008feef93c0955931d801740f # master branch Jun 26 2023
 )
-FetchContent_MakeAvailable(glew)
+
+FetchContent_GetProperties(glew)
+if(NOT glew_POPULATED)
+    FetchContent_Populate(glew)
+
+    set(glew-cmake_BUILD_SHARED OFF CACHE INTERNAL "" FORCE)
+
+    add_subdirectory(${glew_SOURCE_DIR} ${glew_BINARY_DIR})
+endif()
 
 # add inipp
 FetchContent_Declare(inipp
@@ -59,7 +81,16 @@ FetchContent_Declare(args
     GIT_REPOSITORY https://github.com/Taywee/args
     GIT_TAG 6.4.6
 )
-FetchContent_MakeAvailable(args)
+
+FetchContent_GetProperties(args)
+if(NOT args_POPULATED)
+    FetchContent_Populate(args)
+
+    set(ARGS_BUILD_EXAMPLE OFF CACHE INTERNAL "" FORCE)
+    set(ARGS_BUILD_UNITTESTS OFF CACHE INTERNAL "" FORCE)
+
+    add_subdirectory(${args_SOURCE_DIR} ${args_BINARY_DIR})
+endif()
 
 # add libfmt
 FetchContent_Declare(fmt
@@ -76,15 +107,17 @@ add_subdirectory("src")
 
 # include submodules
 target_include_directories(${PROJECT_NAME} PUBLIC
-    # cmake expects the dependencies to have an include folder for headers, these projects dont so i place include path manually
     "${PROJECT_BINARY_DIR}/_deps/args-src/"
     "${PROJECT_BINARY_DIR}/_deps/inipp-src/"
-    "submodules/SFML/include"
+    "${PROJECT_BINARY_DIR}/_deps/glew-src/include/"
+    "${PROJECT_BINARY_DIR}/_deps/glfw-src/include/"
+    "${PROJECT_BINARY_DIR}/_deps/fmt-src/include/"
+    "${PROJECT_BINARY_DIR}/_deps/cpr-src/include/"
 )
 
 # link all libraries to the executable
 target_link_libraries(${PROJECT_NAME}
-    "cpr::cpr;fmt::fmt"
+    "cpr;glfw;libglew_static;fmt"
 )
 
 #copy the resources to the build folder
