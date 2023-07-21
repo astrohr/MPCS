@@ -11,7 +11,5 @@
 
 //----------------------------------------------------------
 
-//void WindowSetup(ObjectDatabase& database, Camera& cam);
 
-// \throws GraphicsError
 void windowFunction(ObjectDatabase& database, Camera& cam);
