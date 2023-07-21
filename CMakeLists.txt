@@ -69,6 +69,14 @@ if(NOT glew_POPULATED)
     add_subdirectory(${glew_SOURCE_DIR} ${glew_BINARY_DIR})
 endif()
 
+# add glm
+FetchContent_Declare(glm
+    GIT_REPOSITORY https://github.com/g-truc/glm
+    GIT_TAG 0.9.9.8
+    FIND_PACKAGE_ARGS NAMES glm
+)
+FetchContent_MakeAvailable(glm)
+
 # add inipp
 FetchContent_Declare(inipp
     GIT_REPOSITORY https://github.com/mcmtroffaes/inipp
@@ -109,6 +117,7 @@ add_subdirectory("src")
 target_include_directories(${PROJECT_NAME} PUBLIC
     "${PROJECT_BINARY_DIR}/_deps/args-src/"
     "${PROJECT_BINARY_DIR}/_deps/inipp-src/"
+    "${PROJECT_BINARY_DIR}/_deps/glm-src/"
     "${PROJECT_BINARY_DIR}/_deps/glew-src/include/"
     "${PROJECT_BINARY_DIR}/_deps/glfw-src/include/"
     "${PROJECT_BINARY_DIR}/_deps/fmt-src/include/"
