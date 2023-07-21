@@ -47,4 +47,11 @@ public:
     virtual ~ConstructorFail() {}
 };
 
+class GraphicsError : public std::runtime_error
+{
+public:
+    GraphicsError(const std::string& problem) : std::runtime_error(problem) {}
+    virtual ~GraphicsError() {}
+};
+
 }

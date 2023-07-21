@@ -97,8 +97,9 @@ void ObjectDatabase::export_observation_targets(bool copy_cpb)
     {
         fmt::print("\nObservation targets for {}:\n\n{}", m_name, targets);
         if (copy_cpb){
-            sf::Clipboard::setString(targets);
-            fmt::print("Copied to clipboard\n");
+            // sf::Clipboard::setString(targets);
+            // fmt::print("Copied to clipboard\n");
+            fmt::print("Warning: Didnt copy to clipboard because no clipboard utility exists!\n");
         }
         else{
             fmt::print("! Didnt copy to clipboard !\n");
