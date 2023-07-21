@@ -23,6 +23,7 @@
 #include <vector>
 #include <string>
 #include <tuple>
+#include <array>
 #include <map>
 
 // external libs
