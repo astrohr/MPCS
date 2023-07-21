@@ -176,7 +176,11 @@ int main(int argc, char** argv)
         }
         database.set_exposure(pic_exposition);
 
-        WindowSetup(database, cam);
+        try{
+            windowFunction(database, cam);
+        } catch (std::runtime_error e){
+            fmt::print("Error {}\n", e.what());
+        }
 
         database.export_observation_targets(to_clipboard);
         
