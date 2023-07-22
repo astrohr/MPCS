@@ -2,6 +2,8 @@
 
 #pragma once
 
+#include <clip.h>
+
 #include "pch.hpp"
 
 #include "Ephemeris.hpp"
