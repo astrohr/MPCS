@@ -2,6 +2,8 @@
 4 Add a LOG class and custom errors, maybe even use external lib (<1d)
  - keep a sort of a log file, there you can remember the states the program has been in use it for remote debugging
  - you dont need to modify the code exceptions too much since you will be deleting it all soon, just upgrade the ones you have already and thats it
+ - later we could implement std::format into logging so that we can pass n arguments in log.xxx() and it will insert var values into string
+ - probably add optional argument to surpress log output to console, just to write message in log
 5-6 replace sfml with opengl (1mo)
 ...
  - Ephemeris and Picture class really could have some inheritance (make a sky-position class)

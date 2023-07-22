@@ -14,16 +14,7 @@ Log::~Log()
     output.close();
 };
 
-void Log::log(std::string &message)
-{
-    std::time_t t = std::time(nullptr);
-    std::tm tm = *std::localtime(&t);
-    message = std::format("[{:04d}-{:02d}-{:02d} {:02d}:{:02d}:{:02d}] {}\n", tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec, message);
-    std::cout << message;
-    output << message;
-};
-
-void Log::setLogLevel(int &level)
+void Log::setLogLevel(const int &level)
 {
     if (1 <= level <= 5)
     {
@@ -36,37 +27,49 @@ void Log::setLogLevel(int &level)
     }
 };
 
-void Log::dbg(std::string &message)
+void Log::log(std::string &message, bool &hide)
 {
-    std::string x = "DEBUG:    " + message;
+    std::time_t t = std::time(nullptr);
+    std::tm tm = *std::localtime(&t);
+    message = std::format("[{:04d}-{:02d}-{:02d} {:02d}:{:02d}:{:02d}] {}\n", tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec, message);
+    output << message;
+    if (!hide)
+    {
+        std::cout << message;
+    }
+};
+
+void Log::dbg(const std::string &message, bool hide = false)
+{
     if (log_level == 1)
     {
-        log(x);
+        std::string x = "DEBUG:    " + message;
+        log(x, hide);
     }
 };
 
-void Log::msg(std::string &message)
+void Log::msg(const std::string &message, bool hide = false)
 {
-    std::string x = "MESSAGE:  " + message;
     if (log_level <= 2)
     {
-        log(x);
+        std::string x = "MESSAGE:  " + message;
+        log(x, hide);
     }
 };
 
-void Log::wrn(std::string &message)
+void Log::wrn(const std::string &message, bool hide = false)
 {
-    std::string x = "WARNING:  " + message;
-    if (log_level <= 4)
-    {
-        log(x);
-    }
-};
-void Log::err(std::string &message)
-{
-    std::string x = "ERROR:    " + message;
     if (log_level <= 3)
     {
-        log(x);
+        std::string x = "WARNING:  " + message;
+        log(x, hide);
+    }
+};
+void Log::err(const std::string &message, bool hide = false)
+{
+    if (log_level <= 4)
+    {
+        std::string x = "ERROR:    " + message;
+        log(x, hide);
     }
 };
