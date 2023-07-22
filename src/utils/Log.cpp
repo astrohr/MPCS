@@ -1,9 +1,7 @@
 #include "Log.hpp"
 
-Log::Log(int level = 1)
+Log::Log(int level = 1) : log_level(level)
 {
-    log_level = level;
-
     std::time_t t = std::time(nullptr);
     std::tm tm = *std::localtime(&t);
 
