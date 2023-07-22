@@ -15,6 +15,8 @@ if(WIN32) # Install dlls in the same directory as the executable on Windows
     set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
 endif()
 
+# -------------------- DEPENDENCIES
+
 include(FetchContent)
 
 # add libcpr
@@ -73,7 +75,7 @@ endif()
 FetchContent_Declare(glm
     GIT_REPOSITORY https://github.com/g-truc/glm
     GIT_TAG 0.9.9.8
-    FIND_PACKAGE_ARGS NAMES glm
+    FIND_PACKAGE_ARGS NAMES glm libglm
 )
 FetchContent_MakeAvailable(glm)
 
@@ -107,6 +109,24 @@ FetchContent_Declare(fmt
 )
 FetchContent_MakeAvailable(fmt)
 
+# add clip
+FetchContent_Declare(clip
+    GIT_REPOSITORY https://github.com/dacap/clip
+    GIT_TAG v1.5
+)
+
+FetchContent_GetProperties(clip)
+if(NOT clip_POPULATED)
+    FetchContent_Populate(clip)
+
+    set(CLIP_EXAMPLES OFF CACHE BOOL "" FORCE)
+    set(CLIP_TESTS OFF CACHE BOOL "" FORCE)
+
+    add_subdirectory(${clip_SOURCE_DIR} ${clip_BINARY_DIR})
+endif()
+
+# -------------------- END OF DEPENDENCIES
+
 # create executable
 add_executable(${PROJECT_NAME})
 
@@ -115,18 +135,19 @@ add_subdirectory("src")
 
 # include submodules
 target_include_directories(${PROJECT_NAME} PUBLIC
-    "${PROJECT_BINARY_DIR}/_deps/args-src/"
-    "${PROJECT_BINARY_DIR}/_deps/inipp-src/"
+    "${PROJECT_BINARY_DIR}/_deps/args-src/" # header only
+    "${PROJECT_BINARY_DIR}/_deps/inipp-src/" # header only
     "${PROJECT_BINARY_DIR}/_deps/glm-src/"
+    "${PROJECT_BINARY_DIR}/_deps/clip-src/"
+    "${PROJECT_BINARY_DIR}/_deps/fmt-src/include/"
     "${PROJECT_BINARY_DIR}/_deps/glew-src/include/"
     "${PROJECT_BINARY_DIR}/_deps/glfw-src/include/"
-    "${PROJECT_BINARY_DIR}/_deps/fmt-src/include/"
     "${PROJECT_BINARY_DIR}/_deps/cpr-src/include/"
 )
 
 # link all libraries to the executable
 target_link_libraries(${PROJECT_NAME}
-    "cpr;glfw;libglew_static;fmt"
+    "cpr;glfw;libglew_static;fmt;glm;clip"
 )
 
 #copy the resources to the build folder
