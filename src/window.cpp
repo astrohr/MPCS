@@ -109,7 +109,6 @@ void windowFunction(ObjectDatabase& database, Camera& cam)
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
     // -------------------- shader
-
     GLuint program = newProgram("shader/vertex.glsl", "shader/fragment.glsl");
 
     // -------------------- window

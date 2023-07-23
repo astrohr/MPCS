@@ -112,7 +112,7 @@ void ObjectDatabase::insert_data(std::string& str)
         Ephemeris eph(str);
         m_ephemerides.emplace_back(eph);
     }
-    catch (utils::ConstructorFail& e){
+    catch (mpcsError::ConstructorFail& e){
         fmt::print("Warning: Ephemeris Construction failed: \n{}\n", e.what());
     }
 }
@@ -237,7 +237,7 @@ int ObjectDatabase::fill_database(std::string& link)
     // downloads the data off the internet
     std::vector<std::string> downloaded;
     try{
-        utils::get_html(link, downloaded);
+        get_html(link, downloaded);
     }
     catch (std::exception& e) {
         fmt::print("Error: {}", e.what());

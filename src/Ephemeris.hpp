@@ -46,6 +46,7 @@ private:
 
     // link to the data about ephemeris
     std::string m_link;
+    
     // has link been visited?
     bool m_linkVisited;
 
