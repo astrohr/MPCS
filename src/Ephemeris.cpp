@@ -51,7 +51,7 @@ Ephemeris::Ephemeris(std::string& raw)
         m_ephemerisNumber = std::stoi(num);
     }
     catch (std::exception& e) {
-        throw utils::ConstructorFail(fmt::format("Bad data provided for ephemeris {}\nprovided: {}", m_ephemerisNumber, raw));
+        throw mpcsError::ConstructorFail(fmt::format("Bad data provided for ephemeris {}\nprovided: {}", m_ephemerisNumber, raw));
     }
 
     m_link = link;
@@ -75,13 +75,13 @@ int Ephemeris::follow_link()
     std::vector<std::string> downloaded;
 
     try{
-        utils::get_html(m_link, downloaded, 4500.0);
+        get_html(m_link, downloaded, 4500.0);
     }
-    catch (utils::DownloadFail& e) {
+    catch (mpcsError::DownloadFail& e) {
         fmt::print("Warning: {}\n", e.what());
         return 1;
     }
-    catch (utils::ForbiddenLink& e) {
+    catch (mpcsError::ForbiddenLink& e) {
         fmt::print("Warning: {}\n", e.what());
         return 2;
     }

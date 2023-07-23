@@ -24,6 +24,7 @@
 #include <string>
 #include <tuple>
 #include <array>
+#include <list>
 #include <map>
 
 // external libs

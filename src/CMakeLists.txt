@@ -17,6 +17,7 @@ configure_file("cmakevars.h.in" "${PROJECT_BINARY_DIR}/src/cmakevars.h")
 # include all directories that this code requires (except for the external dependencies)
 target_include_directories(${PROJECT_NAME} PUBLIC
     "${PROJECT_BINARY_DIR}" # due to the configured file
+    "structures"
     "utils"
     "."
 )
