@@ -62,13 +62,7 @@ void defaultVariables(unsigned int &W, unsigned int &H, unsigned int &FOV)
 // args syntax: ./MPCS [-u|--url <str>] [-e|--exposition <int>] [-n|--number <int>] [-c|--copy] [-x|--exit] [-f|--fov <int>]
 int main(int argc, char **argv)
 {
-    // string containing the version of the MPCS
-    std::string version;
-#ifdef MPCS_VERSION_MICRO
-    version = fmt::format("MPCSolver {}.{}.{}", MPCS_VERSION_MAJOR, MPCS_VERSION_MINOR, MPCS_VERSION_MICRO);
-#else
-    version = fmt::format("MPCSolver {}.{}", MPCS_VERSION_MAJOR, MPCS_VERSION_MINOR);
-#endif
+    std::string version = fmt::format("MPCSolver {}.{}.{}", MPCS_VERSION_MAJOR, MPCS_VERSION_MINOR, MPCS_VERSION_MICRO);
 
     // create the camera and the database
     ObjectDatabase database;
