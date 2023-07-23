@@ -5,6 +5,9 @@
 #include <inipp/inipp.h>
 #include <args.hxx>
 
+#include "Observatory.hpp"
+#include "Telescope.hpp"
+
 #include "src/cmakevars.h"
 #include "window.hpp"
 
@@ -15,45 +18,94 @@
 // \param[out] W window width
 // \param[out] H window height
 // \param[out] FOV telescope FOV
-void defaultVariables(unsigned int &W, unsigned int &H, unsigned int &FOV)
+void defaultVariables(unsigned int& W, unsigned int& H, Observatory& obs)
 {
     std::ifstream ReadFile("../resources/MPCS.ini");
     if (!ReadFile.is_open())
     {
         ReadFile.open("./resources/MPCS.ini");
-        if (!ReadFile.is_open())
-        {
-            logs.wrn(
-                "MPCS.ini does not exist, or isnt in the right directory!\n\n");
+        if (!ReadFile.is_open()){
+            throw mpcsError::InippError("MPCS.ini does not exist, or isnt in the right directory! (resources)\n\n");
         }
     }
+
     // initialize inipp
     inipp::Ini<char> ini;
-
     // inipp magic
     ini.parse(ReadFile);
-    if (!inipp::get_value(ini.sections["Window"], "W", W))
-    {
-        W = 1080;
-        logs.wrn(
-            std::format("Window width not properly specified in MPCS.ini!\nDefaulting to W = {}\n"
-                        "",
-                        W));
+
+    // window data
+    try{ // try catch because we are parsing for an integer
+        if (!inipp::get_value(ini.sections["Window"], "W", W)){
+            W = 1080;
+            fmt::print(
+                "Warning: Window width not properly specified\n"
+                "Defaulting to W = {}\n", W
+            );
+        }
+        if (!inipp::get_value(ini.sections["Window"], "H", H)){
+            H = 920;
+            fmt::print(
+                "Warning: Window height not properly specified\n"
+                "Defaulting to H = {}\n", H
+            );
+        }
+    } catch (std::exception e){
+        ReadFile.close();
+        throw e;
     }
-    if (!inipp::get_value(ini.sections["Window"], "H", H))
-    {
-        H = 920;
-        logs.wrn(
-            std::format("Window height not properly specified in MPCS.ini!\nDefaulting to H = {}\n",
-                        H));
+
+    // observatory data
+    std::string id, name;
+    if (inipp::get_value(ini.sections["Observatory"], "CODE", id)){
+        ReadFile.close();
+        throw mpcsError::InippError("Observatory code not specified\n");
     }
-    if (!inipp::get_value(ini.sections["Telescope"], "FOV", FOV))
-    {
-        FOV = 2500;
-        logs.wrn(
-            std::format("Warning: Telescope FOV not properly specified in MPCS.ini!\nDefaulting to FOV = {}\n",
-                        FOV));
+    if (inipp::get_value(ini.sections["Observatory"], "NAME", name)){
+        fmt::print("Warning: Observatory name not specified\n");
+        name = "";
     }
+    obs.setID(id);
+    obs.setName(name);
+
+
+    // telescope data
+    int i = 1; bool shouldScanNext = true;
+    while(shouldScanNext)
+    {
+        int FOV = -1; std::string name = ""; 
+        shouldScanNext = false;
+
+        try{ // try catch because we are parsing for an integer
+            if (!inipp::get_value(ini.sections[fmt::format("Telescope{}", i)], "FOV", FOV))
+                shouldScanNext = true;
+        } catch (std::exception e){
+            ReadFile.close();
+            throw e;
+        }
+
+        if (inipp::get_value(ini.sections[fmt::format("Telescope{}", i)], "NAME", name))
+            shouldScanNext = true;
+        
+
+        if (shouldScanNext){
+            if (FOV == -1){
+                fmt::print("Warning: FOV for telescope #{} not properly specified\n", i);
+                break;
+            }
+            if (name.empty()){
+                fmt::print("Warning: Name for telescope #{} not properly specified\n", i);
+                name = "unknown";
+            }
+        }
+
+        obs.getTelescopes().emplace_back(Telescope(FOV, name));
+
+        i++;
+    }
+
+    if (obs.getTelescopes().empty())
+        throw mpcsError::InippError("No telescopes (properly) specified");
 
     std::cout << "\n";
     ReadFile.close();
@@ -62,38 +114,26 @@ void defaultVariables(unsigned int &W, unsigned int &H, unsigned int &FOV)
 // args syntax: ./MPCS [-u|--url <str>] [-e|--exposition <int>] [-n|--number <int>] [-c|--copy] [-x|--exit] [-f|--fov <int>]
 int main(int argc, char **argv)
 {
-    std::string version = fmt::format("MPCSolver {}.{}.{}", MPCS_VERSION_MAJOR, MPCS_VERSION_MINOR, MPCS_VERSION_MICRO);
+    // -------------------- Init important things
+    Observatory observatory;
 
-    // create the camera and the database
     ObjectDatabase database;
     Camera cam;
-
-    // read the default variables
-    try
-    {
-        unsigned int W, H, FOV;
-        defaultVariables(W, H, FOV);
-        cam.setDimensions(W, H);
-        database.set_FOV(FOV);
-    }
-    catch (std::exception &e)
-    {
-        logs.err(std::format("{} \n\n", e.what()));
-        return 1;
-    }
-
+    
     std::string obj_url = "";
     int pic_exposition = 0, pic_number = 0;
     bool to_clipboard = false, close_after = false;
 
-    // Argument parser
+    std::string version = fmt::format("MPCSolver {}.{}.{}", MPCS_VERSION_MAJOR, MPCS_VERSION_MINOR, MPCS_VERSION_MICRO);
+
+    // -------------------- Argument parser
     args::ArgumentParser parser("MPCS - Minor Planet Center Solver", version + '\n');
+
     // arguments
     args::HelpFlag help(parser, "help", "Display this message", {'h', "help"});
     args::ValueFlag<std::string> url(parser, "url", "the url to the object offsets link", {'u', "url"});
     args::ValueFlag<int> exposition(parser, "exposition", "the exposition duration (seconds)", {'e', "expositon"});
     args::ValueFlag<int> number(parser, "number", "number of pictures to be taken", {'n', "number"});
-    args::ValueFlag<int> fov(parser, "FOV", "telescope FOV", {'f', "fov"});
     args::Flag copy(parser, "copy", "copy to clipboard", {'c', "copy"});
     args::Flag exit(parser, "exit", "exit the program after use", {'x', "exit"});
 
@@ -124,25 +164,28 @@ int main(int argc, char **argv)
     }
 
     // if parsing was successful store the inputed arguments
-    if (url)
-        obj_url = args::get(url);
-    if (exposition)
-        pic_exposition = args::get(exposition);
-    if (number)
-        pic_number = args::get(number);
-    if (fov)
-    {
-        unsigned int FOV = args::get(fov);
-        logs.msg(std::format("FOV at {}\n", FOV));
-        database.set_FOV(FOV);
-    }
-    if (exit)
-        close_after = true;
+    if (url) obj_url = args::get(url);
+    if (exposition) pic_exposition = args::get(exposition);
+    if (number) pic_number = args::get(number);
+    if (exit) close_after = true; 
     // if no parameters were passed, assume to_clipboard to be true
     if (copy || (!url && !exposition && !number && !exit))
         to_clipboard = true;
 
-    while (true)
+
+    // -------------------- read MPCS.ini
+    try{
+        unsigned int W, H;
+        defaultVariables(W, H, observatory);
+        cam.setDimensions(W, H);
+    }
+    catch (std::exception& e){
+        fmt::print("Error in MPCS.ini: {} \n\n", e.what());
+        return 1;
+    }
+
+    // -------------------- main loop
+    while(true)
     {
         if (obj_url == "")
             std::cout << "Insert the website URL:\n";
@@ -216,5 +259,6 @@ int main(int argc, char **argv)
             std::cout << "\n\n";
         }
     }
+
     return 0;
 }

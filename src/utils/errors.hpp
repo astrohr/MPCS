@@ -31,4 +31,11 @@ public:
     virtual ~ConstructorFail() {}
 };
 
+class InippError : public std::runtime_error
+{
+public:
+    InippError(const std::string& problem) : std::runtime_error(problem) {}
+    virtual ~InippError() {}
+};
+
 }
