@@ -31,15 +31,16 @@ void Log::log(std::string &message, bool &hide)
 {
     std::time_t t = std::time(nullptr);
     std::tm tm = *std::localtime(&t);
-    message = std::format("[{:04d}-{:02d}-{:02d} {:02d}:{:02d}:{:02d}] {}\n", tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec, message);
-    output << message;
+    message = std::format("{}\n", message);
+    std::string log_message = std::format("[{:04d}-{:02d}-{:02d} {:02d}:{:02d}:{:02d}] ", tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec) + message;
+    output << log_message;
     if (!hide)
     {
         std::cout << message;
     }
 };
 
-void Log::dbg(const std::string &message, bool hide = false)
+void Log::dbg(const std::string &message, bool hide /*=false*/)
 {
     if (log_level == 1)
     {
@@ -48,7 +49,7 @@ void Log::dbg(const std::string &message, bool hide = false)
     }
 };
 
-void Log::msg(const std::string &message, bool hide = false)
+void Log::msg(const std::string &message, bool hide /*=false*/)
 {
     if (log_level <= 2)
     {
@@ -57,7 +58,7 @@ void Log::msg(const std::string &message, bool hide = false)
     }
 };
 
-void Log::wrn(const std::string &message, bool hide = false)
+void Log::wrn(const std::string &message, bool hide /*=false*/)
 {
     if (log_level <= 3)
     {
@@ -66,7 +67,7 @@ void Log::wrn(const std::string &message, bool hide = false)
     }
 };
 
-void Log::err(const std::string &message, bool hide = false)
+void Log::err(const std::string &message, bool hide /*=false*/)
 {
     if (log_level <= 4)
     {
@@ -74,3 +75,5 @@ void Log::err(const std::string &message, bool hide = false)
         log(x, hide);
     }
 };
+
+Log logs;

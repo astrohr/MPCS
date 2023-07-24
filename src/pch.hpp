@@ -28,4 +28,4 @@
 // external libs
 #include <fmt/core.h>
 
-extern Log log;
+extern Log logs;

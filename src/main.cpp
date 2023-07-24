@@ -30,7 +30,7 @@ void WindowSetup(ObjectDatabase &database, Camera &cam)
     sf::Font font;
     // dont worry that this will end up throwing a warning (sometimes)
     if (!font.loadFromFile("../resources/arial.ttf") && !font.loadFromFile("resources/arial.ttf"))
-        log.wrn("Font not found, using default font\n");
+        logs.wrn("Font not found, using default font\n");
 
     // text object for rendering text
     sf::Text text;
@@ -66,7 +66,7 @@ void WindowSetup(ObjectDatabase &database, Camera &cam)
                 else if (event.key.code == sf::Keyboard::R)
                     cam.reset_position(database.getFOV(), database);
                 else if (event.key.code == sf::Keyboard::H)
-                    log.msg(
+                    logs.msg(
                         "\nLeft Click to add an observation target\n"
                         "Right Click to remove an observation target\n"
                         "Q to exit the window and confirm the selection\n"
@@ -225,7 +225,7 @@ void defaultVariables(unsigned int &W, unsigned int &H, unsigned int &FOV)
         ReadFile.open("./resources/MPCS.ini");
         if (!ReadFile.is_open())
         {
-            log.wrn(
+            logs.wrn(
                 "MPCS.ini does not exist, or isnt in the right directory!\n\n");
         }
     }
@@ -237,7 +237,7 @@ void defaultVariables(unsigned int &W, unsigned int &H, unsigned int &FOV)
     if (!inipp::get_value(ini.sections["Window"], "W", W))
     {
         W = 1080;
-        log.wrn(
+        logs.wrn(
             std::format("Window width not properly specified in MPCS.ini!\nDefaulting to W = {}\n"
                         "",
                         W));
@@ -245,14 +245,14 @@ void defaultVariables(unsigned int &W, unsigned int &H, unsigned int &FOV)
     if (!inipp::get_value(ini.sections["Window"], "H", H))
     {
         H = 920;
-        log.wrn(
+        logs.wrn(
             std::format("Window height not properly specified in MPCS.ini!\nDefaulting to H = {}\n",
                         H));
     }
     if (!inipp::get_value(ini.sections["Telescope"], "FOV", FOV))
     {
         FOV = 2500;
-        log.wrn(
+        logs.wrn(
             std::format("Warning: Telescope FOV not properly specified in MPCS.ini!\nDefaulting to FOV = {}\n",
                         FOV));
     }
@@ -286,7 +286,7 @@ int main(int argc, char **argv)
     }
     catch (std::exception &e)
     {
-        log.err(std::format("{} \n\n", e.what()));
+        logs.err(std::format("{} \n\n", e.what()));
         return 1;
     }
 
@@ -309,7 +309,7 @@ int main(int argc, char **argv)
     try
     {
         parser.ParseCLI(argc, argv);
-        log.msg(std::format("{}\n", version));
+        logs.msg(std::format("{}\n", version));
     }
     // if parsing fails, print help message and inform user of the error
     catch (args::Help)
@@ -320,13 +320,13 @@ int main(int argc, char **argv)
     }
     catch (args::ParseError e)
     {
-        log.err(std::format("\n{}\n\n", e.what()));
+        logs.err(std::format("\n{}\n\n", e.what()));
         std::cout << parser << std::endl;
         return 1;
     }
     catch (args::ValidationError e)
     {
-        log.err(std::format("\n{}\n\n", e.what()));
+        logs.err(std::format("\n{}\n\n", e.what()));
         std::cout << parser << std::endl;
         return 1;
     }
@@ -341,7 +341,7 @@ int main(int argc, char **argv)
     if (fov)
     {
         unsigned int FOV = args::get(fov);
-        log.msg(std::format("FOV at {}\n", FOV));
+        logs.msg(std::format("FOV at {}\n", FOV));
         database.set_FOV(FOV);
     }
     if (exit)
@@ -365,7 +365,7 @@ int main(int argc, char **argv)
             bool retry = false;
             if (greska == 1)
             {
-                log.wrn("Link interaction failed, retry? (y/n): ");
+                logs.wrn("Link interaction failed, retry? (y/n): ");
                 std::string s;
                 std::cin >> s;
                 if (!s.empty() && (s[0] == 'y' || s[0] == 'Y'))
@@ -387,7 +387,7 @@ int main(int argc, char **argv)
 
         cam.reset_position(database.getFOV(), database);
 
-        log.msg(std::format("\nObject: {}\n", database.name()));
+        logs.msg(std::format("\nObject: {}\n", database.name()));
 
         if (!pic_number)
         {
@@ -411,7 +411,7 @@ int main(int argc, char **argv)
         {
             if (!to_clipboard)
             {
-                log.msg("Press enter to exit");
+                logs.msg("Press enter to exit");
                 std::cin.ignore();
             }
             break;
