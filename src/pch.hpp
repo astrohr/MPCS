@@ -13,6 +13,9 @@
 #include <algorithm>
 #include <cfloat>
 #include <cmath>
+#include <ctime>
+#include <format>
+#include "utils/Log.hpp"
 #include <regex>
 #include <stdexcept>
 
@@ -24,3 +27,5 @@
 
 // external libs
 #include <fmt/core.h>
+
+extern Log log;

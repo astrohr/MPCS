@@ -2,10 +2,7 @@
 
 #pragma once
 
-#include "../pch.hpp"
-#include <ctime>
-#include <format>
-
+#include "pch.hpp"
 //----------------------------------------------------------
 
 // Logger class

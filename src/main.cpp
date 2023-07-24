@@ -8,11 +8,8 @@
 
 #include "src/cmakevars.h"
 #include "Camera.hpp"
-#include "utils/Log.hpp"
 
 //----------------------------------------------------------
-
-Log log;
 
 void WindowSetup(ObjectDatabase &database, Camera &cam)
 {

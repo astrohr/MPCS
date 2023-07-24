@@ -65,6 +65,7 @@ void Log::wrn(const std::string &message, bool hide = false)
         log(x, hide);
     }
 };
+
 void Log::err(const std::string &message, bool hide = false)
 {
     if (log_level <= 4)
