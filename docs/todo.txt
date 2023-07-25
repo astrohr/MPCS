@@ -32,6 +32,7 @@
 11 Account for atmospheric refraction and potential camera distortions (?)
 12 use Reuse SPDX SBOM (2d)
 13 Add CI/CD (2d)
+14 Make a new readme and archive the old changelog (./changelog -> ./changelog_old) because new version is essentially completely different
 
 At any point:
 Make it so that the user can configure the setup without opening the ini file
