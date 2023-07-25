@@ -7,7 +7,7 @@ project(MPCS VERSION 3.0.0)
 set(BUILD_SHARED_LIBS OFF)
 set(BUILD_TESTING OFF)
 set(CMAKE_BUILD_FLAGS "-O3")
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED TRUE)
 
 if(WIN32) # Install dlls in the same directory as the executable on Windows
