@@ -25,3 +25,4 @@
 
 //external libs
 #include <fmt/core.h>
+#include <cpr/cpr.h>
