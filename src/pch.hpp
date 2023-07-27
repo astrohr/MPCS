@@ -4,24 +4,28 @@
 
 //----------------------------------------------------------
 
-
-//streams
+// streams
 #include <iostream>
 #include <fstream>
 #include <sstream>
 
-//functionalities
+// functionalities
 #include <algorithm>
 #include <cfloat>
 #include <cmath>
+#include <ctime>
+#include <format>
+#include "utils/Log.hpp"
 #include <regex>
 #include <stdexcept>
 
-//data structures
+// data structures
 #include <vector>
 #include <string>
 #include <tuple>
 #include <map>
 
-//external libs
+// external libs
 #include <fmt/core.h>
+
+extern Log logs;
