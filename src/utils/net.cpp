@@ -63,7 +63,7 @@ void utils::get_html(std::string& link, std::vector<std::string>& userdata, int 
         CURL *curl = curl_easy_init();
         curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, read_curl_data);
         curl_easy_setopt(curl, CURLOPT_WRITEDATA, &userdata);
-        curl_easy_setopt(curl, CURLOPT_NOPROGRESS, FALSE);
+        curl_easy_setopt(curl, CURLOPT_NOPROGRESS, false);
         curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, (long)1);
         int progcall = 0; // measures how many times progressdata function is called, mod 4
         curl_easy_setopt(curl, CURLOPT_XFERINFOFUNCTION, progress_callback);

@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.20)
 
 # project init
-project(MPCS VERSION 2.6.0)
+project(MPCS VERSION 2.6.1)
 
 # set important vars
 set(BUILD_SHARED_LIBS OFF)
@@ -81,7 +81,7 @@ if (MINGW)
     file(GLOB RUNTIME_LIBS 
         "${Mingw_Path}/libunistring*.dll"
         "${Mingw_Path}/libcrypto*.dll"
-        "${Mingw_Path}/libwinpthread*.dll "
+        "${Mingw_Path}/libwinpthread*.dll"
         "${Mingw_Path}/libssh*.dll"
         "${Mingw_Path}/libidn*.dll"
         "${Mingw_Path}/libpsl*.dll"

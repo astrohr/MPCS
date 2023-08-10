@@ -158,7 +158,7 @@ int Ephemeris::follow_link()
     dec_whole = (ss >> temp) ? std::stoi(temp) : 0;
     dec_min = (ss >> temp) ? std::stoi(temp) : 0;
     dec_sec = (ss >> temp) ? std::stoi(temp) : 0;
-    m_dec = ((float)abs(dec_whole) + dec_min/60.f + dec_sec/3600.f) * ((float)abs(dec_whole)/dec_whole);
+    m_dec = ((float)abs(dec_whole) + dec_min/60.f + dec_sec/3600.f) * (abs(dec_whole)/dec_whole);
 
     // then elongation
     m_elong = (ss >> temp) ? std::stof(temp) : 0.f;

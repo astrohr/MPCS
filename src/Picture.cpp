@@ -21,8 +21,7 @@ void Picture::approxCoords(float& centerRa, float& centerDec)
     if (m_dec < 0) m_dec = 360.f - std::fmod(-m_dec, 360.f);
     else m_dec = std::fmod(m_dec, 360.f);
     // convert 0-360 degree range to -180 to 180 range
-    if (m_dec >= 270.f) m_dec = 270.f-m_dec;
+    if (m_dec >= 270.f) m_dec = m_dec-360.f;
     else if (m_dec >= 90.f) m_dec = 180.f-m_dec;
     else;
-    
 }
