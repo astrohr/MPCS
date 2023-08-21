@@ -35,33 +35,28 @@ void defaultVariables(unsigned int& W, unsigned int& H, Observatory& obs)
     ini.parse(ReadFile);
 
     // window data
-    try{ // try catch because we are parsing for an integer
-        if (!inipp::get_value(ini.sections["Window"], "W", W)){
-            W = 1080;
-            fmt::print(
-                "Warning: Window width not properly specified\n"
-                "Defaulting to W = {}\n", W
-            );
-        }
-        if (!inipp::get_value(ini.sections["Window"], "H", H)){
-            H = 920;
-            fmt::print(
-                "Warning: Window height not properly specified\n"
-                "Defaulting to H = {}\n", H
-            );
-        }
-    } catch (std::exception e){
-        ReadFile.close();
-        throw e;
+    if (!inipp::get_value(ini.sections["Window"], "W", W)){
+        W = 1080;
+        fmt::print(
+            "Warning: Window width not properly specified\n"
+            "Defaulting to W = {}\n", W
+        );
+    }
+    if (!inipp::get_value(ini.sections["Window"], "H", H)){
+        H = 920;
+        fmt::print(
+            "Warning: Window height not properly specified\n"
+            "Defaulting to H = {}\n", H
+        );
     }
 
     // observatory data
     std::string id, name;
-    if (inipp::get_value(ini.sections["Observatory"], "CODE", id)){
+    if (!inipp::get_value(ini.sections["Observatory"], "CODE", id)){
         ReadFile.close();
         throw mpcsError::InippError("Observatory code not specified\n");
     }
-    if (inipp::get_value(ini.sections["Observatory"], "NAME", name)){
+    if (!inipp::get_value(ini.sections["Observatory"], "NAME", name)){
         fmt::print("Warning: Observatory name not specified\n");
         name = "";
     }
@@ -76,65 +71,8 @@ void defaultVariables(unsigned int& W, unsigned int& H, Observatory& obs)
         int FOV = -1; std::string name = ""; 
         shouldScanNext = false;
 
-        try{ // try catch because we are parsing for an integer
-            if (!inipp::get_value(ini.sections[fmt::format("Telescope{}", i)], "FOV", FOV))
-                shouldScanNext = true;
-        } catch (std::exception e){
-            ReadFile.close();
-            throw e;
-        }
-
-        if (inipp::get_value(ini.sections[fmt::format("Telescope{}", i)], "NAME", name))
+        if (inipp::get_value(ini.sections[fmt::format("Telescope{}", i)], "FOV", FOV))
             shouldScanNext = true;
-        
-
-        if (shouldScanNext){
-            if (FOV == -1){
-                fmt::print("Warning: FOV for telescope #{} not properly specified\n", i);
-                break;
-            }
-            if (name.empty()){
-                fmt::print("Warning: Name for telescope #{} not properly specified\n", i);
-                name = "unknown";
-            }
-        }
-
-        obs.getTelescopes().emplace_back(Telescope(FOV, name));
-
-        i++;
-    }
-
-    if (obs.getTelescopes().empty())
-        throw mpcsError::InippError("No telescopes (properly) specified");
-
-    // observatory data
-    std::string id, name;
-    if (inipp::get_value(ini.sections["Observatory"], "CODE", id)){
-        ReadFile.close();
-        throw mpcsError::InippError("Observatory code not specified\n");
-    }
-    if (inipp::get_value(ini.sections["Observatory"], "NAME", name)){
-        fmt::print("Warning: Observatory name not specified\n");
-        name = "";
-    }
-    obs.setID(id);
-    obs.setName(name);
-
-
-    // telescope data
-    int i = 1; bool shouldScanNext = true;
-    while(shouldScanNext)
-    {
-        int FOV = -1; std::string name = ""; 
-        shouldScanNext = false;
-
-        try{ // try catch because we are parsing for an integer
-            if (!inipp::get_value(ini.sections[fmt::format("Telescope{}", i)], "FOV", FOV))
-                shouldScanNext = true;
-        } catch (std::exception e){
-            ReadFile.close();
-            throw e;
-        }
 
         if (inipp::get_value(ini.sections[fmt::format("Telescope{}", i)], "NAME", name))
             shouldScanNext = true;

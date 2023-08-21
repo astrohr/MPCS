@@ -7,6 +7,7 @@
 
 #include "pch.hpp"
 #include "utils/utils.hpp"
+#include "graphics/GLProgram.hpp"
 #include "Camera.hpp"
 
 //----------------------------------------------------------
