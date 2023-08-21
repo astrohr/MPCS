@@ -66,7 +66,7 @@ void windowFunction(ObjectDatabase& database, Camera& cam)
 
         glfwSwapBuffers(window);
         glFlush();
-    }    
+    }
 
     // -------------------- deinit
     glfwDestroyWindow(window);
