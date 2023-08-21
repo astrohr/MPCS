@@ -15,13 +15,14 @@
 
 
 // this function parses the MPCS.ini file
-// \param[out] W window width 
-// \param[out] H window height 
+// \param[out] W window width
+// \param[out] H window height
 // \param[out] FOV telescope FOV
 void defaultVariables(unsigned int& W, unsigned int& H, Observatory& obs)
 {
     std::ifstream ReadFile("../resources/MPCS.ini");
-    if (!ReadFile.is_open()){
+    if (!ReadFile.is_open())
+    {
         ReadFile.open("./resources/MPCS.ini");
         if (!ReadFile.is_open()){
             throw mpcsError::InippError("MPCS.ini does not exist, or isnt in the right directory! (resources)\n\n");
@@ -106,13 +107,64 @@ void defaultVariables(unsigned int& W, unsigned int& H, Observatory& obs)
     if (obs.getTelescopes().empty())
         throw mpcsError::InippError("No telescopes (properly) specified");
 
-    fmt::print("\n");
+    // observatory data
+    std::string id, name;
+    if (inipp::get_value(ini.sections["Observatory"], "CODE", id)){
+        ReadFile.close();
+        throw mpcsError::InippError("Observatory code not specified\n");
+    }
+    if (inipp::get_value(ini.sections["Observatory"], "NAME", name)){
+        fmt::print("Warning: Observatory name not specified\n");
+        name = "";
+    }
+    obs.setID(id);
+    obs.setName(name);
+
+
+    // telescope data
+    int i = 1; bool shouldScanNext = true;
+    while(shouldScanNext)
+    {
+        int FOV = -1; std::string name = ""; 
+        shouldScanNext = false;
+
+        try{ // try catch because we are parsing for an integer
+            if (!inipp::get_value(ini.sections[fmt::format("Telescope{}", i)], "FOV", FOV))
+                shouldScanNext = true;
+        } catch (std::exception e){
+            ReadFile.close();
+            throw e;
+        }
+
+        if (inipp::get_value(ini.sections[fmt::format("Telescope{}", i)], "NAME", name))
+            shouldScanNext = true;
+        
+
+        if (shouldScanNext){
+            if (FOV == -1){
+                fmt::print("Warning: FOV for telescope #{} not properly specified\n", i);
+                break;
+            }
+            if (name.empty()){
+                fmt::print("Warning: Name for telescope #{} not properly specified\n", i);
+                name = "unknown";
+            }
+        }
+
+        obs.getTelescopes().emplace_back(Telescope(FOV, name));
+
+        i++;
+    }
+
+    if (obs.getTelescopes().empty())
+        throw mpcsError::InippError("No telescopes (properly) specified");
+
+    std::cout << "\n";
     ReadFile.close();
 }
 
-
 // args syntax: ./MPCS [-u|--url <str>] [-e|--exposition <int>] [-n|--number <int>] [-c|--copy] [-x|--exit] [-f|--fov <int>]
-int main(int argc, char** argv)
+int main(int argc, char **argv)
 {
     // -------------------- Init important things
     Observatory observatory;
@@ -121,7 +173,7 @@ int main(int argc, char** argv)
     Camera cam;
     
     std::string obj_url = "";
-    int pic_exposition=0, pic_number=0;
+    int pic_exposition = 0, pic_number = 0;
     bool to_clipboard = false, close_after = false;
 
     std::string version = fmt::format("MPCSolver {}.{}.{}", MPCS_VERSION_MAJOR, MPCS_VERSION_MINOR, MPCS_VERSION_MICRO);
@@ -138,22 +190,27 @@ int main(int argc, char** argv)
     args::Flag exit(parser, "exit", "exit the program after use", {'x', "exit"});
 
     // try parsing arguments
-    try{
+    try
+    {
         parser.ParseCLI(argc, argv);
-        fmt::print("{}\n", version);
-    } 
+        logs.msg(std::format("{}\n", version));
+    }
     // if parsing fails, print help message and inform user of the error
-    catch (args::Help) {
-        std::cout << std::endl << parser << std::endl;
+    catch (args::Help)
+    {
+        std::cout << std::endl
+                  << parser << std::endl;
         return 0;
     }
-    catch (args::ParseError e) {
-        fmt::print("\nError: {}\n\n", e.what());
+    catch (args::ParseError e)
+    {
+        logs.err(std::format("\n{}\n\n", e.what()));
         std::cout << parser << std::endl;
         return 1;
     }
-    catch (args::ValidationError e){
-        fmt::print("\nError: {}\n\n", e.what());
+    catch (args::ValidationError e)
+    {
+        logs.err(std::format("\n{}\n\n", e.what()));
         std::cout << parser << std::endl;
         return 1;
     }
@@ -164,7 +221,8 @@ int main(int argc, char** argv)
     if (number) pic_number = args::get(number);
     if (exit) close_after = true; 
     // if no parameters were passed, assume to_clipboard to be true
-    if (copy || (!url && !exposition && !number && !exit)) to_clipboard = true; 
+    if (copy || (!url && !exposition && !number && !exit))
+        to_clipboard = true;
 
 
     // -------------------- read MPCS.ini
@@ -181,42 +239,53 @@ int main(int argc, char** argv)
     // -------------------- main loop
     while(true)
     {
-        if (obj_url == "") fmt::print("Insert the website URL:\n");
-        //this while loop is here to make sure a link is provided
-        while(!obj_url.size()) std::getline(std::cin, obj_url);
-        fmt::print("\n");
-        
+        if (obj_url == "")
+            std::cout << "Insert the website URL:\n";
+        // this while loop is here to make sure a link is provided
+        while (!obj_url.size())
+            std::getline(std::cin, obj_url);
+        std::cout << "\n";
+
         int greska = database.fill_database(obj_url);
-        if (greska){
+        if (greska)
+        {
             bool retry = false;
-            if (greska == 1){
-                fmt::print("Link interaction failed, retry? (y/n): ");
-                std::string s; std::cin >> s;
-                if (!s.empty() && (s[0] == 'y' || s[0] == 'Y')) retry = true;
+            if (greska == 1)
+            {
+                logs.wrn("Link interaction failed, retry? (y/n): ");
+                std::string s;
+                std::cin >> s;
+                if (!s.empty() && (s[0] == 'y' || s[0] == 'Y'))
+                    retry = true;
             }
 
-            if (close_after && !retry) break;
-            else{
-                if (!retry) obj_url = "";
+            if (close_after && !retry)
+                break;
+            else
+            {
+                if (!retry)
+                    obj_url = "";
                 pic_exposition = pic_number = 0;
                 database.reset();
-                fmt::print("\n\n");
+                std::cout << "\n\n";
                 continue;
             }
         }
 
         cam.reset_position(database.getFOV(), database);
-        
-        fmt::print("\nObject: {}\n", database.name());
 
-        if (!pic_number){
-            fmt::print("Insert the ammount of pictures: ");
+        logs.msg(std::format("\nObject: {}\n", database.name()));
+
+        if (!pic_number)
+        {
+            std::cout << "Insert the ammount of pictures: ";
             std::cin >> pic_number;
         }
         database.set_amount(pic_number);
 
-        if (!pic_exposition){
-            fmt::print("Insert the exposure length (in seconds): ");
+        if (!pic_exposition)
+        {
+            std::cout << "Insert the exposure length (in seconds): ";
             std::cin >> pic_exposition;
         }
         database.set_exposure(pic_exposition);
@@ -224,19 +293,22 @@ int main(int argc, char** argv)
         windowFunction(database, cam);
 
         database.export_observation_targets(to_clipboard);
-        
-        if (close_after){
-            if (!to_clipboard){
-                fmt::print("Press enter to exit");
+
+        if (close_after)
+        {
+            if (!to_clipboard)
+            {
+                logs.msg("Press enter to exit");
                 std::cin.ignore();
             }
             break;
         }
-        else{
+        else
+        {
             pic_exposition = pic_number = 0;
             obj_url = "";
             database.reset();
-            fmt::print("\n\n");
+            std::cout << "\n\n";
         }
     }
 
