@@ -11,7 +11,7 @@ void updateInput(GLFWwindow* window)
         glfwSetWindowShouldClose(window, true);
 }
 
-void windowFunction(ObjectDatabase& database, Camera& cam)
+void windowFunction(unsigned int W, unsigned int H, std::string name)
 {
     // -------------------- init glfw
     if(!glfwInit()){
@@ -21,8 +21,7 @@ void windowFunction(ObjectDatabase& database, Camera& cam)
 
     glfwWindowHint(GLFW_RESIZABLE, true);
 
-    auto [W, H] = cam.getWindowSize();
-    GLFWwindow* window = glfwCreateWindow(W, H, database.name().c_str(), NULL, NULL);
+    GLFWwindow* window = glfwCreateWindow(W, H, name.c_str(), NULL, NULL);
 
     // set the resizing function
     glfwSetFramebufferSizeCallback(window, 

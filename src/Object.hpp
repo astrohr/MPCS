@@ -56,6 +56,8 @@ public:
       lastUpdate(lastUpdate), note(note), nObs(nObs), arc(arc), H(H), notSeen(notSeen)
     {}
 
-    ~Object();
+    ~Object() = default;
+
+    const std::string getName() const { return name; }
 
 };

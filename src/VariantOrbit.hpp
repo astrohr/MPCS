@@ -20,8 +20,8 @@ private:
 
 public:
 
-    VariantOrbit();
+    VariantOrbit() = default;
     
-    ~VariantOrbit();
+    ~VariantOrbit() = default;
 
 };

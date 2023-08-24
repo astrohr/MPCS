@@ -12,4 +12,4 @@
 //----------------------------------------------------------
 
 
-void windowFunction();
+void windowFunction(unsigned int W, unsigned int H, std::string name);

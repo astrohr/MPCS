@@ -42,3 +42,10 @@ double Time::date_to_JD(int year, int month, int day, int hour, int minute)
     // https://en.wikipedia.org/wiki/Julian_day#Converting_Gregorian_calendar_date_to_Julian_Day_Number
     return ((1461*(year+4800+(month-14)/12))/4+(367*(month-2-12*((month-14)/12)))/12-(3*((year+4900+(month-14)/12)/100))/4+day-32075)+(hour-12.0)/24.0+minute/1440.0;
 }
+
+std::map<std::string, int> monthVals = 
+{
+    {"Jan", 1}, {"Feb", 2}, {"Mar", 3}, {"Apr", 4},
+    {"May", 5}, {"Jun", 6}, {"Jul", 7}, {"Aug", 8},
+    {"Sep", 9}, {"Oct", 10}, {"Nov", 11}, {"Dec", 12},
+};

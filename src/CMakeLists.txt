@@ -2,10 +2,10 @@
 target_sources(${PROJECT_NAME} PUBLIC
     "main.cpp"
     "window.cpp"
-    "Camera.cpp"
-    "ObjectDatabase.cpp"
-    "Ephemeris.cpp"
-    "Picture.cpp"
+    "Object.cpp"
+    "Observatory.cpp"
+    "Telescope.cpp"
+    "VariantOrbit.cpp"
     "utils/net.cpp"
     "utils/Log.cpp"
     "utils/Time.cpp"
@@ -20,6 +20,7 @@ configure_file("cmakevars.h.in" "${PROJECT_BINARY_DIR}/src/cmakevars.h")
 target_include_directories(${PROJECT_NAME} PUBLIC
     "${PROJECT_BINARY_DIR}" # due to the configured file
     "structures"
+    "graphics"
     "utils"
     "."
 )

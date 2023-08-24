@@ -32,6 +32,7 @@ if(NOT cpr_POPULATED)
 
     set(CURL_ZLIB OFF CACHE INTERNAL "" FORCE)
     set(BUILD_CURL_EXE OFF CACHE INTERNAL "" FORCE)
+    set(CURL_DISABLE_CRYPTO_AUTH ON CACHE INTERNAL "" FORCE)
 
     add_subdirectory(${cpr_SOURCE_DIR} ${cpr_BINARY_DIR} EXCLUDE_FROM_ALL)
 endif()
@@ -85,22 +86,6 @@ FetchContent_Declare(inipp
     GIT_TAG c61e699682d3f1091209c2179f1d03f5fc593327 # develop branch Feb 3 2022
 )
 FetchContent_MakeAvailable(inipp)
-
-# add args
-FetchContent_Declare(args
-    GIT_REPOSITORY https://github.com/Taywee/args
-    GIT_TAG 6.4.6
-)
-
-FetchContent_GetProperties(args)
-if(NOT args_POPULATED)
-    FetchContent_Populate(args)
-
-    set(ARGS_BUILD_EXAMPLE OFF CACHE INTERNAL "" FORCE)
-    set(ARGS_BUILD_UNITTESTS OFF CACHE INTERNAL "" FORCE)
-
-    add_subdirectory(${args_SOURCE_DIR} ${args_BINARY_DIR})
-endif()
 
 # add libfmt
 FetchContent_Declare(fmt
