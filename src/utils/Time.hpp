@@ -6,6 +6,8 @@
 
 //----------------------------------------------------------
 
+
+// class made for easier manipulation and storage of time values
 class Time{
 private:
 
@@ -39,4 +41,13 @@ public:
     // \returns Julian day time
     static double date_to_JD(int year, int month, int day, int hour, int minute);
 
+};
+
+
+// map that links strings to their months
+std::map<std::string, int> monthVals = 
+{
+    {"Jan", 1}, {"Feb", 2}, {"Mar", 3}, {"Apr", 4},
+    {"May", 5}, {"Jun", 6}, {"Jul", 7}, {"Aug", 8},
+    {"Sep", 9}, {"Oct", 10}, {"Nov", 11}, {"Dec", 12},
 };

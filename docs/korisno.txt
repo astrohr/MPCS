@@ -1,44 +1,54 @@
-UNCERTAINTY OFFSETS FOR XYZ LINK EXPLAINED
+UNCERTAINTY OFFSETS FOR AN OBJECT
 
 https://cgi.minorplanetcenter.net/cgi-bin/uncertaintymap.cgi?
+// name
 Obj=P11BEt9&
-//id
+// time
 JD=2459898.243056&
-//time
+// not sure
 Form=Y&
 Ext=VAR&
-//dnt
+// observatory
 OC=L01&
+// not sure
 META=apm12
 
 
-// ^ send them a mail about the things you dont know the meaning of
-
-VARIANT ORBIT LINK EXPLAINED
+VARIANT ORBIT
 
 https://cgi.minorplanetcenter.net/cgi-bin/confirmeph.cgi?
+// name
 Obj01=P11BEt9&
-//id
+// orbit id
 VO=00001&
-//variant orbit, ako je broj veci od max onda je automatski set na 1
-//ovo provjeravaj tako da pamtis zadnji, as tamo je najmanja sansa da nes bude isto
+// JDTime
 JD=2459898.244587&
-//vrijeme u nekom utc formatu di je 1 = 1 dan
+// Observatory
 obscode=L01&
-//obv
+// not sure
 raty=a&
 dmot=p&
 Parallax=1&
-//dnt
-int=2&
 // 0 je razmaci od sat vremena
 // 1 je pol
 // 2 je 10 min
 // 3 je 1 min
+int=2&
+// not sure
 mot=m
-//dnt
+
+
+LIST OF ALL ORBITS FOR AN OBJECT
+
+https://cgi.minorplanetcenter.net/cgi-bin/showobsorbs.cgi?
+// name
+Obj=G19341&
+// not sure
+orb=y
+
 
 
 LIST OF ALL OBJECTS
 
 https://www.minorplanetcenter.net/iau/NEO/neocp.txt
+// i dont know what parameter is H and Arc in this file (two before the last one)

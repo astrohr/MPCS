@@ -8,13 +8,13 @@
 Time::Time(double JulianDayTime)
 : JulianDayTime(JulianDayTime)
 {
-    auto[year, month, day, hour, minute] = this.JD_to_date(JulianDayTime);
+    auto[year, month, day, hour, minute] = this->JD_to_date(JulianDayTime);
 }
 
 Time::Time(int year, int month, int day, int hour, int minute)
 : year(year), month(month), day(day), hour(hour), minute(minute)
 {
-    JulianDayTime = this.date_to_JD(year, month, day, hour, minute);
+    JulianDayTime = this->date_to_JD(year, month, day, hour, minute);
 }
 
 std::tuple<int, int, int, int, int> Time::JD_to_date(double JD)

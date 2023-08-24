@@ -29,5 +29,5 @@ struct Orbit{
     OrbitType type;
     
     // time at which orbit is relevant
-    Time time
+    Time time;
 };

@@ -24,11 +24,11 @@ public:
     virtual ~ForbiddenLink() {}
 };
 
-class ConstructorFail : public std::runtime_error
+class BadData : public std::runtime_error
 {
 public:
-    ConstructorFail(const std::string& problem) : std::runtime_error(problem) {}
-    virtual ~ConstructorFail() {}
+    BadData(const std::string& problem) : std::runtime_error(problem) {}
+    virtual ~BadData() {}
 };
 
 class InippError : public std::runtime_error

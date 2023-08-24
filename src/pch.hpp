@@ -11,13 +11,12 @@
 
 // functionalities
 #include <algorithm>
+#include <stdexcept>
 #include <cfloat>
+#include <format>
 #include <cmath>
 #include <ctime>
-#include <format>
-#include "utils/Log.hpp"
 #include <regex>
-#include <stdexcept>
 
 // data structures
 #include <vector>
@@ -30,4 +29,6 @@
 // external libs
 #include <fmt/core.h>
 
+// custom
+#include "utils/Log.hpp"
 extern Log logs;

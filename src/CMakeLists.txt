@@ -8,6 +8,7 @@ target_sources(${PROJECT_NAME} PUBLIC
     "Picture.cpp"
     "utils/net.cpp"
     "utils/Log.cpp"
+    "utils/Time.cpp"
     "graphics/GLProgram.cpp"
 )
 target_precompile_headers(${PROJECT_NAME} PRIVATE "pch.hpp")

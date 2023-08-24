@@ -8,9 +8,8 @@
 #include "pch.hpp"
 #include "utils/utils.hpp"
 #include "graphics/GLProgram.hpp"
-#include "Camera.hpp"
 
 //----------------------------------------------------------
 
 
-void windowFunction(ObjectDatabase& database, Camera& cam);
+void windowFunction();
