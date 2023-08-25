@@ -66,4 +66,9 @@ public:
     // \throw DownloadFail, ForbiddenLink, BadData
     void extractOrbits();
 
+
+    // scrapes all available objects from https://www.minorplanetcenter.net/iau/NEO/neocp.txt
+    // \param objects a vector of all objects
+    // \throw DownloadFail, ForbiddenLink, BadData
+    static void findObjects(std::vector<Object>& objects);
 };
