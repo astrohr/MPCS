@@ -61,6 +61,8 @@ void findObjects(std::vector<Object>& objects)
         } catch(std::exception& e){
             throw mpcsError::BadData(std::format("Bad data found on {}: \n{}", objectsLink, e.what()));
         }
+
+        // instead of trowing an error here (and in other places), write the data to a log and continue scanning
     	
         std::string lastUpdateStr = line.substr(lastUpdatePosition, notePosition-lastUpdatePosition);
         std::string note = line.substr(notePosition, nobsPosition-notePosition);
@@ -100,7 +102,7 @@ void findObjects(std::vector<Object>& objects)
         }
         if(!noteContent) note.clear(); // if not, clear it
 
-        // create the object
+        // create the object (can throw an error)
         objects.emplace_back(Object(name, score, discoveryTime, coords, mag, lastUpdate, note, nObs, arc, H, dns));
     }
 }

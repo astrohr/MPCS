@@ -60,4 +60,10 @@ public:
 
     const std::string getName() const { return name; }
 
+
+    // function that will fill the variantOrbits variable
+    // scrapes all available objects from https://cgi.minorplanetcenter.net/cgi-bin/showobsorbs.cgi?Obj=[name]&orb=y
+    // \throw DownloadFail, ForbiddenLink, BadData
+    void extractOrbits();
+
 };
