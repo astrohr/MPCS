@@ -9,7 +9,10 @@
 #include "utils/utils.hpp"
 #include "graphics/GLProgram.hpp"
 
+#include "Object.hpp"
+#include "Observatory.hpp"
+
 //----------------------------------------------------------
 
 
-void windowFunction(unsigned int W, unsigned int H, std::string name);
+void windowFunction(unsigned int W, unsigned int H, std::string name, std::vector<Object>& objects, Observatory& observatory);

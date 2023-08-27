@@ -10,13 +10,17 @@
 #include <sstream>
 
 // functionalities
+#include <filesystem>
 #include <algorithm>
 #include <stdexcept>
-#include <cfloat>
 #include <format>
-#include <cmath>
 #include <ctime>
 #include <regex>
+
+// math
+#include <glm/glm.hpp>
+#include <numbers>
+#include <cmath>
 
 // data structures
 #include <vector>
@@ -32,3 +36,4 @@
 // custom
 #include "utils/Log.hpp"
 extern Log logs;
+extern std::string g_mpcsIniPath;

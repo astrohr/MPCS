@@ -11,7 +11,7 @@ void updateInput(GLFWwindow* window)
         glfwSetWindowShouldClose(window, true);
 }
 
-void windowFunction(unsigned int W, unsigned int H, std::string name)
+void windowFunction(unsigned int W, unsigned int H, std::string name, std::vector<Object>& objects, Observatory& observatory)
 {
     // -------------------- init glfw
     if(!glfwInit()){
@@ -46,7 +46,7 @@ void windowFunction(unsigned int W, unsigned int H, std::string name)
     glEnable(GL_CULL_FACE); // dont draw the side of a vertex that cant be seen
     glCullFace(GL_BACK); // the back side cant be seen
     glFrontFace(GL_CCW); // front is where the points of a triangle are connected counterclockwise
-    glEnable(GL_BLEND); 
+    glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
     // -------------------- shader
@@ -62,6 +62,9 @@ void windowFunction(unsigned int W, unsigned int H, std::string name)
 
         // clear
         glClear(GL_COLOR_BUFFER_BIT	| GL_DEPTH_BUFFER_BIT);
+
+        // draw objects
+
 
         glfwSwapBuffers(window);
         glFlush();

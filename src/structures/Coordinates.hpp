@@ -24,3 +24,14 @@ struct CoordinatesLocal{
     double alt;
     
 };
+
+
+// Geographical coordinates storage struct
+struct CoordinatesGeo{
+    // Longitude
+    double lon;
+
+    // Latitude
+    double lat;
+    
+};

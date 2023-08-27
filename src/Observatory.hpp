@@ -4,8 +4,12 @@
 
 #include "pch.hpp"
 
+#include <inipp/inipp.h>
+
 #include "Coordinates.hpp"
 #include "Telescope.hpp"
+
+#include "utils/utils.hpp"
 
 //----------------------------------------------------------
 
@@ -18,9 +22,11 @@ private:
     // the name of the observatory :]
     std::string name;
 
-    // the coordinates of the observatory
-    // this is meant to be used if all telescopes are nearby
-    Coordinates coords;
+    // coordinates are in the WGS-84 coordinate system
+    // because of this they will not perfectly match with the regular geographic coordinates (google maps), however 
+    // due to the irregular shape of the planet, these coordinates will give a more precise image of the night sky
+    // this is why those coordinates should not be displayed anywhere since they will cause confusion
+    CoordinatesGeo coords;
 
     // the list of avaible telescopes
     std::vector<Telescope> telescopes;
@@ -32,14 +38,24 @@ public:
     ~Observatory() = default;
 
 
-    std::string getID() { return ID; }
+    std::string getID() const { return ID; }
 
     std::vector<Telescope>& getTelescopes() { return telescopes; }
     
+    CoordinatesGeo getCoords() { return coords; }
+
+    std::string getName() const { return name; }
+
+    void setCoords(CoordinatesGeo coords) { this->coords = coords; }
+
     void setName(std::string& name) { this->name = name; }
 
     void setID(std::string& id) { ID = id; }
 
 
+    // the function that will pull the observatory data from https://minorplanetcenter.net/iau/lists/ObsCodes.html
+    // \throw DownloadFail, ForbiddenLink, BadData
+    // \return true if failed, false if it didnt
+    bool fillData();
 
 };

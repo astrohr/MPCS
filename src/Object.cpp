@@ -6,9 +6,9 @@
 
 void Object::extractOrbits()
 {
-    std::string objectsLink = "https://cgi.minorplanetcenter.net/cgi-bin/showobsorbs.cgi?Obj=" + this->name + "&orb=y";
+    std::string orbitsLink = "https://cgi.minorplanetcenter.net/cgi-bin/showobsorbs.cgi?Obj=" + this->name + "&orb=y";
     std::vector<std::string> raw;
-    get_html(objectsLink, raw);
+    get_html(orbitsLink, raw);
 
     // a single string looks like this
     // P11Ip0N 18.6  0.15  K238P 356.90249    8.24817  353.26306   12.51383  0.6861987  0.06144459   6.3603394                  4   1    0 days 0.11         NEOCPV0001
@@ -49,7 +49,7 @@ void Object::extractOrbits()
             ss >> temp; rms = std::stof(temp);
             ss >> temp; temp = temp.substr(6, 4); orbitID = (temp == "omin") ? 1 : std::stoi(temp) + 1;
         } catch(std::exception& e){
-            throw mpcsError::BadData(std::format("Bad data found on {}: \n{}", objectsLink, e.what()));
+            throw mpcsError::BadData(std::format("Bad data found on {}: \n{}", orbitsLink, e.what()));
         }
 
         // instead of trowing an error here (and in other places), write the data to a log and continue scanning

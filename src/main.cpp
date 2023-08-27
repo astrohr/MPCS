@@ -13,6 +13,8 @@
 
 //----------------------------------------------------------
 
+// define global vars
+std::string g_mpcsIniPath;
 
 // this function parses the MPCS.ini file
 // \param[out] W window width
@@ -20,14 +22,7 @@
 // \param[out] FOV telescope FOV
 void defaultVariables(unsigned int& W, unsigned int& H, Observatory& obs)
 {
-    std::ifstream ReadFile("../resources/MPCS.ini");
-    if (!ReadFile.is_open())
-    {
-        ReadFile.open("./resources/MPCS.ini");
-        if (!ReadFile.is_open()){
-            throw mpcsError::InippError("MPCS.ini does not exist, or isnt in the right directory! (resources)\n\n");
-        }
-    }
+    std::ifstream ReadFile(g_mpcsIniPath);
 
     // initialize inipp
     inipp::Ini<char> ini;
@@ -51,7 +46,7 @@ void defaultVariables(unsigned int& W, unsigned int& H, Observatory& obs)
     }
 
     // observatory data
-    std::string id, name;
+    std::string id, name; double longitude, latitude;
     if (!inipp::get_value(ini.sections["Observatory"], "CODE", id)){
         ReadFile.close();
         throw mpcsError::InippError("Observatory code not specified\n");
@@ -60,8 +55,17 @@ void defaultVariables(unsigned int& W, unsigned int& H, Observatory& obs)
         fmt::print("Warning: Observatory name not specified\n");
         name = "";
     }
+    if (!inipp::get_value(ini.sections["Observatory"], "LONGITUDE", longitude)){
+        fmt::print("Log: Observatory longitude not found\n");
+        longitude = -1000.0;
+    }
+    if (!inipp::get_value(ini.sections["Observatory"], "LATITUDE", latitude)){
+        fmt::print("Log: Observatory latitude not found\n");
+        latitude = -1000.0;
+    }
     obs.setID(id);
     obs.setName(name);
+    obs.setCoords({longitude, latitude});
 
 
     // telescope data
@@ -107,6 +111,18 @@ int main(int argc, char **argv)
     Observatory observatory;
 
     std::string version = fmt::format("MPCSolver {}.{}.{}", MPCS_VERSION_MAJOR, MPCS_VERSION_MINOR, MPCS_VERSION_MICRO);
+    fmt::println("Log: {}", version);
+
+    // -------------------- find MPCS.ini
+    fmt::println("Log: looking for MPCS.ini");
+    if (std::filesystem::exists("../resources/MPCS.ini")) g_mpcsIniPath = "../resources/MPCS.ini";
+    else if (std::filesystem::exists("./resources/MPCS.ini")) g_mpcsIniPath = "./resources/MPCS.ini";
+    else if (std::filesystem::exists("./MPCS.ini")) g_mpcsIniPath = "./MPCS.ini";
+    else{
+        fmt::print("Error: MPCS.ini does not exist, or isnt in the right directory! (resources)\n\n");
+        return 1;
+    }
+    fmt::println("Log: MPCS.ini found at {}", g_mpcsIniPath);
 
     // -------------------- read MPCS.ini
     unsigned int W, H;
@@ -132,8 +148,19 @@ int main(int argc, char **argv)
         return 1;
     }
 
+    // -------------------- complete observatory data if it is not completed
+    {
+        auto [lon, lat] = observatory.getCoords();
+        if (
+            lon >= 360.0 || lon < 0.0 || 
+            lat < -90.0 || lat > 90.0 || 
+            observatory.getName().empty()
+        ) observatory.fillData();
+    }
 
-    windowFunction(W, H, "Minor Planet Center Solver 3");
+    // -------------------- start the window
+    windowFunction(W, H, "Minor Planet Center Solver 3", objects, observatory);
+
 
     return 0;
 }

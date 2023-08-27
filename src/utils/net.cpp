@@ -9,6 +9,7 @@ std::vector<std::string> g_allowed_links = {
     "https://cgi.minorplanetcenter.net/",
     "https://www.minorplanetcenter.net/",
     "http://cgi.minorplanetcenter.net/",
+    "https://minorplanetcenter.net/",
 };
 
 void get_html(std::string& link, std::vector<std::string>& raw, int milis){

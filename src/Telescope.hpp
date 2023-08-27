@@ -15,7 +15,7 @@ private:
     std::string name;
 
     // the coordinates of the telescope
-    Coordinates coords;
+    CoordinatesGeo coords;
 
     // telescope field of view (in arcseconds)
     float FOV;
