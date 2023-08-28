@@ -3,8 +3,8 @@
 #pragma once
 
 #include "pch.hpp"
-
 #include "utils/utils.hpp"
+
 #include "VariantOrbit.hpp"
 
 //----------------------------------------------------------
@@ -24,7 +24,11 @@ private:
     
     // Coordinates
     // note that this is the most probable location
-    Coordinates coords;
+    CoordinatesSky coords;
+
+    // Coordinates in 3D space where the sky sphere is a sphere with a center in 0,0,0
+    // this exists to simplify computations
+    Coordinates3D coords3d;
 
     float magnitude;
 
@@ -49,7 +53,7 @@ private:
 public:
 
     Object(
-        std::string& name, int& score, Time& discoveryTime, Coordinates& coords, float& magnitude,
+        std::string& name, int& score, Time& discoveryTime, CoordinatesSky& coords, float& magnitude,
         Time& lastUpdate, std::string& note, int& nObs, float& arc, float& H, float& notSeen
     )
     : name(name), score(score), discoveryTime(discoveryTime), coords(coords), magnitude(magnitude),

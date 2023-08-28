@@ -118,7 +118,7 @@ void Object::findObjects(std::vector<Object>& objects)
         Time discoveryTime(year, month, (int)day, (int)minute, (int)second);
 
         // make a coordinates variable
-        Coordinates coords = {ra, dec};
+        CoordinatesSky coords = {ra, dec};
 
         // turn the lastUpdate string into Time
         float time;

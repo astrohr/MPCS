@@ -3,13 +3,11 @@
 #pragma once
 
 #include "pch.hpp"
+#include "utils/utils.hpp"
 
 #include <inipp/inipp.h>
 
-#include "Coordinates.hpp"
 #include "Telescope.hpp"
-
-#include "utils/utils.hpp"
 
 //----------------------------------------------------------
 

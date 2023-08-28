@@ -1,12 +1,12 @@
 //----------------------------------------------------------
 
 #include "pch.hpp"
+#include "utils/utils.hpp"
 
 #include <inipp/inipp.h>
 
 #include "Observatory.hpp"
 #include "Object.hpp"
-#include "utils/utils.hpp"
 
 #include "src/cmakevars.h"
 #include "window.hpp"
@@ -159,7 +159,7 @@ int main(int argc, char **argv)
     }
 
     // -------------------- start the window
-    windowFunction(W, H, "Minor Planet Center Solver 3", objects, observatory);
+    windowFunction(W, H, objects, observatory);
 
 
     return 0;

@@ -11,7 +11,7 @@ void updateInput(GLFWwindow* window)
         glfwSetWindowShouldClose(window, true);
 }
 
-void windowFunction(unsigned int W, unsigned int H, std::string name, std::vector<Object>& objects, Observatory& observatory)
+void windowFunction(unsigned int W, unsigned int H, std::vector<Object>& objects, Observatory& observatory)
 {
     // -------------------- init glfw
     if(!glfwInit()){
@@ -21,7 +21,7 @@ void windowFunction(unsigned int W, unsigned int H, std::string name, std::vecto
 
     glfwWindowHint(GLFW_RESIZABLE, true);
 
-    GLFWwindow* window = glfwCreateWindow(W, H, name.c_str(), NULL, NULL);
+    GLFWwindow* window = glfwCreateWindow(W, H, "Minor Planet Center Solver 3", NULL, NULL);
 
     // set the resizing function
     glfwSetFramebufferSizeCallback(window, 
@@ -54,7 +54,7 @@ void windowFunction(unsigned int W, unsigned int H, std::string name, std::vecto
     program.use();
 
     // -------------------- window
-    glClearColor(0.f, 1.f, 1.f, 1.f);
+    glClearColor(0.f, 0.f, 0.f, 1.f);
     while(!glfwWindowShouldClose(window))
     {
         glfwPollEvents();

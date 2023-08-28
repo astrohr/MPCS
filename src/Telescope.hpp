@@ -3,8 +3,7 @@
 #pragma once
 
 #include "pch.hpp"
-
-#include "Coordinates.hpp"
+#include "utils/utils.hpp"
 
 //----------------------------------------------------------
 
@@ -24,7 +23,7 @@ private:
     double rotation;
 
     // the locations where specific pictures will be taken
-    std::vector<Coordinates> pictures;
+    std::vector<CoordinatesSky> pictures;
 
 public:
 

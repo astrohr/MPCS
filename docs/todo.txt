@@ -41,8 +41,10 @@ Make it so that the user can configure the setup without opening the ini file
  - The program prompts them for an observatory code and pulls some data from the internet
  - or even better, pulls all of the data and offers the observatories that exist for choosing
  - The same prompting for telescopes 
- - have a thread that polls for changes on the "all objects text file"
- - consider making the time class se std::chrono
+Have a thread that polls for changes on the "all objects text file"
+Consider using std::chrono for time related things
+Make a window where 3d orbit(s) will be displayed
+ - upon selection show the orbit properties (ellipse parameters, perihelion, revolution period, closest distance to earths orbit etc)
 
 Version 4 maybe?
 Separate the program into multiple programs

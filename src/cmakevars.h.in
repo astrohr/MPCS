@@ -4,7 +4,7 @@
 
 //----------------------------------------------------------
 
-
+// this file interacts with cmake to make some defines
 
 #define MPCS_VERSION_MAJOR @MPCS_VERSION_MAJOR@
 #define MPCS_VERSION_MINOR @MPCS_VERSION_MINOR@

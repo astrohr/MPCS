@@ -15,4 +15,4 @@
 //----------------------------------------------------------
 
 
-void windowFunction(unsigned int W, unsigned int H, std::string name, std::vector<Object>& objects, Observatory& observatory);
+void windowFunction(unsigned int W, unsigned int H, std::vector<Object>& objects, Observatory& observatory);
