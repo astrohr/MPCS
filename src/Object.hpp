@@ -19,8 +19,8 @@ private:
     // Minor planet center score
     int score;
 
-    // Time of discovery
-    Time discoveryTime;
+    // time of discovery (unix milis)
+    time_t discoveryTime;
     
     // Coordinates
     // note that this is the most probable location
@@ -32,8 +32,8 @@ private:
 
     float magnitude;
 
-    // Time od last update
-    Time lastUpdate;
+    // time od last update (unix milis)
+    time_t lastUpdate;
 
     // There is a note section which is usually empty but here it is nevertheless
     std::string note;
@@ -53,8 +53,8 @@ private:
 public:
 
     Object(
-        std::string& name, int& score, Time& discoveryTime, CoordinatesSky& coords, float& magnitude,
-        Time& lastUpdate, std::string& note, int& nObs, float& arc, float& H, float& notSeen
+        std::string& name, int& score, time_t& discoveryTime, CoordinatesSky& coords, float& magnitude,
+        time_t& lastUpdate, std::string& note, int& nObs, float& arc, float& H, float& notSeen
     )
     : name(name), score(score), discoveryTime(discoveryTime), coords(coords), magnitude(magnitude),
       lastUpdate(lastUpdate), note(note), nObs(nObs), arc(arc), H(H), notSeen(notSeen)

@@ -113,9 +113,9 @@ void Object::findObjects(std::vector<Object>& objects)
         std::string note = line.substr(notePosition, nobsPosition-notePosition);
 
         // make the time variable
-        float minute = (day - (float)((int)day)) * 60.f;
-        float second = (minute - (float)((int)minute)) * 60.f;
-        Time discoveryTime(year, month, (int)day, (int)minute, (int)second);
+        float hour = (day - (float)((int)day)) * 24.f;
+        float minute = (hour - (float)((int)hour)) * 60.f;
+        time_t discoveryTime = date_to_unix_milis(year, month, day, hour, minute, 0);
 
         // make a coordinates variable
         CoordinatesSky coords = {raH*15.0, dec}; // times 15 because its provided in hours, not degrees
@@ -133,9 +133,9 @@ void Object::findObjects(std::vector<Object>& objects)
         } catch(std::exception& e){
             throw mpcsError::BadData(std::format("Bad data found on {}: \n{}", objectsLink, e.what()));
         }
-        float minute2 = (day2 - (float)((int)day2)) * 60.f;
-        float second2 = (minute2 - (float)((int)minute2)) * 60.f;
-        Time lastUpdate(year2, month2, (int)day2, (int)minute2, (int)second2);
+        float hour2 = (day2 - (float)((int)day2)) * 24.f;
+        float minute2 = (hour2 - (float)((int)hour2)) * 60.f;
+        time_t lastUpdate = date_to_unix_milis(year2, month2, day2, hour2, minute2, 0);
 
         // check if the note has content
         bool noteContent = false;

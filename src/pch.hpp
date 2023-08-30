@@ -36,4 +36,5 @@
 // custom
 #include "utils/Log.hpp"
 extern Log logs;
-extern std::string g_mpcsIniPath;
+extern std::string g_mpcsIniPath; // path to MPCS.ini
+extern double g_radian; // how many radians in a degree

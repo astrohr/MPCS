@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include "Time.hpp"
+#include "pch.hpp"
 
 //----------------------------------------------------------
 
@@ -78,6 +78,6 @@ struct Orbit{
     // the type of the orbit
     OrbitType type;
     
-    // time at which orbit is relevant
-    Time time;
+    // time at which orbit is relevant (unix milis)
+    size_t time;
 };

@@ -45,6 +45,8 @@ Have a thread that polls for changes on the "all objects text file"
 Consider using std::chrono for time related things
 Make a window where 3d orbit(s) will be displayed
  - upon selection show the orbit properties (ellipse parameters, perihelion, revolution period, closest distance to earths orbit etc)
+Add a data tracker that tracks how much internet has been used 
+
 
 Version 4 maybe?
 Separate the program into multiple programs

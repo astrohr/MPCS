@@ -8,7 +8,7 @@ target_sources(${PROJECT_NAME} PUBLIC
     "VariantOrbit.cpp"
     "utils/net.cpp"
     "utils/Log.cpp"
-    "utils/Time.cpp"
+    "utils/misc.cpp"
     "graphics/GLProgram.cpp"
 )
 target_precompile_headers(${PROJECT_NAME} PRIVATE "pch.hpp")
@@ -19,7 +19,6 @@ configure_file("cmakevars.h.in" "${PROJECT_BINARY_DIR}/src/cmakevars.h")
 # include all directories that this code requires (except for the external dependencies)
 target_include_directories(${PROJECT_NAME} PUBLIC
     "${PROJECT_BINARY_DIR}" # due to the configured file
-    "structures"
     "graphics"
     "utils"
     "."

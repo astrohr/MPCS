@@ -14,7 +14,11 @@
 //----------------------------------------------------------
 
 // define global vars
+
 std::string g_mpcsIniPath;
+double g_radian = (std::numbers::pi/180.0);
+
+
 
 // this function parses the MPCS.ini file
 // \param[out] W window width
