@@ -13,12 +13,60 @@
 
 //----------------------------------------------------------
 
-// define global vars
+// define global vars (from pch.hpp)
 
 std::string g_mpcsIniPath;
-double g_radian = (std::numbers::pi/180.0);
+const double g_radian = (std::numbers::pi/180.0);
+const time_t g_siderealDayLength = 86164091;
+std::pair<time_t, time_t> g_siderealTimeReference;
 
 
+// this function gets yesterdays sidereal time in Greenwich at midnight as a reference
+// \throw DownloadFail, ForbiddenLink, BadData
+void setSiderealTimeReference()
+{
+    // find out what is yesterdays date (yesterday is used because of timezone differences)
+
+    time_t yesterday = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now() - std::chrono::hours(24));
+    std::tm* yesterday_tm = std::localtime(&yesterday);
+    int year = yesterday_tm->tm_year + 1900, month = yesterday_tm->tm_mon + 1, day = yesterday_tm->tm_mday;
+
+    // get the data
+
+    std::string apiLink = std::format("https://aa.usno.navy.mil/api/siderealtime?date={}-{}-{}&time=00:00&tz=0&coords=0,0&reps=1&intv_mag=1&intv_unit=day", year, month, day);
+    std::string raw = get_html(apiLink);
+
+    // isolate the data
+
+    size_t dataError = raw.find("\"error\"");
+    size_t dataMarker = raw.find("\"data\"");
+    if (dataMarker == std::string::npos || dataError != std::string::npos)
+        throw mpcsError::BadData(std::format("Bad data found on {}: \n{}", apiLink, raw));
+
+    size_t dataBegin = raw.find('{', dataMarker); // find where the section begins
+    size_t dataEnd = raw.find('}', dataBegin); // find where the section ends
+    std::string dataWindow = raw.substr(dataBegin, dataEnd-dataBegin);
+
+    // regex search the value
+
+    std::regex re("\"gast\"\\s*:\\s*\"([^\"]+)\""); // we are looking for the gast parameter value
+    std::smatch match;
+    std::string val;
+    if (std::regex_search(dataWindow, match, re) && match.size() > 1) val = match.str(1);
+    else throw mpcsError::BadData(std::format("Regex pattern < {} > failed while searching: \n{}", "\"gast\"\\s*:\\s*\"([^\"]+)\"", raw));
+
+    // convert and save
+    // the string looks like this 22:31:43.3540 
+
+    time_t siderealTime = 0;
+    std::istringstream ss(val);
+    std::string temp;
+    std::getline(ss, temp, ':'); siderealTime += std::stoi(temp) * 3600 * 1000;
+    std::getline(ss, temp, ':'); siderealTime += std::stoi(temp) * 60 * 1000;
+    std::getline(ss, temp, ':'); siderealTime += std::stof(temp) * 1000;
+
+    g_siderealTimeReference = std::make_pair(yesterday, siderealTime);
+}
 
 // this function parses the MPCS.ini file
 // \param[out] W window width
@@ -113,6 +161,7 @@ int main(int argc, char **argv)
 {
     // -------------------- Init important things
     Observatory observatory;
+    unsigned int W, H; // window dimensions
 
     std::string version = fmt::format("MPCSolver {}.{}.{}", MPCS_VERSION_MAJOR, MPCS_VERSION_MINOR, MPCS_VERSION_MICRO);
     fmt::println("Log: {}", version);
@@ -129,7 +178,6 @@ int main(int argc, char **argv)
     fmt::println("Log: MPCS.ini found at {}", g_mpcsIniPath);
 
     // -------------------- read MPCS.ini
-    unsigned int W, H;
     try{
         defaultVariables(W, H, observatory);
     } catch (std::exception& e){
@@ -161,6 +209,10 @@ int main(int argc, char **argv)
             observatory.getName().empty()
         ) observatory.fillData();
     }
+
+    // -------------------- fetch the sidereal time reference
+    setSiderealTimeReference();
+    fmt::println("Log: Sidereal time reference set at {} for unix timestamp {}", g_siderealTimeReference.second, g_siderealTimeReference.first);
 
     // -------------------- start the window
     windowFunction(W, H, objects, observatory);

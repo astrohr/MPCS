@@ -121,14 +121,17 @@ void Object::findObjects(std::vector<Object>& objects)
         CoordinatesSky coords = {raH*15.0, dec}; // times 15 because its provided in hours, not degrees
 
         // turn the lastUpdate string into Time
+
+        std::stringstream ss3(lastUpdateStr);
+
         float time;
-        int year2=-1, month2; // year is -1 because year isnt provided and its not needed to specify it in this case
-        float day2, hour2, sec2;
+        int year2 = 1970, month2; // year is 1900 because year isnt provided and its not needed to specify it in this case
+        float day2;
         try{          
-            ss1 >> temp; ss1 >> temp; 
+            ss3 >> temp; ss3 >> temp; 
             if (temp.back() == '.') temp.pop_back(); // remove the dot from the end of the month
-            month2 = monthVals[temp];    
-            ss1 >> temp;
+            month2 = monthVals[temp];
+            ss3 >> temp;
             day2 = std::stof(temp);
         } catch(std::exception& e){
             throw mpcsError::BadData(std::format("Bad data found on {}: \n{}", objectsLink, e.what()));

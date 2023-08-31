@@ -42,7 +42,12 @@ time_t date_to_unix_milis(int year, int month, int day, int hour, int minute, in
 
     // Convert the tm structure to time_t and then to the system_clock::time_point
     time_t time_temp = std::mktime(&time_in);
-    if (time_temp == -1) throw std::runtime_error("Error: Failed to convert to time_t.");
+    if (time_temp == -1) 
+        throw std::runtime_error(std::format(
+            "Error: Failed to convert to time_t\n"
+            "parameters:tm_year = {} - 1900 \ntm_month = {} - 1 \ntm_day = {} \ntm_hour = {} \ntm_minute = {} \ntm_second = {}\n",
+            year, month, day, hour, minute, second
+        ));
 
     auto tp = std::chrono::system_clock::from_time_t(time_temp);
     

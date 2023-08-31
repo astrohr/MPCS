@@ -10,9 +10,10 @@ std::vector<std::string> g_allowed_links = {
     "https://www.minorplanetcenter.net/",
     "http://cgi.minorplanetcenter.net/",
     "https://minorplanetcenter.net/",
+    "https://aa.usno.navy.mil/api/",
 };
 
-void get_html(std::string& link, std::vector<std::string>& raw, int milis){
+std::string get_html(std::string& link, int milis){
     // Check if the link type is allowed by comparing to the strings in g_allowed_links
     bool match = false;
     for(int i = 0; i < g_allowed_links.size() && !match; i++)
@@ -49,11 +50,18 @@ void get_html(std::string& link, std::vector<std::string>& raw, int milis){
     else if (r.status_code >= 400) {
         throw mpcsError::DownloadFail(fmt::format("Error {} making request", r.status_code));
     }
+
+    fmt::print("\rDownload success :D               ");
+
+    return r.text;
+}
+
+void get_html(std::string& link, std::vector<std::string>& raw, int milis){
+    std::string rawstr = get_html(link, milis);
     
     // separate the response at every newline
     raw.clear();
-    std::istringstream iss(r.text);
+    std::istringstream iss(rawstr);
     std::string line;
-    while (std::getline(iss, line)) raw.push_back(line);
-
+    while (std::getline(iss, line)) raw.push_back(line);   
 }

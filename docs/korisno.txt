@@ -52,3 +52,9 @@ LIST OF ALL OBJECTS
 
 https://www.minorplanetcenter.net/iau/NEO/neocp.txt
 // i dont know what parameter is H and Arc in this file (two before the last one)
+
+
+
+SIDEREAL TIME API
+https://aa.usno.navy.mil/data/api
+(year range 1800-2050)
