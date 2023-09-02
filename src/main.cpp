@@ -2,13 +2,13 @@
 
 #include "pch.hpp"
 #include "utils/utils.hpp"
+#include "src/cmakevars.h"
 
 #include <inipp/inipp.h>
 
 #include "Observatory.hpp"
 #include "Object.hpp"
 
-#include "src/cmakevars.h"
 #include "window.hpp"
 
 //----------------------------------------------------------
@@ -184,6 +184,10 @@ int main(int argc, char **argv)
         fmt::print("Error in MPCS.ini: {} \n\n", e.what());
         return 1;
     }
+
+    // -------------------- fetch the sidereal time reference
+    setSiderealTimeReference();
+    fmt::println("Log: Sidereal time reference set at {} for unix timestamp {}", g_siderealTimeReference.second, g_siderealTimeReference.first);
     
     // -------------------- get available objects
     std::vector<Object> objects;
@@ -199,6 +203,7 @@ int main(int argc, char **argv)
         fmt::print("Forbidden link:\n{}", e.what());
         return 1;
     }
+    fmt::println("Log: Found {} objects", objects.size());
 
     // -------------------- complete observatory data if it is not completed
     {
@@ -209,10 +214,6 @@ int main(int argc, char **argv)
             observatory.getName().empty()
         ) observatory.fillData();
     }
-
-    // -------------------- fetch the sidereal time reference
-    setSiderealTimeReference();
-    fmt::println("Log: Sidereal time reference set at {} for unix timestamp {}", g_siderealTimeReference.second, g_siderealTimeReference.first);
 
     // -------------------- start the window
     windowFunction(W, H, objects, observatory);

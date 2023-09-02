@@ -7,7 +7,9 @@
 
 #include "pch.hpp"
 #include "utils/utils.hpp"
+
 #include "graphics/GLProgram.hpp"
+#include "graphics/Camera.hpp"
 
 #include "Object.hpp"
 #include "Observatory.hpp"

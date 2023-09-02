@@ -4,6 +4,17 @@
 
 //----------------------------------------------------------
 
+
+Object::Object(
+    std::string& name, int& score, time_t& discoveryTime, CoordinatesSky& coords, float& magnitude,
+    time_t& lastUpdate, std::string& note, int& nObs, float& arc, float& H, float& notSeen
+)
+: name(name), score(score), discoveryTime(discoveryTime), coords(coords), magnitude(magnitude),
+    lastUpdate(lastUpdate), note(note), nObs(nObs), arc(arc), H(H), notSeen(notSeen)
+{
+    coords3d = skyTo3D(coords);
+}
+
 void Object::extractOrbits()
 {
     std::string orbitsLink = "https://cgi.minorplanetcenter.net/cgi-bin/showobsorbs.cgi?Obj=" + this->name + "&orb=y";

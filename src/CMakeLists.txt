@@ -9,7 +9,9 @@ target_sources(${PROJECT_NAME} PUBLIC
     "utils/net.cpp"
     "utils/Log.cpp"
     "utils/misc.cpp"
+    "utils/structures.cpp"
     "graphics/GLProgram.cpp"
+    "graphics/Camera.cpp"
 )
 target_precompile_headers(${PROJECT_NAME} PRIVATE "pch.hpp")
 

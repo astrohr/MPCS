@@ -47,6 +47,7 @@ Make a window where 3d orbit(s) will be displayed
  - upon selection show the orbit properties (ellipse parameters, perihelion, revolution period, closest distance to earths orbit etc)
 Add a data tracker that tracks how much internet has been used 
 Utils folder is weird now, functionalities that act as mini external libraries that can be put into other projects should be there, not structures
+Find a way to hide shaders inside the code, instead of having a folder for them
 
 
 Version 4 maybe?

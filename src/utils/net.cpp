@@ -51,7 +51,7 @@ std::string get_html(std::string& link, int milis){
         throw mpcsError::DownloadFail(fmt::format("Error {} making request", r.status_code));
     }
 
-    fmt::print("\rDownload success :D               ");
+    fmt::println("\rDownload success :D               ");
 
     return r.text;
 }

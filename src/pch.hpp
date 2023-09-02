@@ -18,11 +18,15 @@
 #include <regex>
 
 // math
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/quaternion.hpp>
+#include <glm/gtx/quaternion.hpp>
 #include <glm/glm.hpp>
 #include <numbers>
 #include <cmath>
 
 // data structures
+#include <unordered_map>
 #include <utility>
 #include <vector>
 #include <string>

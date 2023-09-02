@@ -55,15 +55,12 @@ public:
     Object(
         std::string& name, int& score, time_t& discoveryTime, CoordinatesSky& coords, float& magnitude,
         time_t& lastUpdate, std::string& note, int& nObs, float& arc, float& H, float& notSeen
-    )
-    : name(name), score(score), discoveryTime(discoveryTime), coords(coords), magnitude(magnitude),
-      lastUpdate(lastUpdate), note(note), nObs(nObs), arc(arc), H(H), notSeen(notSeen)
-    {}
+    );
 
     ~Object() = default;
 
     const std::string getName() const { return name; }
-
+    const Coordinates3D& getCoords3D() const { return coords3d; }
 
     // function that will fill the variantOrbits variable
     // scrapes all available objects from https://cgi.minorplanetcenter.net/cgi-bin/showobsorbs.cgi?Obj=[name]&orb=y
