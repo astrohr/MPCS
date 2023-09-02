@@ -15,11 +15,44 @@
 
 // define global vars (from pch.hpp)
 
-std::string g_mpcsIniPath;
+std::string g_resourcesPath;
 const double g_radian = (std::numbers::pi/180.0);
 const time_t g_siderealDayLength = 86164091;
 std::pair<time_t, time_t> g_siderealTimeReference;
 
+bool checkPath(const std::string& path)
+{
+    fmt::println("Log: Checking path {}", path);
+    bool allresources = true;
+    if (!std::filesystem::exists(path)){
+        fmt::println("Log: Folder {} doesnt exist", path);    
+        return false;
+    }
+
+    fmt::println("Log: resources folder found at {}", path);
+    fmt::println("Log: Checking resources...");
+
+    if (std::filesystem::exists(path+"/MPCS.ini")) fmt::println("Log: MPCS.ini found");
+    else{
+        fmt::println("Log: MPCS.ini not found");
+        allresources = false;
+    }
+
+    if (std::filesystem::exists(path+"/shaders/fragment.glsl")) fmt::println("Log: shaders/fragment.glsl found");
+    else{
+        fmt::println("Log: shaders/fragment.glsl not found");
+        allresources = false;
+    }
+
+    if (std::filesystem::exists(path+"/shaders/vertex.glsl")) fmt::println("Log: shaders/vertex.glsl found");
+    else{
+        fmt::println("Log: shaders/vertex.glsl not found");
+        allresources = false;
+    }
+
+    if (allresources) fmt::println("Log: resources found at {}", path);
+    return allresources;
+}
 
 // this function gets yesterdays sidereal time in Greenwich at midnight as a reference
 // \throw DownloadFail, ForbiddenLink, BadData
@@ -74,7 +107,7 @@ void setSiderealTimeReference()
 // \param[out] FOV telescope FOV
 void defaultVariables(unsigned int& W, unsigned int& H, Observatory& obs)
 {
-    std::ifstream ReadFile(g_mpcsIniPath);
+    std::ifstream ReadFile(g_resourcesPath+"/MPCS.ini");
 
     // initialize inipp
     inipp::Ini<char> ini;
@@ -167,15 +200,14 @@ int main(int argc, char **argv)
     fmt::println("Log: {}", version);
 
     // -------------------- find MPCS.ini
-    fmt::println("Log: looking for MPCS.ini");
-    if (std::filesystem::exists("../resources/MPCS.ini")) g_mpcsIniPath = "../resources/MPCS.ini";
-    else if (std::filesystem::exists("./resources/MPCS.ini")) g_mpcsIniPath = "./resources/MPCS.ini";
-    else if (std::filesystem::exists("./MPCS.ini")) g_mpcsIniPath = "./MPCS.ini";
+    fmt::println("Log: looking for the resources folder...");
+    if (checkPath("../resources")) g_resourcesPath = "../resources";
+    else if (checkPath("./resources")) g_resourcesPath = "./resources";
+    else if (checkPath("./MPCS.ini")) g_resourcesPath = ".";
     else{
-        fmt::print("Error: MPCS.ini does not exist, or isnt in the right directory! (resources)\n\n");
+        fmt::print("Error: resources not found!\n\n");
         return 1;
     }
-    fmt::println("Log: MPCS.ini found at {}", g_mpcsIniPath);
 
     // -------------------- read MPCS.ini
     try{

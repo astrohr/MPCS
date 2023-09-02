@@ -44,7 +44,7 @@ bool Observatory::fillData()
 
     // write data to MPCS.ini
     // note that this part of code RELIES on previous code to check there is an observatory section with its id specified
-    std::fstream iniFile(g_mpcsIniPath);
+    std::fstream iniFile(g_resourcesPath + "/MPCS.ini");
     if(!iniFile) return 1;
 
     std::stringstream ss; ss << iniFile.rdbuf(); // copy the file
@@ -84,7 +84,7 @@ bool Observatory::fillData()
 
     newData += data.substr(nextData); // and add the rest of the file
     
-    std::filesystem::resize_file(g_mpcsIniPath, 0); // clear the file
+    std::filesystem::resize_file(g_resourcesPath + "/MPCS.ini", 0); // clear the file
     iniFile.seekp(0); // go to the beginning
     iniFile << newData; // write
 
