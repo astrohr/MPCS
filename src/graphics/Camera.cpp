@@ -8,7 +8,7 @@
 void Camera::calibrateCameraMatrix()
 {
     glm::mat4 proj = glm::perspective(
-        fov * (float)g_radian, // fov
+        glm::radians(fov), // fov
         (float)W/H, // aspect ratio
         0.1f, // near clipping plane, keep as big as possible, or you get precision issues
         5.0f // far clipping plane, keep as little as possible
@@ -76,8 +76,8 @@ void Camera::setRotations(CoordinatesGeo& coords, time_t time, CoordinatesSkyLoc
     // rotate the camera along the sky equator towards the vernal equinox using the sidereal time reference
 
     yaw = (HA / g_siderealDayLength) * (2 * std::numbers::pi);
-    if (HA > g_siderealDayLength / 2) pitch = (3 - HA / (g_siderealDayLength / 4)) * (coords.lat * g_radian);
-    else pitch = (1 - HA / (g_siderealDayLength / 4)) * (-coords.lat * g_radian);
+    if (HA > g_siderealDayLength / 2) pitch = (3 - HA / (g_siderealDayLength / 4)) * glm::radians((float)coords.lat);
+    else pitch = (1 - HA / (g_siderealDayLength / 4)) * glm::radians(-1 * (float)coords.lat);
 
     updateRotations(look); // this also updates the camera matrix
 
@@ -86,8 +86,8 @@ void Camera::setRotations(CoordinatesGeo& coords, time_t time, CoordinatesSkyLoc
 
 void Camera::updateRotations(CoordinatesSkyLocal &newPosition)
 {
-    yaw += (newPosition.alt - lookingPosition.alt) * g_radian;
-    pitch += (newPosition.az - newPosition.az) * g_radian; 
+    yaw += glm::radians((float)newPosition.alt - (float)lookingPosition.alt);
+    pitch += glm::radians((float)newPosition.az - (float)newPosition.az); 
 
     lookingPosition = newPosition;
     calibrateCameraMatrix();
@@ -95,9 +95,9 @@ void Camera::updateRotations(CoordinatesSkyLocal &newPosition)
 
 void Camera::pan(bool up, bool left, bool down, bool right)
 {
-    if (up) pitch += 1*g_radian;
-    if (left) yaw -= 1*g_radian;
-    if (down) pitch -= 1*g_radian;
-    if (right) yaw += 1*g_radian;
+    if (up) pitch += glm::radians(1.f);
+    if (left) yaw -= glm::radians(1.f);
+    if (down) pitch -= glm::radians(1.f);
+    if (right) yaw += glm::radians(1.f);
     calibrateCameraMatrix();
 }

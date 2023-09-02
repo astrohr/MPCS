@@ -37,7 +37,7 @@ bool Observatory::fillData()
     }
 
     // calculate latitude
-    double latitude = std::atan(sin/cos) / g_radian;
+    double latitude = std::atan(sin/cos) / std::numbers::pi * 180.0;
 
     this->name = name;
     this->coords = {longitude, latitude};

@@ -16,7 +16,6 @@
 // define global vars (from pch.hpp)
 
 std::string g_resourcesPath;
-const double g_radian = (std::numbers::pi/180.0);
 const time_t g_siderealDayLength = 86164091;
 std::pair<time_t, time_t> g_siderealTimeReference;
 
