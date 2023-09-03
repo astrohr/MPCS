@@ -54,4 +54,8 @@ public:
 
     // pans the camera
     void pan(bool up, bool left, bool down, bool right);
+    
+    // zooms the camera
+    // \param[in] closer true if zoom in, false iz zoom out
+    void zoom(bool closer);
 };

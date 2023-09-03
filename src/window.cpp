@@ -33,13 +33,6 @@ void windowFunction(unsigned int W, unsigned int H, std::vector<Object>& objects
 
     GLFWwindow* window = glfwCreateWindow(W, H, "Minor Planet Center Solver 3", NULL, NULL);
 
-    // set the resizing function
-    glfwSetFramebufferSizeCallback(window, 
-        [](GLFWwindow* window, int frameBufferWidth, int frameBufferHeight) -> void {
-            glViewport(0, 0, frameBufferWidth, frameBufferHeight);
-        }
-    );
-
     glfwMakeContextCurrent(window);
 
     // -------------------- init glew
@@ -87,7 +80,31 @@ void windowFunction(unsigned int W, unsigned int H, std::vector<Object>& objects
     Camera cam(W, H, 100);
 
     // -------------------- shader
-    GLProgram program("../resources/shaders/vertex.glsl", "../resources/shaders/fragment.glsl");
+    GLProgram program(g_resourcesPath+"/shaders/vertex.glsl", g_resourcesPath+"/shaders/fragment.glsl");
+
+    // -------------------- glfw window callback functions
+    struct CallbackData {
+        Camera* mainCamera;
+    };
+    CallbackData callbackData;
+    callbackData.mainCamera = &cam;
+    glfwSetWindowUserPointer(window, &callbackData); // had to do this because i need camera in a callback function
+
+    // mouse scrolling
+    glfwSetScrollCallback(window, 
+        [](GLFWwindow* window, double xoffset, double yoffset) -> void {
+            CallbackData* data = static_cast<CallbackData*>(glfwGetWindowUserPointer(window)); // retrieve camera callback data
+            if (yoffset > 0)  data->mainCamera->zoom(true);
+            else data->mainCamera->zoom(false);
+        }
+    );
+
+    // window resizing
+    glfwSetFramebufferSizeCallback(window, 
+        [](GLFWwindow* window, int frameBufferWidth, int frameBufferHeight) -> void {
+            glViewport(0, 0, frameBufferWidth, frameBufferHeight);
+        }
+    );
 
     // -------------------- window
     glClearColor(0.f, 0.f, 0.f, 1.f);

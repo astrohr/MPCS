@@ -21,28 +21,6 @@ void Camera::calibrateCameraMatrix()
     glm::mat4 tran = glm::translate(glm::mat4(1.0f), glm::vec3(position.X, position.Y, position.Z));
 
     matrix = proj * rot * tran;
-
-    // std::cout << "\nproj:\n";
-    // for (int i = 0; i < 4; i++) {
-    //     for (int j = 0; j < 4; j++) {
-    //         std::cout << proj[i][j] << " ";
-    //     }
-    //     std::cout << std::endl;
-    // }
-    // std::cout << "rot:\n";
-    // for (int i = 0; i < 4; i++) {
-    //     for (int j = 0; j < 4; j++) {
-    //         std::cout << rot[i][j] << " ";
-    //     }
-    //     std::cout << std::endl;
-    // }
-    // std::cout << "tran:\n";
-    // for (int i = 0; i < 4; i++) {
-    //     for (int j = 0; j < 4; j++) {
-    //         std::cout << tran[i][j] << " ";
-    //     }
-    //     std::cout << std::endl;
-    // }
 }
 
 Camera::Camera(Coordinates3D position, double pitch, double roll, double yaw, int W, int H, float fov)
@@ -95,9 +73,16 @@ void Camera::updateRotations(CoordinatesSkyLocal &newPosition)
 
 void Camera::pan(bool up, bool left, bool down, bool right)
 {
-    if (up) pitch += glm::radians(1.f);
-    if (left) yaw -= glm::radians(1.f);
-    if (down) pitch -= glm::radians(1.f);
-    if (right) yaw += glm::radians(1.f);
+    if (up) pitch += glm::radians(fov/100.f);
+    if (left) yaw -= glm::radians(fov/100.f);
+    if (down) pitch -= glm::radians(fov/100.f);
+    if (right) yaw += glm::radians(fov/100.f);
+    calibrateCameraMatrix();
+}
+
+void Camera::zoom(bool closer)
+{
+    if (closer) fov = std::max(5.f, fov*0.985f);
+    else fov = std::min(170.f, fov*1.015f);
     calibrateCameraMatrix();
 }

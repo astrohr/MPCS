@@ -19,6 +19,8 @@ std::string g_resourcesPath;
 const time_t g_siderealDayLength = 86164091;
 std::pair<time_t, time_t> g_siderealTimeReference;
 
+// function checks if a given path has all resources that this program requires
+// \param[in] path path to the folder to check
 bool checkPath(const std::string& path)
 {
     fmt::println("Log: Checking path {}", path);
