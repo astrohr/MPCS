@@ -23,7 +23,7 @@ void windowFunction(unsigned int W, unsigned int H, std::vector<Object>& objects
 {
     // -------------------- init glfw
     if(!glfwInit()){
-        fmt::print("GLFW init failed\n");
+        fmt::println("Error: GLFW init failed");
         return;
     }
 
@@ -40,7 +40,7 @@ void windowFunction(unsigned int W, unsigned int H, std::vector<Object>& objects
     GLenum err = glewInit();
     if(err != GLEW_OK){
         glfwTerminate();
-        fmt::print("GLEW init failed:\n{}", (char*)glewGetErrorString(err));
+        fmt::println("Error: GLEW init failed:\n{}", (char*)glewGetErrorString(err));
         return;
     }
     
@@ -52,29 +52,6 @@ void windowFunction(unsigned int W, unsigned int H, std::vector<Object>& objects
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-    // ------------------- set up drawing data
-    std::vector<float> vertices;
-    for(auto obj : objects){
-        fmt::println("Log: Coords for {} - {} {} {}", obj.getName(), obj.getCoords3D().X, obj.getCoords3D().Y, obj.getCoords3D().Z);
-        vertices.emplace_back(obj.getCoords3D().X);
-        vertices.emplace_back(obj.getCoords3D().Y);
-        vertices.emplace_back(obj.getCoords3D().Z);
-    }
-
-    unsigned int VBO, VAO;
-    glGenVertexArrays(1, &VAO);
-    glGenBuffers(1, &VBO);
-
-    glBindVertexArray(VAO);
-
-    glBindBuffer(GL_ARRAY_BUFFER, VBO);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(float)*vertices.size(), &vertices[0], GL_STATIC_DRAW);
-
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
-    glEnableVertexAttribArray(0);
-
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
-    glBindVertexArray(0);
 
     // -------------------- camera
     Camera cam(W, H, 100);
@@ -106,21 +83,81 @@ void windowFunction(unsigned int W, unsigned int H, std::vector<Object>& objects
         }
     );
 
+    // ------------------- set up drawing data
+    // objects
+    std::vector<float> vertices;
+    for(auto obj : objects){
+        vertices.emplace_back(obj.getCoords3D().X);
+        vertices.emplace_back(obj.getCoords3D().Y);
+        vertices.emplace_back(obj.getCoords3D().Z);
+    }
+
+    unsigned int VBobjects, VAobjects;
+    glGenVertexArrays(1, &VAobjects);
+    glGenBuffers(1, &VBobjects);
+
+    glBindVertexArray(VAobjects);
+
+    glBindBuffer(GL_ARRAY_BUFFER, VBobjects);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(float)*vertices.size(), &vertices[0], GL_STATIC_DRAW);
+
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+    glEnableVertexAttribArray(0);
+
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glBindVertexArray(0);
+
+    // horizon line
+    vertices.clear();
+    CoordinatesSkyLocal c = cam.getLookingPosition();
+    cam.updateRotations({0, 0});
+    glm::vec3 camRot = cam.getRotationAngles();
+    glm::quat quaternion; quaternion = glm::quat(glm::vec3(camRot[0]+std::numbers::pi/2.0, camRot[1], camRot[2]));
+    glm::mat4 rot = glm::toMat4(quaternion);
+    cam.updateRotations(c);
+    const int CIRCLE_POINTS = 16;
+    for(int i = 0; i < CIRCLE_POINTS; i++){
+        double rad = 2.0*std::numbers::pi * i/CIRCLE_POINTS;
+        glm::vec4 circlePoint = rot * glm::vec4(std::cos(rad), std::sin(rad), 0.0, 0.0);
+        vertices.emplace_back(circlePoint[0]);
+        vertices.emplace_back(circlePoint[1]);
+        vertices.emplace_back(circlePoint[2]);
+    }
+
+    unsigned int VBground, VAground;
+    glGenVertexArrays(1, &VAground);
+    glGenBuffers(1, &VBground);
+
+    glBindVertexArray(VAground);
+
+    glBindBuffer(GL_ARRAY_BUFFER, VBground);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(float)*vertices.size(), &vertices[0], GL_STATIC_DRAW);
+
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+    glEnableVertexAttribArray(0);
+
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glBindVertexArray(0);
+
     // -------------------- window
     glClearColor(0.f, 0.f, 0.f, 1.f);
+    glPointSize(3.0f);
     while(!glfwWindowShouldClose(window))
     {
         glfwPollEvents();
         updateInput(window, cam);
+        program.setUniformMat4f("MVP", cam.getTransformation());
 
         // clear
         glClear(GL_COLOR_BUFFER_BIT	| GL_DEPTH_BUFFER_BIT);
-
+        
         // draw objects
-        program.setUniformMat4f("MVP", cam.getTransformation());
-        glBindVertexArray(VAO);
-        glPointSize(5.0f);
+        glBindVertexArray(VAobjects);
         glDrawArrays(GL_POINTS, 0, objects.size());
+
+        // draw horizon line
+        glBindVertexArray(VAground);
+        glDrawArrays(GL_LINE_LOOP, 0, CIRCLE_POINTS);
 
         // bureaucracy..
         glfwSwapBuffers(window);
@@ -128,6 +165,10 @@ void windowFunction(unsigned int W, unsigned int H, std::vector<Object>& objects
     }
 
     // -------------------- deinit
+    glDeleteBuffers(1, &VBobjects);
+    glDeleteVertexArrays(1, &VAobjects);
+    glDeleteBuffers(1, &VBground);
+    glDeleteVertexArrays(1, &VAground);
     glfwDestroyWindow(window);
     glfwTerminate();
 }

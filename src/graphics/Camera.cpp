@@ -14,8 +14,7 @@ void Camera::calibrateCameraMatrix()
         5.0f // far clipping plane, keep as little as possible
     );
 
-    glm::vec3 EulerAngles(pitch, roll, yaw);
-    glm::quat quaternion(EulerAngles);
+    glm::quat quaternion(rotations);
     glm::mat4 rot = glm::toMat4(quaternion);
     
     glm::mat4 tran = glm::translate(glm::mat4(1.0f), glm::vec3(position.X, position.Y, position.Z));
@@ -23,14 +22,8 @@ void Camera::calibrateCameraMatrix()
     matrix = proj * rot * tran;
 }
 
-Camera::Camera(Coordinates3D position, double pitch, double roll, double yaw, int W, int H, float fov)
-: position(position), pitch(pitch), roll(roll), yaw(yaw), W(W), H(H), fov(fov), lookingPosition({0.0, 0.0})
-{
-    calibrateCameraMatrix();
-}
-
 Camera::Camera(int W, int H, float fov)
-: position({0.0, 0.0, 0.0}), pitch(0.0), roll(0.0), yaw(0.0), W(W), H(H), fov(fov), lookingPosition({0.0, 0.0})
+: position({0.0, 0.0, 0.0}), rotations(glm::vec3(0.f)), W(W), H(H), fov(fov), lookingPosition({0.0, 0.0})
 {
     calibrateCameraMatrix();
 }
@@ -41,7 +34,7 @@ void Camera::setRotations(CoordinatesGeo& coords, time_t time, CoordinatesSkyLoc
 
     // account for the longitude 
 
-    roll = (coords.lon / 360.0);
+    rotations[0] = (coords.lon / 360.0);
 
     // calculate the hour angle
 
@@ -53,19 +46,19 @@ void Camera::setRotations(CoordinatesGeo& coords, time_t time, CoordinatesSkyLoc
 
     // rotate the camera along the sky equator towards the vernal equinox using the sidereal time reference
 
-    yaw = (HA / g_siderealDayLength) * (2 * std::numbers::pi);
-    if (HA > g_siderealDayLength / 2) pitch = (3 - HA / (g_siderealDayLength / 4)) * glm::radians((float)coords.lat);
-    else pitch = (1 - HA / (g_siderealDayLength / 4)) * glm::radians(-1 * (float)coords.lat);
+    rotations[2] = (HA / g_siderealDayLength) * (2 * std::numbers::pi);
+    if (HA > g_siderealDayLength / 2) rotations[1] = (3 - HA / (g_siderealDayLength / 4)) * glm::radians((float)coords.lat);
+    else rotations[1] = (1 - HA / (g_siderealDayLength / 4)) * glm::radians(-1 * (float)coords.lat);
 
     updateRotations(look); // this also updates the camera matrix
 
     // a small note that even tho it is not needed to use all 3 roll directions, it is done for the sake of simplicity
 }
 
-void Camera::updateRotations(CoordinatesSkyLocal &newPosition)
+void Camera::updateRotations(CoordinatesSkyLocal newPosition)
 {
-    yaw += glm::radians((float)newPosition.alt - (float)lookingPosition.alt);
-    pitch += glm::radians((float)newPosition.az - (float)newPosition.az); 
+    rotations[2] += glm::radians((float)newPosition.alt - (float)lookingPosition.alt);
+    rotations[1] += glm::radians((float)newPosition.az - (float)newPosition.az); 
 
     lookingPosition = newPosition;
     calibrateCameraMatrix();
@@ -73,10 +66,10 @@ void Camera::updateRotations(CoordinatesSkyLocal &newPosition)
 
 void Camera::pan(bool up, bool left, bool down, bool right)
 {
-    if (up) pitch += glm::radians(fov/100.f);
-    if (left) yaw -= glm::radians(fov/100.f);
-    if (down) pitch -= glm::radians(fov/100.f);
-    if (right) yaw += glm::radians(fov/100.f);
+    if (up) rotations[1] += glm::radians(fov/100.f);
+    if (left) rotations[2] -= glm::radians(fov/100.f);
+    if (down) rotations[1] -= glm::radians(fov/100.f);
+    if (right) rotations[2] += glm::radians(fov/100.f);
     calibrateCameraMatrix();
 }
 
