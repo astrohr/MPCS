@@ -11,8 +11,8 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED TRUE)
 
 if(WIN32) # Install dlls in the same directory as the executable on Windows
-    set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
-    set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
+    set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR})
+    set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR})
 endif()
 
 # -------------------- DEPENDENCIES
@@ -110,6 +110,18 @@ if(NOT clip_POPULATED)
     add_subdirectory(${clip_SOURCE_DIR} ${clip_BINARY_DIR})
 endif()
 
+# add imgui
+FetchContent_Declare(
+    imgui-docking
+    GIT_REPOSITORY https://github.com/ocornut/imgui
+    GIT_TAG v1.89.9-docking
+)
+
+FetchContent_GetProperties(imgui-docking)
+if(NOT imgui-docking_POPULATED)
+    FetchContent_Populate(imgui-docking)
+endif()
+
 # -------------------- END OF DEPENDENCIES
 
 # create executable
@@ -117,6 +129,17 @@ add_executable(${PROJECT_NAME})
 
 # add code
 add_subdirectory("src")
+
+# # add imgui code since they dont have their own cmake
+target_sources(${PROJECT_NAME} PUBLIC
+    "${PROJECT_BINARY_DIR}/_deps/imgui-docking-src/imgui.cpp"
+    "${PROJECT_BINARY_DIR}/_deps/imgui-docking-src/imgui_draw.cpp"
+    "${PROJECT_BINARY_DIR}/_deps/imgui-docking-src/imgui_demo.cpp"  # delete this one before moving to the main branch
+    "${PROJECT_BINARY_DIR}/_deps/imgui-docking-src/imgui_tables.cpp"
+    "${PROJECT_BINARY_DIR}/_deps/imgui-docking-src/imgui_widgets.cpp"
+    "${PROJECT_BINARY_DIR}/_deps/imgui-docking-src/backends/imgui_impl_glfw.cpp"
+    "${PROJECT_BINARY_DIR}/_deps/imgui-docking-src/backends/imgui_impl_opengl3.cpp"
+)
 
 # include submodules
 target_include_directories(${PROJECT_NAME} PUBLIC
@@ -128,6 +151,8 @@ target_include_directories(${PROJECT_NAME} PUBLIC
     "${PROJECT_BINARY_DIR}/_deps/glew-src/include/"
     "${PROJECT_BINARY_DIR}/_deps/glfw-src/include/"
     "${PROJECT_BINARY_DIR}/_deps/cpr-src/include/"
+    "${PROJECT_BINARY_DIR}/_deps/imgui-docking-src/"
+    "${PROJECT_BINARY_DIR}/_deps/imgui-docking-src/backends/"
 )
 
 # link all libraries to the executable

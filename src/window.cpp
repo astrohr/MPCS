@@ -44,6 +44,9 @@ void windowFunction(unsigned int W, unsigned int H, std::vector<Object>& objects
         return;
     }
     
+    fmt::println("Log: OpenGL version {}", (char*)glGetString(GL_VERSION));
+
+
     // -------------------- opengl options
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_CULL_FACE); // dont draw the side of a vertex that cant be seen
@@ -52,6 +55,29 @@ void windowFunction(unsigned int W, unsigned int H, std::vector<Object>& objects
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
+    // -------------------- init opengl
+    IMGUI_CHECKVERSION(); // check that version is compatible with what its used for
+    ImGui::CreateContext();
+    ImGuiIO& io = ImGui::GetIO(); (void)io;
+    io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;       // Enable Keyboard Controls
+    io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;           // Enable Docking
+    io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;         // Enable Multi-Viewport / Platform Windows
+
+    ImGui::StyleColorsDark();
+
+    // When viewports are enabled we tweak WindowRounding/WindowBg so platform windows can look identical to regular ones.
+    ImGuiStyle& style = ImGui::GetStyle();
+    if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
+    {
+        style.WindowRounding = 0.0f;
+        style.Colors[ImGuiCol_WindowBg].w = 1.0f;
+    }
+
+    // Setup Platform/Renderer backends
+    ImGui_ImplGlfw_InitForOpenGL(window, true);
+    ImGui_ImplOpenGL3_Init("#version 330"); //glsl version
+
+    fmt::println("Log: IMGUI version: {}", IMGUI_VERSION);
 
     // -------------------- camera
     Camera cam(W, H, 100);
@@ -70,6 +96,8 @@ void windowFunction(unsigned int W, unsigned int H, std::vector<Object>& objects
     // mouse scrolling
     glfwSetScrollCallback(window, 
         [](GLFWwindow* window, double xoffset, double yoffset) -> void {
+            ImGui_ImplGlfw_ScrollCallback(window, xoffset, yoffset); // first call the scroll event of imgui since its windows are in front
+            if (ImGui::GetIO().WantCaptureMouse) return; // check if imgui wants to capture the mouse
             CallbackData* data = static_cast<CallbackData*>(glfwGetWindowUserPointer(window)); // retrieve camera callback data
             if (yoffset > 0)  data->mainCamera->zoom(true);
             else data->mainCamera->zoom(false);
@@ -144,13 +172,19 @@ void windowFunction(unsigned int W, unsigned int H, std::vector<Object>& objects
     glPointSize(3.0f);
     while(!glfwWindowShouldClose(window))
     {
+        // clear
+        glClear(GL_COLOR_BUFFER_BIT	| GL_DEPTH_BUFFER_BIT);
+
+        // Start the Dear ImGui frame
+        ImGui_ImplOpenGL3_NewFrame();
+        ImGui_ImplGlfw_NewFrame();
+        ImGui::NewFrame();
+
+        // user interactions
         glfwPollEvents();
         updateInput(window, cam);
         program.setUniformMat4f("MVP", cam.getTransformation());
 
-        // clear
-        glClear(GL_COLOR_BUFFER_BIT	| GL_DEPTH_BUFFER_BIT);
-        
         // draw objects
         glBindVertexArray(VAobjects);
         glDrawArrays(GL_POINTS, 0, objects.size());
@@ -159,12 +193,31 @@ void windowFunction(unsigned int W, unsigned int H, std::vector<Object>& objects
         glBindVertexArray(VAground);
         glDrawArrays(GL_LINE_LOOP, 0, CIRCLE_POINTS);
 
-        // bureaucracy..
+        // draw imgui stuff
+        ImGui::ShowDemoWindow();
+
+        // render imgui stuff
+        ImGui::Render();
+        ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+
+
+        // Update and Render additional Platform Windows (imgui docking thing)
+        if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable){
+            GLFWwindow* backup_current_context = glfwGetCurrentContext();
+            ImGui::UpdatePlatformWindows();
+            ImGui::RenderPlatformWindowsDefault();
+            glfwMakeContextCurrent(backup_current_context);
+        }
+
+        // make sure it gets displayed, ok?
         glfwSwapBuffers(window);
         glFlush();
     }
 
     // -------------------- deinit
+    ImGui_ImplOpenGL3_Shutdown();
+    ImGui_ImplGlfw_Shutdown();
+    ImGui::DestroyContext();
     glDeleteBuffers(1, &VBobjects);
     glDeleteVertexArrays(1, &VAobjects);
     glDeleteBuffers(1, &VBground);
