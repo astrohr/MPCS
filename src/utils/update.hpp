@@ -1,10 +1,7 @@
 #include "pch.hpp"
 
 
-void run(std::string latest_ver);
-bool update(std::string latest_ver);
-
-bool check_ver(std::string version)
+bool check_ver(const std::string& version)
 {
 
     std::cout << "Checking for updates...\n" << std::endl;
@@ -56,7 +53,7 @@ bool check_ver(std::string version)
     }
 }
 
-bool update(std::string latest_ver)
+bool update(const std::string& latest_ver)
 {
     std::string file = "MPCS-" + latest_ver + "-win64.exe";
     std::ifstream myfile;
@@ -89,7 +86,7 @@ bool update(std::string latest_ver)
     }
 }
 
-void run(std::string latest_ver)
+void run(const std::string& latest_ver)
 {
 #if _WIN32
     std::string command = std::format("start MPCS-{}-win64.exe", latest_ver);
