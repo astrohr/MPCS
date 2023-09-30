@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.20)
 
 # project init
-project(MPCS VERSION 2.6.1)
+project(MPCS VERSION 2.6.2)
 
 # set important vars
 set(BUILD_SHARED_LIBS OFF)

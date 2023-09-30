@@ -90,10 +90,13 @@ int Ephemeris::follow_link()
 
     // get a reference to the first line that contains ephemeris data 
     std::string data;
-    for (int i = 0; i < downloaded.size(); i++)
-        if (!downloaded[i].empty() && downloaded[i][0] == '2')
+    for (int i = 0; i < downloaded.size(); i++){  
+        if (!downloaded[i].empty() && downloaded[i][0] == '2'){
             data = downloaded[i];
-        
+            break;
+        }
+    }
+    
     // remove the text from the end of the string
     for(int i = data.size()-1; i >=0; i--){
         if (isdigit(data[i])){
