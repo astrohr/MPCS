@@ -67,7 +67,7 @@ void setSiderealTimeReference()
 
     // get the data
 
-    std::string apiLink = std::format("https://aa.usno.navy.mil/api/siderealtime?date={}-{}-{}&time=00:00&tz=0&coords=0,0&reps=1&intv_mag=1&intv_unit=day", year, month, day);
+    std::string apiLink = fmt::format("https://aa.usno.navy.mil/api/siderealtime?date={}-{}-{}&time=00:00&tz=0&coords=0,0&reps=1&intv_mag=1&intv_unit=day", year, month, day);
     std::string raw = get_html(apiLink);
 
     // isolate the data
@@ -75,7 +75,7 @@ void setSiderealTimeReference()
     size_t dataError = raw.find("\"error\"");
     size_t dataMarker = raw.find("\"data\"");
     if (dataMarker == std::string::npos || dataError != std::string::npos)
-        throw mpcsError::BadData(std::format("Bad data found on {}: \n{}", apiLink, raw));
+        throw mpcsError::BadData(fmt::format("Bad data found on {}: \n{}", apiLink, raw));
 
     size_t dataBegin = raw.find('{', dataMarker); // find where the section begins
     size_t dataEnd = raw.find('}', dataBegin); // find where the section ends
@@ -87,7 +87,7 @@ void setSiderealTimeReference()
     std::smatch match;
     std::string val;
     if (std::regex_search(dataWindow, match, re) && match.size() > 1) val = match.str(1);
-    else throw mpcsError::BadData(std::format("Regex pattern < {} > failed while searching: \n{}", "\"gast\"\\s*:\\s*\"([^\"]+)\"", raw));
+    else throw mpcsError::BadData(fmt::format("Regex pattern < {} > failed while searching: \n{}", "\"gast\"\\s*:\\s*\"([^\"]+)\"", raw));
 
     // convert and save
     // the string looks like this 22:31:43.3540 

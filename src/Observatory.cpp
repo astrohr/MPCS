@@ -32,7 +32,7 @@ bool Observatory::fillData()
             sin = std::stof(line.substr(21, 9));
             name = line.substr(30);
         } catch (std::exception& e){
-            throw mpcsError::BadData(std::format("Bad data found on {}: \n{}", observatoryLinks, e.what()));
+            throw mpcsError::BadData(fmt::format("Bad data found on {}: \n{}", observatoryLinks, e.what()));
         } 
     }
 
@@ -62,9 +62,9 @@ bool Observatory::fillData()
     while(data[writePosition-1] != '\n') writePosition++; // find the write position
     
     std::string newData = data.substr(0, writePosition);
-    if (noName) newData += std::format("NAME = {}\n", name);
-    newData += std::format("LATITUDE = {:.6f}\n", latitude);
-    newData += std::format("LONGITUDE = {:.6f}\n", longitude);
+    if (noName) newData += fmt::format("NAME = {}\n", name);
+    newData += fmt::format("LATITUDE = {:.6f}\n", latitude);
+    newData += fmt::format("LONGITUDE = {:.6f}\n", longitude);
 
     std::string line;
     bool spaces = true, comment = false;

@@ -1,11 +1,11 @@
 #include "Log.hpp"
 
-Log::Log(int level = 1) : log_level(level)
+Log::Log(int level) : log_level(level)
 {
     std::time_t t = std::time(nullptr);
     std::tm tm = *std::localtime(&t);
 
-    std::string file = std::format("{:04d}-{:02d}-{:02d}.log", tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday);
+    std::string file = fmt::format("{:04d}-{:02d}-{:02d}.log", tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday);
     output.open(file);
 };
 
@@ -16,7 +16,7 @@ Log::~Log()
 
 void Log::setLogLevel(const int &level)
 {
-    if (1 <= level <= 5)
+    if ( level >= 1 && level <= 5)
     {
         log_level = level;
     }
@@ -31,8 +31,8 @@ void Log::log(std::string &message, bool &hide)
 {
     std::time_t t = std::time(nullptr);
     std::tm tm = *std::localtime(&t);
-    message = std::format("{}\n", message);
-    std::string log_message = std::format("[{:04d}-{:02d}-{:02d} {:02d}:{:02d}:{:02d}] ", tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec) + message;
+    message = fmt::format("{}\n", message);
+    std::string log_message = fmt::format("[{:04d}-{:02d}-{:02d} {:02d}:{:02d}:{:02d}] ", tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec) + message;
     output << log_message;
     if (!hide)
     {

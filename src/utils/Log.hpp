@@ -15,7 +15,7 @@ private:
     std::ofstream output;
 
 public:
-    Log(int level);
+    Log(int level = 1);
     ~Log();
     int getLogLevel() { return log_level; };
     void setLogLevel(const int &level);

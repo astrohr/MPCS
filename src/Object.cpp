@@ -60,7 +60,7 @@ void Object::extractOrbits()
             ss >> temp; rms = std::stof(temp);
             ss >> temp; temp = temp.substr(6, 4); orbitID = (temp == "omin") ? 1 : std::stoi(temp) + 1;
         } catch(std::exception& e){
-            throw mpcsError::BadData(std::format("Bad data found on {}: \n{}", orbitsLink, e.what()));
+            throw mpcsError::BadData(fmt::format("Bad data found on {}: \n{}", orbitsLink, e.what()));
         }
 
         // instead of trowing an error here (and in other places), write the data to a log and continue scanning
@@ -90,7 +90,7 @@ void Object::findObjects(std::vector<Object>& objects)
 
         if (!line.size()) continue;
         else if (line.size() < 100) 
-            throw mpcsError::BadData(std::format("Bad data found on {}: Less than 100 chars per line", objectsLink));
+            throw mpcsError::BadData(fmt::format("Bad data found on {}: Less than 100 chars per line", objectsLink));
 
         std::stringstream ss1(line.substr(0, lastUpdatePosition)), ss2(line.substr(nobsPosition));
         std::string temp;
@@ -115,7 +115,7 @@ void Object::findObjects(std::vector<Object>& objects)
             ss2 >> temp; H = std::stof(temp);
             ss2 >> temp; dns = std::stof(temp);
         } catch(std::exception& e){
-            throw mpcsError::BadData(std::format("Bad data found on {}: \n{}", objectsLink, e.what()));
+            throw mpcsError::BadData(fmt::format("Bad data found on {}: \n{}", objectsLink, e.what()));
         }
 
         // instead of trowing an error here (and in other places), write the data to a log and continue scanning
@@ -145,7 +145,7 @@ void Object::findObjects(std::vector<Object>& objects)
             ss3 >> temp;
             day2 = std::stof(temp);
         } catch(std::exception& e){
-            throw mpcsError::BadData(std::format("Bad data found on {}: \n{}", objectsLink, e.what()));
+            throw mpcsError::BadData(fmt::format("Bad data found on {}: \n{}", objectsLink, e.what()));
         }
         float hour2 = (day2 - (float)((int)day2)) * 24.f;
         float minute2 = (hour2 - (float)((int)hour2)) * 60.f;
