@@ -6,7 +6,7 @@ target_sources(${PROJECT_NAME} PUBLIC
     "Ephemeris.cpp"
     "Picture.cpp"
     "utils/net.cpp"
-    "utils/app.cpp"
+    "utils/AutoPic.cpp"
 )
 target_precompile_headers(${PROJECT_NAME} PRIVATE "pch.hpp")
 

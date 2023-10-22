@@ -8,7 +8,7 @@
 
 #include "src/cmakevars.h"
 #include "Camera.hpp"
-#include "utils/App.hpp"
+#include "utils/AutoPic.hpp"
 
 //----------------------------------------------------------
 
@@ -135,10 +135,12 @@ void WindowSetup(ObjectDatabase& database, Camera& cam)
         //draw auto picked fov centers
         for(auto eph : auto_fovs)
         {
-            tocka.setFillColor(sf::Color(255, 192, 203));
+            tocka.setFillColor(sf::Color(254, 0, 243));
+            tocka.setScale(2.f, 2.f);
             auto [x, y] = eph;
             tocka.setPosition(x, y);
             window.draw(tocka);
+            tocka.setScale(1.f, 1.f);
         }
 
         //draw a blue square on cursor location

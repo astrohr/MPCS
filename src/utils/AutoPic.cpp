@@ -1,6 +1,6 @@
 //----------------------------------------------------------
 
-#include "App.hpp"
+#include "AutoPic.hpp"
 
 //----------------------------------------------------------
 
@@ -10,36 +10,31 @@ std::vector<std::pair<int, int>> AutoPickPictures(ObjectDatabase& database, unsi
     const int total_ephems = database.getEphs().size(); // for debug: stores total number of ephemerids
     std::vector<int> fov_captures = {}; // for debug: stores how many points were captured per picture
     std::vector<std::pair<int, int>> removeable_ephemerids = {}; // stores ephemerids not captured yet
-    for (const auto& eph : database.getEphs()) { // fill removeable_ephemerids
+    // fill removeable_ephemerids
+    for (const auto& eph : database.getEphs()) { 
         auto [x, y] = eph.getOffsets();
         removeable_ephemerids.emplace_back(std::make_pair(x, y));
     }
     std::vector<std::pair<int, int>> picked_ephemerids = {}; // stores the coordinates of the pictures
-    //std::vector<std::pair<std::pair<int, int>, int>> ephem_fovs; // stores the number of captured ephemerids per POTENTIAL picture
     std::vector<std::pair<std::pair<int, int>, std::vector<std::pair<int, int>>>> sorted_ephem_fovs;
 
     do {
         sorted_ephem_fovs.clear(); // clear the vector of potential pictures every iteration
-        std::map<std::pair<int, int>, std::vector<std::pair<int, int>>> captured_ephems = {}; // key is POTENTIAL picture, value is vector of captured ephemerid
 
-        for (size_t i = 0; i < database.getEphs().size(); i += step_size) { // iterate over POTENTIAL picture centers
+        for (size_t i = 0; i < database.getEphs().size(); i += step_size) { // iterate over potential picture centers
             auto eph = database.getEphs()[i];
-            auto [x, y] = eph.getOffsets(); // POTENTIAL picture center
-            captured_ephems[std::make_pair(x, y)] = {}; // new map entry
-
+            auto [x, y] = eph.getOffsets(); // picture center candidate
+            std::vector<std::pair<int, int>> captured_ephems_temp={};
             for (const auto& eph_temp : removeable_ephemerids) { // go through all ephemerids not captured yet
                 auto [x_temp, y_temp] = eph_temp;
 
-                if (abs(x_temp - x) < fov / 2.f && abs(y_temp - y) < fov / 2.f) { // check if ephemerid is in fov of POTENTIAL picture
-                    captured_ephems[std::make_pair(x, y)].emplace_back(std::make_pair(x_temp, y_temp));
+                if (abs(x_temp - x) < fov / 2.f && abs(y_temp - y) < fov / 2.f) { // check if ephemerid is in fov of candidate picture
+                    captured_ephems_temp.emplace_back(std::make_pair(x_temp, y_temp));
                 }
             }
-            //ephem_fovs.emplace_back(std::make_pair(std::make_pair(x, y), captured_ephems[std::make_pair(x, y)].size()));
+            sorted_ephem_fovs.emplace_back(std::make_pair(std::make_pair(x, y), captured_ephems_temp));
         }
-        
-        for (const auto& entry : captured_ephems) {
-            sorted_ephem_fovs.push_back(entry);
-        }
+
         // sort ephem_fovs by number of captured ephemerids, greatest to lowest
         std::sort(sorted_ephem_fovs.begin(), sorted_ephem_fovs.end(), [](const auto& a, const auto& b) {
             return a.second.size() > b.second.size();
@@ -57,7 +52,7 @@ std::vector<std::pair<int, int>> AutoPickPictures(ObjectDatabase& database, unsi
             removeable_ephemerids.end());
 
         std::cout << "Enough points? " << (captured_ephems_number / total_ephems < min_coverage) << captured_ephems_number / total_ephems << ", " << min_coverage << std::endl;
-        std::cout << "Enough dense? " << (sorted_ephem_fovs[0].second.size()> density * captured_ephems_number) << std::endl;
+        std::cout << "Enough dense? " << (sorted_ephem_fovs[0].second.size() > density * captured_ephems_number) << std::endl;
     } while (captured_ephems_number / total_ephems < min_coverage && sorted_ephem_fovs[0].second.size() > density * captured_ephems_number);
 
     // debugging
