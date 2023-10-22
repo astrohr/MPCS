@@ -8,67 +8,9 @@
 
 #include "src/cmakevars.h"
 #include "Camera.hpp"
+#include "utils/App.hpp"
 
 //----------------------------------------------------------
-
-std::vector<std::pair<int,int>> AutoPickPictures(ObjectDatabase& database, unsigned int fov,int step_size = 10, float min_coverage = 0.95, float density = 0.04)
-{
-    int captured_ephems_number = 0;
-    const auto total_ephems = database.getEphs().size();
-    std::vector<int> fov_captures = {};
-    std::vector<std::pair<int, int>> removeable_ephemerids = {};
-    for (const auto& eph : database.getEphs()) {
-        auto [x, y] = eph.getOffsets();
-        removeable_ephemerids.emplace_back(std::make_pair(x, y));
-    }
-    std::vector<std::pair<int, int>> picked_ephemerids = {};
-    std::vector<std::pair<std::pair<int, int>, int>> ephem_fovs;
-    do {
-        ephem_fovs.clear();
-        std::map<std::pair<int, int>, std::vector<std::pair<int, int>>> captured_ephems = {};
-
-        for (size_t i = 0; i < database.getEphs().size(); i += step_size) {
-            int captured_ephems_number_temp = 0;
-            auto eph = database.getEphs()[i];
-            auto [x, y] = eph.getOffsets();
-            captured_ephems[std::make_pair(x, y)] = {};
-
-            for (const auto& eph_temp : removeable_ephemerids) {
-                auto [x_temp, y_temp] = eph_temp;
-                if (abs(x_temp - x) < fov / 2.f && abs(y_temp - y) < fov / 2.f) {
-                    captured_ephems_number_temp++;
-                    captured_ephems[std::make_pair(x, y)].emplace_back(std::make_pair(x_temp, y_temp));
-                }
-            }
-            ephem_fovs.emplace_back(std::make_pair(std::make_pair(x, y), captured_ephems_number_temp));
-        }
-        std::sort(ephem_fovs.begin(), ephem_fovs.end(), [](const auto& a, const auto& b) {
-            return a.second > b.second;
-        });
-        captured_ephems_number += ephem_fovs[0].second;
-        picked_ephemerids.emplace_back(ephem_fovs[0].first);
-        fov_captures.emplace_back(ephem_fovs[0].second);
-        auto to_remove = captured_ephems[ephem_fovs[0].first];
-        removeable_ephemerids.erase(std::remove_if(removeable_ephemerids.begin(), removeable_ephemerids.end(),
-                                        [&to_remove](const auto& el) {
-                                            return std::find(to_remove.begin(), to_remove.end(), el) != to_remove.end();
-                                        }),
-            removeable_ephemerids.end());
-
-    } while (captured_ephems_number / total_ephems < min_coverage && ephem_fovs[0].second > density * captured_ephems_number);
-    std::cout << "Number of points: " << captured_ephems_number << std::endl;
-    std::cout << "Number of fovs: " << picked_ephemerids.size() << std::endl;
-    for (auto point : picked_ephemerids) {
-        // database.insert_picture(point.first, point.second);
-        std::cout << "(" << point.first << ", " << point.second << ")  ";
-    }
-    std::cout << std::endl;
-    for (auto point : fov_captures) {
-        std::cout <<  point <<  "  ";
-    }
-    std::cout << std::endl;
-    return picked_ephemerids;
-}
 
 void WindowSetup(ObjectDatabase& database, Camera& cam)
 {
@@ -107,7 +49,7 @@ void WindowSetup(ObjectDatabase& database, Camera& cam)
 
     bool fokus = true;                      //is window focused?
     float mouseRa = 0.f, mouseDec = 0.f;    //where is the mouse?
-    auto auto_fovs=AutoPickPictures(database, database.getFOV());
+    auto auto_fovs = AutoPickPictures(database, database.getFOV()); //call algorithm for automatic selection of fov centers
     while(window.isOpen())
     {
         //Event processing 
@@ -190,10 +132,10 @@ void WindowSetup(ObjectDatabase& database, Camera& cam)
             window.draw(tocka);
         }
         
+        //draw auto picked fov centers
         for(auto eph : auto_fovs)
         {
-            //auto [R, G, B] = database.getEphs()[0].getColor();
-            tocka.setFillColor(sf::Color(255, 0, 0));
+            tocka.setFillColor(sf::Color(255, 192, 203));
             auto [x, y] = eph;
             tocka.setPosition(x, y);
             window.draw(tocka);
