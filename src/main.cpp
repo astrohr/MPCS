@@ -132,7 +132,7 @@ void defaultVariables(unsigned int& W, unsigned int& H, Observatory& obs)
     }
 
     // observatory data
-    std::string id, name; double longitude, latitude;
+    std::string id, name; float longitude, latitude;
     if (!inipp::get_value(ini.sections["Observatory"], "CODE", id)){
         ReadFile.close();
         throw mpcsError::InippError("Observatory code not specified\n");
@@ -245,8 +245,8 @@ int main(int argc, char **argv)
     {
         auto [lon, lat] = observatory.getCoords();
         if (
-            lon >= 360.0 || lon < 0.0 || 
-            lat < -90.0 || lat > 90.0 || 
+            lon >= 360.f || lon < 0.f || 
+            lat < -90.f || lat > 90.f || 
             observatory.getName().empty()
         ) observatory.fillData();
     }

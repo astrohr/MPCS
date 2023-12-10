@@ -96,7 +96,7 @@ void Object::findObjects(std::vector<Object>& objects)
         std::string temp;
 
         std::string name;
-        int score, year, month; float day, mag; double raH, dec;
+        int score, year, month; float day, mag, raH, dec;
         int nObs; float arc, H, dns;
 
         try{
@@ -106,8 +106,8 @@ void Object::findObjects(std::vector<Object>& objects)
             ss1 >> temp; year = std::stoi(temp);
             ss1 >> temp; month = std::stoi(temp);
             ss1 >> temp; day = std::stof(temp);
-            ss1 >> temp; raH = std::stod(temp);
-            ss1 >> temp; dec = std::stod(temp);
+            ss1 >> temp; raH = std::stof(temp);
+            ss1 >> temp; dec = std::stof(temp);
             ss1 >> temp; mag = std::stof(temp);
 
             ss2 >> temp; nObs = std::stoi(temp);
@@ -129,7 +129,7 @@ void Object::findObjects(std::vector<Object>& objects)
         time_t discoveryTime = date_to_unix_milis(year, month, day, hour, minute, 0);
 
         // make a coordinates variable
-        CoordinatesSky coords = {raH*15.0, dec}; // times 15 because its provided in hours, not degrees
+        CoordinatesSky coords = {raH*15.f, dec}; // times 15 because its provided in hours, not degrees
 
         // turn the lastUpdate string into Time
 

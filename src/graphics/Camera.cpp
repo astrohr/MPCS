@@ -5,36 +5,38 @@
 //----------------------------------------------------------
 
 
-void Camera::calibrateCameraMatrix()
+Camera::Camera(float aspectRatio, float fov)
+: position({0.0, 0.0, 0.0}), aspectRatio(aspectRatio), fov(fov), orientation(glm::quat(1.f, 0.f, 0.f, 0.f)), rotation(glm::quat(1.f, 0.f, 0.f, 0.f))
+{}
+
+void Camera::setAspectRatio(float ar)
 {
-    glm::mat4 proj = glm::perspective(
-        glm::radians(fov), // fov
-        (float)W/H, // aspect ratio
-        0.1f, // near clipping plane, keep as big as possible, or you get precision issues
-        5.0f // far clipping plane, keep as little as possible
-    );
-
-    glm::quat quaternion(rotations);
-    glm::mat4 rot = glm::toMat4(quaternion);
-    
-    glm::mat4 tran = glm::translate(glm::mat4(1.0f), glm::vec3(position.X, position.Y, position.Z));
-
-    matrix = proj * rot * tran;
+    aspectRatio = ar;
 }
 
-Camera::Camera(int W, int H, float fov)
-: position({0.0, 0.0, 0.0}), rotations(glm::vec3(0.f)), W(W), H(H), fov(fov), lookingPosition({0.0, 0.0})
+void Camera::refresh()
 {
-    calibrateCameraMatrix();
+    // recalculate where the camera is looking at
+    // converts the rotation into the system of the orientation, rotates the system, and returns it back to normal
+    lookingAt = glm::conjugate(orientation) * rotation * orientation;
+
+    // recalculate the transformation matrix
+    matrix = 
+        glm::perspective(glm::radians(fov), aspectRatio, 0.1f, 5.0f) 
+        * glm::toMat4(lookingAt) 
+        * glm::translate(glm::mat4(1.0f), glm::vec3(position.X, position.Y, position.Z))
+    ;
 }
 
-void Camera::setRotations(CoordinatesGeo& coords, time_t time, CoordinatesSkyLocal look)
+void Camera::setOrientation(CoordinatesGeo& coords, time_t time)
 {
-    // if cameras rotations are all at 0, the vernal equinox is in the zenit
+    float roll, pitch, yaw; // roll = X, pitch = Y, yaw = Z
+
+    // if cameras rotations are all at 0, the vernal equinox is in the zenith
 
     // account for the longitude 
 
-    rotations[0] = (coords.lon / 360.0);
+    roll = (coords.lon / 360.f);
 
     // calculate the hour angle
 
@@ -46,36 +48,27 @@ void Camera::setRotations(CoordinatesGeo& coords, time_t time, CoordinatesSkyLoc
 
     // rotate the camera along the sky equator towards the vernal equinox using the sidereal time reference
 
-    rotations[2] = (HA / g_siderealDayLength) * (2 * std::numbers::pi);
-    if (HA > g_siderealDayLength / 2) rotations[1] = (3 - HA / (g_siderealDayLength / 4)) * glm::radians((float)coords.lat);
-    else rotations[1] = (1 - HA / (g_siderealDayLength / 4)) * glm::radians(-1 * (float)coords.lat);
+    yaw = (HA / g_siderealDayLength) * (2 * (float)std::numbers::pi);
+    if (HA > g_siderealDayLength / 2)
+        pitch = (3 - HA / (g_siderealDayLength / 4)) * glm::radians(coords.lat);
+    else
+        pitch = (1 - HA / (g_siderealDayLength / 4)) * glm::radians(-1 * coords.lat);
 
-    updateRotations(look); // this also updates the camera matrix
-
-    // a small note that even tho it is not needed to use all 3 roll directions, it is done for the sake of simplicity
+    orientation = glm::quat(glm::vec3(pitch, yaw, roll));
 }
 
-void Camera::updateRotations(CoordinatesSkyLocal newPosition)
+void Camera::setRotation(CoordinatesSkyLocal pos)
 {
-    rotations[2] += glm::radians((float)newPosition.alt - (float)lookingPosition.alt);
-    rotations[1] += glm::radians((float)newPosition.az - (float)newPosition.az); 
-
-    lookingPosition = newPosition;
-    calibrateCameraMatrix();
+    rotation = glm::quat(glm::vec3(glm::radians(pos.alt), glm::radians(pos.az), 0.f));
 }
 
-void Camera::pan(bool up, bool left, bool down, bool right)
+void Camera::updateRotation(CoordinatesSkyLocal delta)
 {
-    if (up) rotations[1] += glm::radians(fov/100.f);
-    if (left) rotations[2] -= glm::radians(fov/100.f);
-    if (down) rotations[1] -= glm::radians(fov/100.f);
-    if (right) rotations[2] += glm::radians(fov/100.f);
-    calibrateCameraMatrix();
+    rotation = glm::quat(glm::vec3(glm::radians(delta.alt), 0.f, 0.f)) * rotation * glm::angleAxis(glm::radians(1.0f), glm::vec3(0.f, delta.az, 0.f));
 }
 
 void Camera::zoom(bool closer)
 {
     if (closer) fov = std::max(5.f, fov*0.985f);
     else fov = std::min(170.f, fov*1.015f);
-    calibrateCameraMatrix();
 }

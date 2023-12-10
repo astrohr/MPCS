@@ -18,7 +18,7 @@ bool Observatory::fillData()
     // code is always 3 letters
     // numbers have max 6 decimal digits
 
-    double longitude, cos, sin;
+    float longitude, cos, sin;
     std::string name;
 
     for(auto& line : raw){
@@ -27,9 +27,9 @@ bool Observatory::fillData()
         if (code != this->ID) continue;
 
         try{
-            longitude = std::stod(line.substr(4, 9));
-            cos = std::stod(line.substr(13, 8));
-            sin = std::stod(line.substr(21, 9));
+            longitude = std::stof(line.substr(4, 9));
+            cos = std::stof(line.substr(13, 8));
+            sin = std::stof(line.substr(21, 9));
             name = line.substr(30);
         } catch (std::exception& e){
             throw mpcsError::BadData(std::format("Bad data found on {}: \n{}", observatoryLinks, e.what()));
@@ -37,7 +37,7 @@ bool Observatory::fillData()
     }
 
     // calculate latitude
-    double latitude = std::atan(sin/cos) / std::numbers::pi * 180.0;
+    float latitude = std::atan(sin/cos) / (float)std::numbers::pi * 180.f;
 
     this->name = name;
     this->coords = {longitude, latitude};

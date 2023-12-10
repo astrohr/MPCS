@@ -9,10 +9,10 @@
 // Sky position storage struct
 struct CoordinatesSky{
     // Right ascension
-    double ra;
+    float ra;
 
     // Declination
-    double dec;
+    float dec;
 
 };
 
@@ -20,10 +20,10 @@ struct CoordinatesSky{
 // Sky position storage struct but for azimuth and altitude
 struct CoordinatesSkyLocal{
     // Azimuth
-    double az;
+    float az;
 
     // Altitude
-    double alt;
+    float alt;
     
 };
 
@@ -31,10 +31,10 @@ struct CoordinatesSkyLocal{
 // Geographical coordinates storage struct
 struct CoordinatesGeo{
     // Longitude
-    double lon;
+    float lon;
 
     // Latitude
-    double lat;
+    float lat;
     
 };
 

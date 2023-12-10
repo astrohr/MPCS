@@ -8,15 +8,17 @@
 void updateInput(GLFWwindow* window, Camera& cam)
 {
 
-    if (glfwGetKey(window, GLFW_KEY_Q) == GLFW_PRESS)
-        glfwSetWindowShouldClose(window, true);
+    if (glfwGetKey(window, GLFW_KEY_Q) == GLFW_PRESS) glfwSetWindowShouldClose(window, true);
+    if (glfwGetKey(window, GLFW_KEY_R) == GLFW_PRESS) cam.setRotation({0,0});
+
     
     bool panUp = false, panLeft = false, panDown = false, panRight = false;
     if (glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS) panUp = true;
     if (glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS) panLeft = true;
     if (glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS) panDown = true;
     if (glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS) panRight = true;
-    if (panUp || panLeft || panDown || panRight) cam.pan(panUp, panLeft, panDown, panRight);
+    if (panUp || panLeft || panDown || panRight)
+        cam.updateRotation({1.f*panRight - 1.f*panLeft, 1.f*panDown - 1.f*panUp});
 }
 
 void windowFunction(unsigned int W, unsigned int H, std::vector<Object>& objects, Observatory& observatory)
@@ -31,7 +33,7 @@ void windowFunction(unsigned int W, unsigned int H, std::vector<Object>& objects
     glfwWindowHint(GLFW_VERSION_MAJOR, 3);
     glfwWindowHint(GLFW_VERSION_MINOR, 3);
 
-    GLFWwindow* window = glfwCreateWindow(W, H, "Minor Planet Center Solver 3", NULL, NULL);
+    GLFWwindow* window = glfwCreateWindow(W, H, ""/*"Minor Planet Center Solver 3"*/, NULL, NULL);
 
     glfwMakeContextCurrent(window);
 
@@ -80,7 +82,7 @@ void windowFunction(unsigned int W, unsigned int H, std::vector<Object>& objects
     fmt::println("Log: IMGUI version: {}", IMGUI_VERSION);
 
     // -------------------- camera
-    Camera cam(W, H, 100);
+    Camera cam(W/(float)H, 100);
 
     // -------------------- shader
     GLProgram program(g_resourcesPath+"/shaders/vertex.glsl", g_resourcesPath+"/shaders/fragment.glsl");
@@ -98,7 +100,7 @@ void windowFunction(unsigned int W, unsigned int H, std::vector<Object>& objects
         [](GLFWwindow* window, double xoffset, double yoffset) -> void {
             ImGui_ImplGlfw_ScrollCallback(window, xoffset, yoffset); // first call the scroll event of imgui since its windows are in front
             if (ImGui::GetIO().WantCaptureMouse) return; // check if imgui wants to capture the mouse
-            CallbackData* data = static_cast<CallbackData*>(glfwGetWindowUserPointer(window)); // retrieve camera callback data
+            CallbackData* data = static_cast<CallbackData*>(glfwGetWindowUserPointer(window)); // retrieve callback data
             if (yoffset > 0)  data->mainCamera->zoom(true);
             else data->mainCamera->zoom(false);
         }
@@ -107,6 +109,8 @@ void windowFunction(unsigned int W, unsigned int H, std::vector<Object>& objects
     // window resizing
     glfwSetFramebufferSizeCallback(window, 
         [](GLFWwindow* window, int frameBufferWidth, int frameBufferHeight) -> void {
+            CallbackData* data = static_cast<CallbackData*>(glfwGetWindowUserPointer(window)); // retrieve callback data
+            data->mainCamera->setAspectRatio(frameBufferWidth/(float)frameBufferHeight);
             glViewport(0, 0, frameBufferWidth, frameBufferHeight);
         }
     );
@@ -137,12 +141,10 @@ void windowFunction(unsigned int W, unsigned int H, std::vector<Object>& objects
 
     // horizon line
     vertices.clear();
-    CoordinatesSkyLocal c = cam.getLookingPosition();
-    cam.updateRotations({0, 0});
-    glm::vec3 camRot = cam.getRotationAngles();
-    glm::quat quaternion; quaternion = glm::quat(glm::vec3(camRot[0]+std::numbers::pi/2.0, camRot[1], camRot[2]));
-    glm::mat4 rot = glm::toMat4(quaternion);
-    cam.updateRotations(c);
+    
+    glm::quat camOrientation = cam.getOrientation(); // rotate the horizon line
+    glm::mat4 rot = glm::toMat4(glm::conjugate(camOrientation) * glm::quat(glm::vec3(glm::radians(90.f), 0.f, 0.f)) * camOrientation);
+
     const int CIRCLE_POINTS = 16;
     for(int i = 0; i < CIRCLE_POINTS; i++){
         double rad = 2.0*std::numbers::pi * i/CIRCLE_POINTS;
@@ -183,6 +185,7 @@ void windowFunction(unsigned int W, unsigned int H, std::vector<Object>& objects
         // user interactions
         glfwPollEvents();
         updateInput(window, cam);
+        cam.refresh();
         program.setUniformMat4f("MVP", cam.getTransformation());
 
         // draw objects
@@ -195,6 +198,24 @@ void windowFunction(unsigned int W, unsigned int H, std::vector<Object>& objects
 
         // draw imgui stuff
         ImGui::ShowDemoWindow();
+        {
+            ImGui::Begin("Debug Window");
+            
+            ImGui::Text(std::format("Fov: {}", cam.getFov()).c_str());
+
+            glm::vec3 camOri = glm::eulerAngles(cam.getOrientation());
+            ImGui::Text(std::format("Camera orientation:\n Roll: {}\n Pitch: {}\n Yaw: {}", camOri[2], camOri[0], camOri[1]).c_str());
+
+            glm::vec3 camRot = glm::eulerAngles(cam.getRotation());
+            ImGui::Text(std::format("Camera rotation:\n Altitude: {}\n Azimuth: {}\n Roll: {}", glm::degrees(camRot[0]), glm::degrees(camRot[1]), glm::degrees(camRot[2])).c_str());
+
+            ImGui::Text("Mouse Positions: ");
+            double xpos, ypos;
+            glfwGetCursorPos(window, &xpos, &ypos);
+            ImGui::Text(std::format(" X: {}\n Y: {}", xpos, ypos).c_str());
+
+            ImGui::End();
+        }
 
         // render imgui stuff
         ImGui::Render();
