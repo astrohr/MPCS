@@ -131,7 +131,7 @@ add_executable(${PROJECT_NAME})
 # add code
 add_subdirectory("src")
 
-# # add imgui code since they dont have their own cmake
+# add imgui code since they dont have their own cmake
 target_sources(${PROJECT_NAME} PUBLIC
     "${PROJECT_BINARY_DIR}/_deps/imgui-docking-src/imgui.cpp"
     "${PROJECT_BINARY_DIR}/_deps/imgui-docking-src/imgui_draw.cpp"

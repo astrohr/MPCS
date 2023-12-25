@@ -61,6 +61,7 @@ public:
 
     const std::string getName() const { return name; }
     const Coordinates3D& getCoords3D() const { return coords3d; }
+    const float getMagnitude() const { return magnitude; }
 
     // function that will fill the variantOrbits variable
     // scrapes all available objects from https://cgi.minorplanetcenter.net/cgi-bin/showobsorbs.cgi?Obj=[name]&orb=y

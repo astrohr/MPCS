@@ -4,13 +4,45 @@
 
 //----------------------------------------------------------
 
+// Helper to display a little (?) mark which shows a tooltip when hovered.
+static void HelpMarker(const char* desc)
+{
+    ImGui::TextDisabled("(?)");
+    if (ImGui::BeginItemTooltip())
+    {
+        ImGui::PushTextWrapPos(ImGui::GetFontSize() * 35.0f);
+        ImGui::TextUnformatted(desc);
+        ImGui::PopTextWrapPos();
+        ImGui::EndTooltip();
+    }
+}
+
+void recalculateVisibility(std::vector<Object>& objects, unsigned int VBO, float max, float min)
+{
+    fmt::print("Log: Recalculating visibility with parameters {} {} ... ", min, max);
+    
+    // create new alpha channel data for each object
+    std::vector<float> alphas;
+    for(auto obj : objects){
+        if (obj.getMagnitude() >= min && obj.getMagnitude() <= max)
+            alphas.emplace_back(1.f);
+        else
+            alphas.emplace_back(0.f);
+    }
+
+    glBindBuffer(GL_ARRAY_BUFFER, VBO); // prepare the buffer
+    void *ptr = glMapBufferRange(GL_ARRAY_BUFFER, objects.size()*sizeof(float)*6, objects.size()*sizeof(float), GL_MAP_WRITE_BIT); // get the pointer
+    memcpy(ptr, alphas.data(), sizeof(float)*objects.size()); // copy the vector data
+    glUnmapBuffer(GL_ARRAY_BUFFER); // invalidate pointer
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+    fmt::println("[SUCCESS]");
+}
 
 void updateInput(GLFWwindow* window, Camera& cam)
 {
-
     if (glfwGetKey(window, GLFW_KEY_Q) == GLFW_PRESS) glfwSetWindowShouldClose(window, true);
     if (glfwGetKey(window, GLFW_KEY_R) == GLFW_PRESS) cam.setRotation({0,0});
-
     
     bool panUp = false, panLeft = false, panDown = false, panRight = false;
     if (glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS) panUp = true;
@@ -103,7 +135,7 @@ void windowFunction(unsigned int W, unsigned int H, std::vector<Object>& objects
 
     // Setup Platform/Renderer backends
     ImGui_ImplGlfw_InitForOpenGL(window, true);
-    ImGui_ImplOpenGL3_Init("#version 330"); //glsl version
+    ImGui_ImplOpenGL3_Init("#version 410"); //glsl version
 
     fmt::println("Info: IMGUI version: {}", IMGUI_VERSION);
 
@@ -142,28 +174,50 @@ void windowFunction(unsigned int W, unsigned int H, std::vector<Object>& objects
     );
 
     // ------------------- set up drawing data
-    // objects
-    std::vector<float> vertices;
-    for(auto obj : objects){
-        vertices.emplace_back(obj.getCoords3D().X);
-        vertices.emplace_back(obj.getCoords3D().Y);
-        vertices.emplace_back(obj.getCoords3D().Z);
-    }
 
     unsigned int VBobjects, VAobjects;
     glGenVertexArrays(1, &VAobjects);
     glGenBuffers(1, &VBobjects);
 
     glBindVertexArray(VAobjects);
-
     glBindBuffer(GL_ARRAY_BUFFER, VBobjects);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(float)*vertices.size(), &vertices[0], GL_STATIC_DRAW);
 
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+    // first we insert the coordinates into the buffer
+    std::vector<float> vertices;
+    for(auto obj : objects){
+        vertices.emplace_back(obj.getCoords3D().X);
+        vertices.emplace_back(obj.getCoords3D().Y);
+        vertices.emplace_back(obj.getCoords3D().Z);
+    }
+    // then we insert the RGB
+    for(auto obj : objects){
+        vertices.emplace_back(1.0f); //R
+        vertices.emplace_back(0.0f); //G
+        vertices.emplace_back(0.0f); //B
+    }
+    // and then we insert the alpha channel
+    // it is separated because it gets modified way more often
+    for(auto obj : objects){
+        vertices.emplace_back(1.0f); //A
+    }
+
+    glBufferData(GL_ARRAY_BUFFER, sizeof(float)*vertices.size(), &vertices[0], GL_DYNAMIC_DRAW);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0); // coords layout
     glEnableVertexAttribArray(0);
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)(objects.size()*3*sizeof(float))); // rgb channels layout
+    glEnableVertexAttribArray(1);
+    glVertexAttribPointer(2, 1, GL_FLOAT, GL_FALSE, sizeof(float), (void*)(objects.size()*6*sizeof(float))); // alpha channel layout
+    glEnableVertexAttribArray(2);
 
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindVertexArray(0);
+
+    unsigned int VBground, VAground;
+    glGenVertexArrays(1, &VAground);
+    glGenBuffers(1, &VBground);
+
+    glBindVertexArray(VAground);
+    glBindBuffer(GL_ARRAY_BUFFER, VBground);
 
     // horizon line
     vertices.clear();
@@ -171,26 +225,26 @@ void windowFunction(unsigned int W, unsigned int H, std::vector<Object>& objects
     glm::quat camOrientation = cam.getOrientation(); // rotate the horizon line
     glm::mat4 rot = glm::toMat4(glm::conjugate(camOrientation) * glm::quat(glm::vec3(glm::radians(90.f), 0.f, 0.f)) * camOrientation);
 
-    const int CIRCLE_POINTS = 16;
+    const int CIRCLE_POINTS = 8;
     for(int i = 0; i < CIRCLE_POINTS; i++){
         double rad = 2.0*std::numbers::pi * i/CIRCLE_POINTS;
         glm::vec4 circlePoint = rot * glm::vec4(std::cos(rad), std::sin(rad), 0.0, 0.0);
         vertices.emplace_back(circlePoint[0]);
         vertices.emplace_back(circlePoint[1]);
         vertices.emplace_back(circlePoint[2]);
+        vertices.emplace_back(1.0f); //R
+        vertices.emplace_back(0.0f); //G
+        vertices.emplace_back(0.0f); //B
+        vertices.emplace_back(1.0f); //A
     }
 
-    unsigned int VBground, VAground;
-    glGenVertexArrays(1, &VAground);
-    glGenBuffers(1, &VBground);
-
-    glBindVertexArray(VAground);
-
-    glBindBuffer(GL_ARRAY_BUFFER, VBground);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(float)*vertices.size(), &vertices[0], GL_STATIC_DRAW);
-
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(float)*vertices.size(), &vertices[0], GL_DYNAMIC_DRAW);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 7 * sizeof(float), (void*)0); // coords layout
     glEnableVertexAttribArray(0);
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 7 * sizeof(float), (void*)(3*sizeof(float))); // rgb channels layout
+    glEnableVertexAttribArray(1);
+    glVertexAttribPointer(2, 1, GL_FLOAT, GL_FALSE, 7 * sizeof(float), (void*)(6*sizeof(float))); // alpha channel layout
+    glEnableVertexAttribArray(2);
 
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindVertexArray(0);
@@ -198,6 +252,8 @@ void windowFunction(unsigned int W, unsigned int H, std::vector<Object>& objects
     // -------------------- window
     glClearColor(0.f, 0.f, 0.f, 1.f);
     glPointSize(3.0f);
+    const ImGuiViewport* main_viewport = ImGui::GetMainViewport();
+    float maximum_magnitude = 30.f, minimum_magnitude = 10.f;
     while(!glfwWindowShouldClose(window))
     {
         // clear
@@ -225,28 +281,49 @@ void windowFunction(unsigned int W, unsigned int H, std::vector<Object>& objects
         // draw imgui stuff
         ImGui::ShowDemoWindow();
         { // deugging
+            ImGui::SetNextWindowPos(ImVec2(main_viewport->WorkPos.x + 400, main_viewport->WorkPos.y), ImGuiCond_FirstUseEver); // default location
+            ImGui::SetNextWindowSize(ImVec2(200, 250), ImGuiCond_FirstUseEver); // default size
+
             ImGui::Begin("Debug Window");
             
-            ImGui::Text(std::format("Fov: {}", cam.getFov()).c_str());
+            ImGui::Text(std::format("Fov: {:.2f}", cam.getFov()).c_str());
 
             glm::vec3 camOri = glm::eulerAngles(cam.getOrientation());
-            ImGui::Text(std::format("Camera orientation:\n Roll: {}\n Pitch: {}\n Yaw: {}", camOri[2], camOri[0], camOri[1]).c_str());
+            ImGui::Text(std::format("Camera orientation:\n Roll: {:.2f}\n Pitch: {:.2f}\n Yaw: {:.2f}", glm::degrees(camOri[2]), glm::degrees(camOri[0]), glm::degrees(camOri[1])).c_str());
 
             glm::vec3 camRot = glm::eulerAngles(cam.getRotation());
-            ImGui::Text(std::format("Camera rotation:\n Altitude: {}\n Azimuth: {}\n Roll: {}", glm::degrees(camRot[0]), glm::degrees(camRot[1]), glm::degrees(camRot[2])).c_str());
+            ImGui::Text(std::format("Camera rotation:\n Altitude: {:.2f}\n Azimuth: {:.2f}\n Roll: {:.2f}", glm::degrees(camRot[0]), glm::degrees(camRot[1]), glm::degrees(camRot[2])).c_str());
 
             ImGui::Text("Mouse Positions: ");
             double xpos, ypos;
             glfwGetCursorPos(window, &xpos, &ypos);
-            ImGui::Text(std::format(" X: {}\n Y: {}", xpos, ypos).c_str());
+            ImGui::Text(std::format(" X: {:.2f}\n Y: {:.2f}", xpos, ypos).c_str());
 
+            ImGui::End();
+        }
+        { // object selection menu
+            ImGui::SetNextWindowPos(ImVec2(main_viewport->WorkPos.x, main_viewport->WorkPos.y), ImGuiCond_FirstUseEver); // default location
+            ImGui::SetNextWindowSize(ImVec2(400, 200), ImGuiCond_FirstUseEver); // default size
+
+            ImGui::Begin("Objects");
+
+            ImGui::SeparatorText("Filters");
+            
+            ImGui::SetNextItemWidth(200);
+            if(
+                ImGui::DragFloatRange2("Magnitude filter", &minimum_magnitude, &maximum_magnitude, 0.1f, -40.0f, 40.0f, "Min: %.1f", "Max: %.1f", ImGuiSliderFlags_AlwaysClamp)
+            ) recalculateVisibility(objects, VBobjects, maximum_magnitude, minimum_magnitude);
+            ImGui::SameLine(); HelpMarker(
+                "If an object has a magnitude outside of\n"
+                "this range, it will not be displayed\n"
+            );
+            
             ImGui::End();
         }
 
         // render imgui stuff
         ImGui::Render();
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
-
 
         // Update and Render additional Platform Windows (imgui docking thing)
         if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable){
@@ -256,7 +333,6 @@ void windowFunction(unsigned int W, unsigned int H, std::vector<Object>& objects
             glfwMakeContextCurrent(backup_current_context);
         }
 
-        // make sure it gets displayed, ok?
         glfwSwapBuffers(window);
         glFlush();
     }
