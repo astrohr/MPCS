@@ -46,10 +46,36 @@ void windowFunction(unsigned int W, unsigned int H, std::vector<Object>& objects
         return;
     }
     
-    fmt::println("Log: OpenGL version {}", (char*)glGetString(GL_VERSION));
+    // -------------------- debug related
+    fmt::println("Info: OpenGL version {}", (char*)glGetString(GL_VERSION));
+    fmt::println("Info: Vendor: {}", (char*)glGetString(GL_VENDOR));
+    fmt::println("Info: Renderer name: {}", (char*)glGetString(GL_RENDERER));
+    int gl_extension_num; glGetIntegerv(GL_NUM_EXTENSIONS, &gl_extension_num);
+    fmt::println("Info: {} GL extensions:", gl_extension_num);
+    for (int i = 0; i < gl_extension_num; i++)
+        fmt::println("\t {}", (char*)glGetStringi(GL_EXTENSIONS, i));
+    fmt::println("Info: Primary GLSL version: {}", (char*)glGetString(GL_SHADING_LANGUAGE_VERSION));
+    int gl_supported_glsl_version_am; glGetIntegerv(GL_NUM_SHADING_LANGUAGE_VERSIONS, &gl_supported_glsl_version_am);
+    fmt::println("Info: Supported versions:");
+    for (int i = 0; i < gl_supported_glsl_version_am; i++)
+        fmt::println("\t {}", (char*)glGetStringi(GL_SHADING_LANGUAGE_VERSION, i));
+
+    glDebugMessageCallback(
+        []( GLenum source, GLenum type, GLuint id, GLenum severity,
+            GLsizei length, const GLchar* message, const void* userParam
+        ) -> void {
+            if (severity == GL_DEBUG_SEVERITY_HIGH) fmt::print("Error: ");
+            else if (severity == GL_DEBUG_SEVERITY_LOW || severity == GL_DEBUG_SEVERITY_HIGH) fmt::print("Warning: ");
+            else return; //fmt::print("Log: "); // this prints a lot of spam
+            fmt::println("[GL] type = {} ... message = {}", type, (char*)message);
+        },
+        nullptr
+    );
 
 
     // -------------------- opengl options
+    glEnable(GL_DEBUG_OUTPUT);
+    glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS); // even if this may cause performance problems, it is needed
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_CULL_FACE); // dont draw the side of a vertex that cant be seen
     glCullFace(GL_BACK); // the back side cant be seen
@@ -79,7 +105,7 @@ void windowFunction(unsigned int W, unsigned int H, std::vector<Object>& objects
     ImGui_ImplGlfw_InitForOpenGL(window, true);
     ImGui_ImplOpenGL3_Init("#version 330"); //glsl version
 
-    fmt::println("Log: IMGUI version: {}", IMGUI_VERSION);
+    fmt::println("Info: IMGUI version: {}", IMGUI_VERSION);
 
     // -------------------- camera
     Camera cam(W/(float)H, 100);
@@ -187,18 +213,18 @@ void windowFunction(unsigned int W, unsigned int H, std::vector<Object>& objects
         updateInput(window, cam);
         cam.refresh();
         program.setUniformMat4f("MVP", cam.getTransformation());
-
+        
         // draw objects
         glBindVertexArray(VAobjects);
         glDrawArrays(GL_POINTS, 0, objects.size());
-
+        
         // draw horizon line
         glBindVertexArray(VAground);
         glDrawArrays(GL_LINE_LOOP, 0, CIRCLE_POINTS);
-
+        
         // draw imgui stuff
         ImGui::ShowDemoWindow();
-        {
+        { // deugging
             ImGui::Begin("Debug Window");
             
             ImGui::Text(std::format("Fov: {}", cam.getFov()).c_str());
