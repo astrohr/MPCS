@@ -3,7 +3,7 @@
 #pragma once
 
 #include "./ObjectDatabase.hpp"
-#include "pch.hpp"
+//#include "pch.hpp"
 //----------------------------------------------------------
 
 // Uses an algorithm do determine optimal locations of Pictures

@@ -11,12 +11,12 @@ std::vector<std::pair<int, int>> AutoPickPictures(ObjectDatabase& database, unsi
     std::vector<int> fov_captures = {}; // for debug: stores how many points were captured per picture
     std::vector<std::pair<int, int>> removeable_ephemerids = {}; // stores ephemerids not captured yet
     // fill removeable_ephemerids
-    for (const auto& eph : database.getEphs()) { 
+    for (const auto& eph : database.getEphs()) {
         auto [x, y] = eph.getOffsets();
         removeable_ephemerids.emplace_back(std::make_pair(x, y));
     }
     std::vector<std::pair<int, int>> picked_ephemerids = {}; // stores the coordinates of the pictures
-    std::vector<std::pair<std::pair<int, int>, std::vector<std::pair<int, int>>>> sorted_ephem_fovs;
+    std::vector<std::pair<std::pair<int, int>, std::vector<std::pair<int, int>>>> sorted_ephem_fovs; // stores picture center and ephemerides it captured
 
     do {
         sorted_ephem_fovs.clear(); // clear the vector of potential pictures every iteration
@@ -24,7 +24,7 @@ std::vector<std::pair<int, int>> AutoPickPictures(ObjectDatabase& database, unsi
         for (size_t i = 0; i < database.getEphs().size(); i += step_size) { // iterate over potential picture centers
             auto eph = database.getEphs()[i];
             auto [x, y] = eph.getOffsets(); // picture center candidate
-            std::vector<std::pair<int, int>> captured_ephems_temp={};
+            std::vector<std::pair<int, int>> captured_ephems_temp = {};
             for (const auto& eph_temp : removeable_ephemerids) { // go through all ephemerids not captured yet
                 auto [x_temp, y_temp] = eph_temp;
 
