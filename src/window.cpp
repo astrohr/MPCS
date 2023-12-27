@@ -17,14 +17,16 @@ static void HelpMarker(const char* desc)
     }
 }
 
-void recalculateVisibility(std::vector<Object>& objects, unsigned int VBO, float max, float min)
+// this function recalculates what objects are visible to the user and displays them
+void recalculateVisibility(std::vector<Object>& objects, unsigned int& VBO, std::vector<bool>& hidden, float& max, float& min)
 {
-    fmt::print("Log: Recalculating visibility with parameters {} {} ... ", min, max);
-    
     // create new alpha channel data for each object
     std::vector<float> alphas;
-    for(auto obj : objects){
-        if (obj.getMagnitude() >= min && obj.getMagnitude() <= max)
+    for(int i = 0; i < objects.size(); i++){
+        if (
+            (objects[i].getMagnitude() >= min && objects[i].getMagnitude() <= max)
+            && hidden[i] == false
+        )
             alphas.emplace_back(1.f);
         else
             alphas.emplace_back(0.f);
@@ -35,8 +37,6 @@ void recalculateVisibility(std::vector<Object>& objects, unsigned int VBO, float
     memcpy(ptr, alphas.data(), sizeof(float)*objects.size()); // copy the vector data
     glUnmapBuffer(GL_ARRAY_BUFFER); // invalidate pointer
     glBindBuffer(GL_ARRAY_BUFFER, 0);
-
-    fmt::println("[SUCCESS]");
 }
 
 void updateInput(GLFWwindow* window, Camera& cam)
@@ -69,7 +69,7 @@ void windowFunction(unsigned int W, unsigned int H, std::vector<Object>& objects
 
     glfwMakeContextCurrent(window);
 
-    // -------------------- init glew
+    // -------------------- init glew for opengl functions
     glewExperimental = true;
     GLenum err = glewInit();
     if(err != GLEW_OK){
@@ -115,7 +115,7 @@ void windowFunction(unsigned int W, unsigned int H, std::vector<Object>& objects
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-    // -------------------- init opengl
+    // -------------------- init imgui
     IMGUI_CHECKVERSION(); // check that version is compatible with what its used for
     ImGui::CreateContext();
     ImGuiIO& io = ImGui::GetIO(); (void)io;
@@ -253,7 +253,6 @@ void windowFunction(unsigned int W, unsigned int H, std::vector<Object>& objects
     glClearColor(0.f, 0.f, 0.f, 1.f);
     glPointSize(3.0f);
     const ImGuiViewport* main_viewport = ImGui::GetMainViewport();
-    float maximum_magnitude = 30.f, minimum_magnitude = 10.f;
     while(!glfwWindowShouldClose(window))
     {
         // clear
@@ -303,21 +302,69 @@ void windowFunction(unsigned int W, unsigned int H, std::vector<Object>& objects
         }
         { // object selection menu
             ImGui::SetNextWindowPos(ImVec2(main_viewport->WorkPos.x, main_viewport->WorkPos.y), ImGuiCond_FirstUseEver); // default location
-            ImGui::SetNextWindowSize(ImVec2(400, 200), ImGuiCond_FirstUseEver); // default size
+            ImGui::SetNextWindowSize(ImVec2(400, 600), ImGuiCond_FirstUseEver); // default size
 
             ImGui::Begin("Objects");
 
+            ImGui::Text(fmt::format("Total: {} objects", objects.size()).c_str());
+
             ImGui::SeparatorText("Filters");
             
+            static float max_magnitude = 30.f, min_magnitude = 10.f; // magnitude limits
+            static std::vector<bool> hidden(objects.size(), false); // what objects are visible to the user
+            static std::vector<bool> selected(objects.size(), false); // what objects had the user selected
+
             ImGui::SetNextItemWidth(200);
-            if(
-                ImGui::DragFloatRange2("Magnitude filter", &minimum_magnitude, &maximum_magnitude, 0.1f, -40.0f, 40.0f, "Min: %.1f", "Max: %.1f", ImGuiSliderFlags_AlwaysClamp)
-            ) recalculateVisibility(objects, VBobjects, maximum_magnitude, minimum_magnitude);
+            if(ImGui::DragFloatRange2("Magnitude filter", &min_magnitude, &max_magnitude, 0.1f, -40.0f, 40.0f, "Min: %.1f", "Max: %.1f", ImGuiSliderFlags_AlwaysClamp))
+                recalculateVisibility(objects, VBobjects, hidden, max_magnitude, min_magnitude);
             ImGui::SameLine(); HelpMarker(
                 "If an object has a magnitude outside of\n"
                 "this range, it will not be displayed\n"
             );
-            
+
+            ImGui::SeparatorText("Select objects");
+
+            if (ImGui::BeginTable("Select Objects", 4, ImGuiTableFlags_Resizable | ImGuiTableFlags_NoSavedSettings | ImGuiTableFlags_Borders))
+            {
+                // Table header
+                ImGui::TableNextRow();
+                ImGui::TableNextColumn();
+                ImGui::Text("Name");
+                ImGui::TableNextColumn();
+                ImGui::Text("Magnitude");
+                ImGui::TableNextColumn();
+                ImGui::Text("Hide");
+                ImGui::TableNextColumn();
+                ImGui::Text("Select");
+                for (int i = 0; i < objects.size(); i++)
+                {
+                    // (i think) this is necesarry because with vector<bool> for some (probbably good but also) annoying reason cant
+                    // access the adresses of individial elements in &stuff[n] fashion, so i am forced to make it work like this >:(
+                    bool selected_part = selected[i];
+                    bool hidden_part = hidden[i];
+
+                    ImGui::TableNextRow();
+                    ImGui::TableNextColumn();
+                    ImGui::Text(objects[i].getName().c_str());
+                    ImGui::TableNextColumn();
+                    ImGui::Text(fmt::format("{:.2f}", objects[i].getMagnitude()).c_str());
+                    
+                    // the following checkboxes have weird names that dont get displayed, the simplest explanation to "why?" is here:
+                    // https://github.com/ocornut/imgui/blob/master/docs/FAQ.md#q-why-is-my-widget-not-reacting-when-i-click-on-it
+                    ImGui::TableNextColumn();
+                    ImGui::Checkbox(fmt::format("##{}-1", i).c_str(), &hidden_part);
+                    ImGui::TableNextColumn();
+                    ImGui::Checkbox(fmt::format("##{}-2", i).c_str(), &selected_part);
+
+                    if (hidden[i] != hidden_part)
+                        recalculateVisibility(objects, VBobjects, hidden, max_magnitude, min_magnitude);
+                    
+                    hidden[i] = hidden_part;
+                    selected[i] = selected_part;
+                }
+                ImGui::EndTable();
+            }
+
             ImGui::End();
         }
 
