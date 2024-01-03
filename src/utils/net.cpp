@@ -46,9 +46,9 @@ std::string get_html(std::string& link, int milis){
 
     // check for errors
     if(r.status_code == 0)
-        throw mpcsError::DownloadFail(r.error.message);
+        throw mpcsError::DownloadFail(fmt::format("Error: {}\nLink which returned error: {} ", r.error.message, link));
     else if (r.status_code >= 400) {
-        throw mpcsError::DownloadFail(fmt::format("Error {} making request", r.status_code));
+        throw mpcsError::DownloadFail(fmt::format("Error {} making request\nLink which returned error: {}", r.status_code, link));
     }
 
     fmt::println("\rDownload success :D               ");

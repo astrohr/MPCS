@@ -80,6 +80,7 @@ void windowFunction(unsigned int W, unsigned int H, std::vector<Object>& objects
     
     // -------------------- debug related
     fmt::println("Info: OpenGL version {}", (char*)glGetString(GL_VERSION));
+    fmt::println("Info: IMGUI version: {}", IMGUI_VERSION);
     fmt::println("Info: Vendor: {}", (char*)glGetString(GL_VENDOR));
     fmt::println("Info: Renderer name: {}", (char*)glGetString(GL_RENDERER));
     int gl_extension_num; glGetIntegerv(GL_NUM_EXTENSIONS, &gl_extension_num);
@@ -137,10 +138,15 @@ void windowFunction(unsigned int W, unsigned int H, std::vector<Object>& objects
     ImGui_ImplGlfw_InitForOpenGL(window, true);
     ImGui_ImplOpenGL3_Init("#version 410"); //glsl version
 
-    fmt::println("Info: IMGUI version: {}", IMGUI_VERSION);
-
     // -------------------- camera
-    Camera cam(W/(float)H, 100);
+    Camera cam((float)W, (float)H, 100);
+    //cam.setOrientation(observatory.getCoords(), std::chrono::system_clock::to_time_t(std::chrono::system_clock::now()));
+
+    // some testing data
+    // CoordinatesGeo cs = {289.84443213466, -73.0670209146797}; 
+    // cam.setOrientation(cs, 1949616955);
+    // auto r = cam.SkyToSkyLocal({4.2167361*15.0, 159.4272905}, 1949616955);
+    // fmt::println("{} {}", r.az, r.alt);
 
     // -------------------- shader
     GLProgram program(g_resourcesPath+"/shaders/vertex.glsl", g_resourcesPath+"/shaders/fragment.glsl");
@@ -168,12 +174,12 @@ void windowFunction(unsigned int W, unsigned int H, std::vector<Object>& objects
     glfwSetFramebufferSizeCallback(window, 
         [](GLFWwindow* window, int frameBufferWidth, int frameBufferHeight) -> void {
             CallbackData* data = static_cast<CallbackData*>(glfwGetWindowUserPointer(window)); // retrieve callback data
-            data->mainCamera->setAspectRatio(frameBufferWidth/(float)frameBufferHeight);
+            data->mainCamera->setWindowDimensions((float)frameBufferWidth, (float)frameBufferHeight);
             glViewport(0, 0, frameBufferWidth, frameBufferHeight);
         }
     );
 
-    // ------------------- set up drawing data
+    // ------------------- object data
 
     unsigned int VBobjects, VAobjects;
     glGenVertexArrays(1, &VAobjects);
@@ -195,8 +201,7 @@ void windowFunction(unsigned int W, unsigned int H, std::vector<Object>& objects
         vertices.emplace_back(0.0f); //G
         vertices.emplace_back(0.0f); //B
     }
-    // and then we insert the alpha channel
-    // it is separated because it gets modified way more often
+    // and then we insert the alpha channel which is separated because it gets modified way more often
     for(auto obj : objects){
         vertices.emplace_back(1.0f); //A
     }
@@ -219,16 +224,17 @@ void windowFunction(unsigned int W, unsigned int H, std::vector<Object>& objects
     glBindVertexArray(VAground);
     glBindBuffer(GL_ARRAY_BUFFER, VBground);
 
-    // horizon line
-    vertices.clear();
-    
-    glm::quat camOrientation = cam.getOrientation(); // rotate the horizon line
-    glm::mat4 rot = glm::toMat4(glm::conjugate(camOrientation) * glm::quat(glm::vec3(glm::radians(90.f), 0.f, 0.f)) * camOrientation);
+    // ------------------- horizon line (circle)
 
-    const int CIRCLE_POINTS = 8;
+    vertices.clear(); // we can reuse the vector
+    
+    // You might wonder, why is the amount of circle points this large when 3 points would be enough to render something that looks like a circle
+    // from the center of the sphere? With large FOVs, the lines from between points will be going through the camera FOV and when rotated horizontaly, 
+    // the line (circle) will appear to be dancing left right (try it)
+    const int CIRCLE_POINTS = 64;
     for(int i = 0; i < CIRCLE_POINTS; i++){
         double rad = 2.0*std::numbers::pi * i/CIRCLE_POINTS;
-        glm::vec4 circlePoint = rot * glm::vec4(std::cos(rad), std::sin(rad), 0.0, 0.0);
+        glm::vec4 circlePoint = glm::vec4(std::cos(rad), std::sin(rad), 0.0, 0.0) * glm::mat4(cam.getOrientation());
         vertices.emplace_back(circlePoint[0]);
         vertices.emplace_back(circlePoint[1]);
         vertices.emplace_back(circlePoint[2]);
@@ -253,6 +259,7 @@ void windowFunction(unsigned int W, unsigned int H, std::vector<Object>& objects
     glClearColor(0.f, 0.f, 0.f, 1.f);
     glPointSize(3.0f);
     const ImGuiViewport* main_viewport = ImGui::GetMainViewport();
+    double mouse_xpos, mouse_ypos; // cursor positions
     while(!glfwWindowShouldClose(window))
     {
         // clear
@@ -268,7 +275,8 @@ void windowFunction(unsigned int W, unsigned int H, std::vector<Object>& objects
         updateInput(window, cam);
         cam.refresh();
         program.setUniformMat4f("MVP", cam.getTransformation());
-        
+        glfwGetCursorPos(window, &mouse_xpos, &mouse_ypos);
+                
         // draw objects
         glBindVertexArray(VAobjects);
         glDrawArrays(GL_POINTS, 0, objects.size());
@@ -285,18 +293,30 @@ void windowFunction(unsigned int W, unsigned int H, std::vector<Object>& objects
 
             ImGui::Begin("Debug Window");
             
-            ImGui::Text(std::format("Fov: {:.2f}", cam.getFov()).c_str());
+            ImGui::SeparatorText("Camera");
+
+            ImGui::Text(fmt::format("Fov: {:.2f}", cam.getFov()).c_str());
 
             glm::vec3 camOri = glm::eulerAngles(cam.getOrientation());
-            ImGui::Text(std::format("Camera orientation:\n Roll: {:.2f}\n Pitch: {:.2f}\n Yaw: {:.2f}", glm::degrees(camOri[2]), glm::degrees(camOri[0]), glm::degrees(camOri[1])).c_str());
+            ImGui::Text(fmt::format("Orientation:\n Roll: {:.2f}\n Pitch: {:.2f}\n Yaw: {:.2f}", glm::degrees(camOri[2]), glm::degrees(camOri[0]), glm::degrees(camOri[1])).c_str());
 
-            glm::vec3 camRot = glm::eulerAngles(cam.getRotation());
-            ImGui::Text(std::format("Camera rotation:\n Altitude: {:.2f}\n Azimuth: {:.2f}\n Roll: {:.2f}", glm::degrees(camRot[0]), glm::degrees(camRot[1]), glm::degrees(camRot[2])).c_str());
+            CoordinatesSkyLocal camLocal = cam.getRotation();
+            ImGui::Text(fmt::format("Local position:\n Altitude: {:.2f}\n Azimuth: {:.2f}", camLocal.alt, camLocal.az).c_str());
 
-            ImGui::Text("Mouse Positions: ");
-            double xpos, ypos;
-            glfwGetCursorPos(window, &xpos, &ypos);
-            ImGui::Text(std::format(" X: {:.2f}\n Y: {:.2f}", xpos, ypos).c_str());
+            static CoordinatesGeo testC = observatory.getCoords();
+            ImGui::SliderFloat("Slider lat", &testC.lat, -90.f, 90.f, "lat = %.1f");
+            ImGui::SliderFloat("Slider lon", &testC.lon, 0.f, 360.f, "lon = %.1f");
+            cam.setOrientation(testC, std::chrono::system_clock::to_time_t(std::chrono::system_clock::now()));
+
+            ImGui::SeparatorText("Mouse");
+
+            static CoordinatesSkyLocal mouse_apparent_pos;
+            mouse_apparent_pos = cam.screenToSkyLocal(mouse_xpos, mouse_ypos);
+
+            ImGui::Text("Positions:");
+            ImGui::Text(fmt::format(" X = {:.2f}\n Y = {:.2f}", mouse_xpos, mouse_ypos).c_str());
+            ImGui::Text(fmt::format(" Alt = {:.2f}\n Az = {:.2f}", mouse_apparent_pos.alt, mouse_apparent_pos.az).c_str());
+            ImGui::Text(fmt::format(" Ra = {:.2f}\n Dec = {:.2f}", 0.f, 0.f).c_str());
 
             ImGui::End();
         }
@@ -324,7 +344,7 @@ void windowFunction(unsigned int W, unsigned int H, std::vector<Object>& objects
 
             ImGui::SeparatorText("Select objects");
 
-            if (ImGui::BeginTable("Select Objects", 4, ImGuiTableFlags_Resizable | ImGuiTableFlags_NoSavedSettings | ImGuiTableFlags_Borders))
+            if (ImGui::BeginTable("Select Objects", 8, ImGuiTableFlags_Resizable | ImGuiTableFlags_NoSavedSettings | ImGuiTableFlags_Borders))
             {
                 // Table header
                 ImGui::TableNextRow();
@@ -333,12 +353,20 @@ void windowFunction(unsigned int W, unsigned int H, std::vector<Object>& objects
                 ImGui::TableNextColumn();
                 ImGui::Text("Magnitude");
                 ImGui::TableNextColumn();
+                ImGui::Text("Ra");
+                ImGui::TableNextColumn();
+                ImGui::Text("Dec");
+                ImGui::TableNextColumn();
+                ImGui::Text("Az");
+                ImGui::TableNextColumn();
+                ImGui::Text("Alt");
+                ImGui::TableNextColumn();
                 ImGui::Text("Hide");
                 ImGui::TableNextColumn();
                 ImGui::Text("Select");
                 for (int i = 0; i < objects.size(); i++)
                 {
-                    // (i think) this is necesarry because with vector<bool> for some (probbably good but also) annoying reason cant
+                    // (i think) this is necesarry because vector<bool> for some (probbably good but also) annoying reason cant
                     // access the adresses of individial elements in &stuff[n] fashion, so i am forced to make it work like this >:(
                     bool selected_part = selected[i];
                     bool hidden_part = hidden[i];
@@ -348,8 +376,18 @@ void windowFunction(unsigned int W, unsigned int H, std::vector<Object>& objects
                     ImGui::Text(objects[i].getName().c_str());
                     ImGui::TableNextColumn();
                     ImGui::Text(fmt::format("{:.2f}", objects[i].getMagnitude()).c_str());
-                    
-                    // the following checkboxes have weird names that dont get displayed, the simplest explanation to "why?" is here:
+                    auto c = objects[i].getCoordsSky();
+                    auto c2 = cam.SkyToSkyLocal(c, std::chrono::system_clock::to_time_t(std::chrono::system_clock::now()));
+                    ImGui::TableNextColumn();
+                    ImGui::Text(fmt::format("{:.2f}", c.ra).c_str());
+                    ImGui::TableNextColumn();
+                    ImGui::Text(fmt::format("{:.2f}", c.dec).c_str());
+                    ImGui::TableNextColumn();
+                    ImGui::Text(fmt::format("{:.2f}", c2.az).c_str());
+                    ImGui::TableNextColumn();
+                    ImGui::Text(fmt::format("{:.2f}", c2.alt).c_str());
+
+                    // the following checkboxes have weird names that dont get displayed, the explanation to "why do that?" is here:
                     // https://github.com/ocornut/imgui/blob/master/docs/FAQ.md#q-why-is-my-widget-not-reacting-when-i-click-on-it
                     ImGui::TableNextColumn();
                     ImGui::Checkbox(fmt::format("##{}-1", i).c_str(), &hidden_part);
@@ -372,7 +410,7 @@ void windowFunction(unsigned int W, unsigned int H, std::vector<Object>& objects
         ImGui::Render();
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 
-        // Update and Render additional Platform Windows (imgui docking thing)
+        // update and render additional platform windows (imgui docking thing)
         if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable){
             GLFWwindow* backup_current_context = glfwGetCurrentContext();
             ImGui::UpdatePlatformWindows();

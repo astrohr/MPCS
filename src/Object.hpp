@@ -61,6 +61,7 @@ public:
 
     const std::string getName() const { return name; }
     const Coordinates3D& getCoords3D() const { return coords3d; }
+    const CoordinatesSky& getCoordsSky()  const { return coords; }
     const float getMagnitude() const { return magnitude; }
 
     // function that will fill the variantOrbits variable

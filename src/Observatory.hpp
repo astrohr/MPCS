@@ -40,7 +40,7 @@ public:
 
     std::vector<Telescope>& getTelescopes() { return telescopes; }
     
-    CoordinatesGeo getCoords() { return coords; }
+    CoordinatesGeo& getCoords() { return coords; }
 
     std::string getName() const { return name; }
 

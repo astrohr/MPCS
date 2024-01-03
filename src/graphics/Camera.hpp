@@ -11,17 +11,17 @@ class Camera {
 private:
 
     // the camera position
-    Coordinates3D position;
+    glm::vec3 position;
 
     // a quaternion describing the orientation of the camera
     glm::quat orientation;
-    // a quaternion describing the rotation of the camera
-    glm::quat rotation;
-    // a quaternion describing where the camera is looking at (combination of rotation and orientation)
-    glm::quat lookingAt;
+    // local rotation of the camera in the ALT/AZ system
+    CoordinatesSkyLocal rotation;
+    // where is the camera observing from?
+    CoordinatesGeo location;
 
-    // camera aspect ratio
-    float aspectRatio;
+    // window dimensions
+    float window_W, window_H;
 
     // camera fov (in degrees)
     float fov;
@@ -31,7 +31,7 @@ private:
 
 public:
 
-    Camera(float aspectRatio, float fov);
+    Camera(float window_W, float window_H, float fov);
 
     ~Camera() = default;
 
@@ -50,17 +50,17 @@ public:
     const glm::quat& getOrientation() const { return orientation; }
 
     // retrieve camera rotation
-    const glm::quat& getRotation() const { return rotation; }
-
+    const CoordinatesSkyLocal& getRotation() const { return rotation; }
 
     // change aspect ratio
-    void setAspectRatio(float ar);
+    void setWindowDimensions(float window_W, float window_H) { this->window_W = window_W; this->window_H = window_H; };
 
     // calculates how the camera should be rotated thanks to the provided time and location and look direction
+    // IMPORTANT: the time provided to this function has to be UTC0
     void setOrientation(CoordinatesGeo& coords, time_t time);
 
     // looks at a specific spot in the sky
-    void setRotation(CoordinatesSkyLocal pos);
+    void setRotation(CoordinatesSkyLocal pos) { rotation = pos; };
 
 
     // updates the camera position when informed many seconds had passed
@@ -72,5 +72,12 @@ public:
     // zooms the camera
     // \param[in] closer true if zoom in, false iz zoom out
     void zoom(bool closer);
+
+    // convert from alt/az to ra/dec
+    CoordinatesSkyLocal SkyToSkyLocal(CoordinatesSky coords, time_t time);
+    // calculates where the position on the screen is in the Alt/Az coordinates
+    CoordinatesSkyLocal screenToSkyLocal(float X, float Y);
+    // calculates where the position on the screen is in the Dec/Ra coordinates
+    CoordinatesSky screenToSky(float X, float Y) = delete; // unimplemented? not for long
 
 };

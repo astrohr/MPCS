@@ -112,8 +112,7 @@ if(NOT clip_POPULATED)
 endif()
 
 # add imgui
-FetchContent_Declare(
-    imgui-docking
+FetchContent_Declare(imgui-docking
     GIT_REPOSITORY https://github.com/ocornut/imgui
     GIT_TAG v1.89.9-docking
 )

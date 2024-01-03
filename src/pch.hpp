@@ -43,5 +43,3 @@
 extern Log logs;
 extern std::map<std::string, int> monthVals;
 extern std::string g_resourcesPath; // path to MPCS.ini
-extern const time_t g_siderealDayLength; // how many miliseconds in a sidereal day
-extern std::pair<time_t, time_t> g_siderealTimeReference; // a reference for sidereal time, first is 00:00 at Greenwich, second is its sidereal time
