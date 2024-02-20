@@ -24,7 +24,6 @@ include(FetchContent)
 FetchContent_Declare(cpr 
     GIT_REPOSITORY https://github.com/libcpr/cpr.git
     GIT_TAG 1.10.4 
-    FIND_PACKAGE_ARGS NAMES cpr
 )
 
 FetchContent_GetProperties(cpr)
@@ -42,7 +41,6 @@ endif()
 FetchContent_Declare(glfw
     GIT_REPOSITORY https://github.com/glfw/glfw
     GIT_TAG 3.3.8
-    FIND_PACKAGE_ARGS NAMES glfw glfw3 libglfw libglfw3
 )
 
 FetchContent_GetProperties(glfw)
@@ -77,7 +75,6 @@ endif()
 FetchContent_Declare(glm
     GIT_REPOSITORY https://github.com/g-truc/glm
     GIT_TAG 0.9.9.8
-    FIND_PACKAGE_ARGS NAMES glm libglm
 )
 FetchContent_MakeAvailable(glm)
 

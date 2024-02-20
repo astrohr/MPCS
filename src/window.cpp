@@ -140,7 +140,7 @@ void windowFunction(unsigned int W, unsigned int H, std::vector<Object>& objects
 
     // -------------------- camera
     Camera cam((float)W, (float)H, 100);
-    //cam.setOrientation(observatory.getCoords(), std::chrono::system_clock::to_time_t(std::chrono::system_clock::now()));
+    cam.setOrientation(observatory.getCoords(), std::chrono::system_clock::to_time_t(std::chrono::system_clock::now()));
 
     // some testing data
     // CoordinatesGeo cs = {289.84443213466, -73.0670209146797}; 
@@ -234,7 +234,7 @@ void windowFunction(unsigned int W, unsigned int H, std::vector<Object>& objects
     const int CIRCLE_POINTS = 64;
     for(int i = 0; i < CIRCLE_POINTS; i++){
         double rad = 2.0*std::numbers::pi * i/CIRCLE_POINTS;
-        glm::vec4 circlePoint = glm::vec4(std::cos(rad), std::sin(rad), 0.0, 0.0) * glm::mat4(cam.getOrientation());
+        glm::vec4 circlePoint = glm::vec4(std::cos(rad), 0.0, std::sin(rad), 0.0) * glm::mat4(cam.getOrientation());
         vertices.emplace_back(circlePoint[0]);
         vertices.emplace_back(circlePoint[1]);
         vertices.emplace_back(circlePoint[2]);
@@ -303,10 +303,10 @@ void windowFunction(unsigned int W, unsigned int H, std::vector<Object>& objects
             CoordinatesSkyLocal camLocal = cam.getRotation();
             ImGui::Text(fmt::format("Local position:\n Altitude: {:.2f}\n Azimuth: {:.2f}", camLocal.alt, camLocal.az).c_str());
 
-            static CoordinatesGeo testC = observatory.getCoords();
-            ImGui::SliderFloat("Slider lat", &testC.lat, -90.f, 90.f, "lat = %.1f");
-            ImGui::SliderFloat("Slider lon", &testC.lon, 0.f, 360.f, "lon = %.1f");
-            cam.setOrientation(testC, std::chrono::system_clock::to_time_t(std::chrono::system_clock::now()));
+            //static CoordinatesGeo testC = observatory.getCoords();
+            //ImGui::SliderFloat("Slider lat", &testC.lat, -90.f, 90.f, "lat = %.1f");
+            //ImGui::SliderFloat("Slider lon", &testC.lon, 0.f, 360.f, "lon = %.1f");
+            //cam.setOrientation(testC, std::chrono::system_clock::to_time_t(std::chrono::system_clock::now()));
 
             ImGui::SeparatorText("Mouse");
 

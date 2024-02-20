@@ -15,9 +15,9 @@ void Camera::refresh()
 
     // turn the rotation into a quaternion
     glm::quat rotationQuat = 
-        glm::quat(glm::radians(rotation.alt) * (orientation * glm::vec3(1.f, 0.f, 0.f))) 
+        glm::quat(glm::radians(rotation.alt) * glm::vec3(1.f, 0.f, 0.f))
         * glm::quat(1.f, 0.f, 0.f, 0.f) 
-        * glm::angleAxis(glm::radians(rotation.az), orientation * glm::vec3(0.f, 1.f, 0.f))
+        * glm::angleAxis(glm::radians(rotation.az), glm::vec3(0.f, 1.f, 0.f))
     ;
 
     // recalculate the transformation matrix

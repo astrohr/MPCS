@@ -62,6 +62,9 @@ public:
     // looks at a specific spot in the sky
     void setRotation(CoordinatesSkyLocal pos) { rotation = pos; };
 
+    // looks at a specific spot in the sky
+    void setLocation(CoordinatesGeo loc) { location = loc; };
+
 
     // updates the camera position when informed many seconds had passed
     void updateOrientation(time_t deltatime) = delete;
