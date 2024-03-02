@@ -45,7 +45,7 @@ void Camera::setOrientation(CoordinatesGeo& coords, time_t time)
     location = coords; // set the camera geographic location
     
     // calculate the location of VE (time is assumed to be in UTC0)
-    CoordinatesSkyLocal veLoc = SkyToSkyLocal({0.f, 0.f}, time);
+    CoordinatesSkyLocal veLoc = {0.f, 0.f}; //SkyToSkyLocal({0.f, 0.f}, time);
     
     glm::quat veRotation = 
         glm::quat(glm::radians(veLoc.alt) * glm::vec3(1.f, 0.f, 0.f)) 
@@ -53,7 +53,8 @@ void Camera::setOrientation(CoordinatesGeo& coords, time_t time)
         * glm::angleAxis(glm::radians(veLoc.az), glm::vec3(0.f, 1.f, 0.f))
     ;
 
-    orientation = glm::quat(glm::radians(-90.f) * glm::vec3(1.f, 0.f, 0.f)) * veRotation; // additional transformation so that camera doesnt look into the zenith
+    // additional transformation so that camera faces the north and is below the zenith
+    orientation = glm::quat(glm::radians(90.f) * glm::vec3(0.f, 1.f, 0.f)) * glm::quat(glm::radians(90.f) * glm::vec3(-1.f, 0.f, 0.f)) * veRotation; 
 }
 
 void Camera::updateRotation(CoordinatesSkyLocal delta)
@@ -73,7 +74,7 @@ void Camera::zoom(bool closer)
 CoordinatesSkyLocal Camera::SkyToSkyLocal(CoordinatesSky coords, time_t time)
 {
     // calculate the local hour angle
-    float hourAngle = std::fmod(((float)getGMST(time) / g_siderealDayLength * 2 * std::numbers::pi) + glm::radians(location.lon) - glm::radians(coords.ra), std::numbers::pi * 2);
+    float hourAngle = std::fmod(((float)getGMST(time) / g_siderealDayLength * 2.f * (float)std::numbers::pi) + glm::radians(location.lon) - glm::radians(coords.ra), (float)std::numbers::pi * 2.f);
     if (hourAngle < 0) hourAngle += std::numbers::pi * 2;
 
     return{
@@ -89,7 +90,7 @@ CoordinatesSkyLocal Camera::screenToSkyLocal(float X, float Y)
     CoordinatesSkyLocal local;
 
     // calculate local location
-    local.alt = (Y - window_H/2.f) / window_H * fov;
+    local.alt = (window_H/2.f - Y) / window_H * fov;
     local.az = (X - window_W/2.f) / window_W * fov * (window_W / window_H);
 
     // add camera values
@@ -104,11 +105,18 @@ CoordinatesSkyLocal Camera::screenToSkyLocal(float X, float Y)
     return local;
 }
 
-// CoordinatesSky Camera::screenToSky(float X, float Y)
-// {
-//     // get local coordinates
-//     CoordinatesSkyLocal local = screenToSkyLocal(X, Y);
+CoordinatesSky Camera::screenToSky(float X, float Y, time_t time)
+{
+    // get local coordinates
+    CoordinatesSkyLocal local = screenToSkyLocal(X, Y);
 
-//     // convert them to sky coordinates
+    // hour angle
+    float H = std::atan2(-std::sin(glm::radians(local.az)), std::tan(glm::radians(local.alt))*std::cos(glm::radians(location.lat)) - std::cos(glm::radians(local.az))*std::sin(glm::radians(location.lat))); 
+    return{
+        glm::degrees(std::fmod(((float)getGMST(time) / g_siderealDayLength * 2.f * (float)std::numbers::pi) + glm::radians(location.lon) - H, (float)std::numbers::pi * 2.f)),
+        glm::degrees(std::asin(std::sin(glm::radians(location.lat))*std::sin(glm::radians(local.alt)) + std::cos(glm::radians(location.lat))*std::cos(glm::radians(local.alt))*std::cos(glm::radians(local.az))))
+    };
 
-// }
+    // https://astrogreg.com/snippets/altaztoHAdec.html
+    // https://en.wikipedia.org/wiki/Hour_angle
+}

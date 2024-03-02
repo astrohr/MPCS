@@ -39,6 +39,23 @@ void recalculateVisibility(std::vector<Object>& objects, unsigned int& VBO, std:
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 
+// this function recalculates mouse debug point position
+void recalculateMouse(unsigned int& VBO, CoordinatesSky& sky, Camera& cam)
+{
+    Coordinates3D tridi = skyTo3D(sky);
+
+    std::vector<float> coords;
+    coords.emplace_back(tridi.X);
+    coords.emplace_back(tridi.Y);
+    coords.emplace_back(tridi.Z);
+
+    glBindBuffer(GL_ARRAY_BUFFER, VBO); // prepare the buffer
+    void *ptr = glMapBufferRange(GL_ARRAY_BUFFER, 0, sizeof(float)*3, GL_MAP_WRITE_BIT); // get the pointer
+    memcpy(ptr, coords.data(), sizeof(float)*3); // copy the vector data
+    glUnmapBuffer(GL_ARRAY_BUFFER); // invalidate pointer
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+}
+
 void updateInput(GLFWwindow* window, Camera& cam)
 {
     if (glfwGetKey(window, GLFW_KEY_Q) == GLFW_PRESS) glfwSetWindowShouldClose(window, true);
@@ -217,14 +234,14 @@ void windowFunction(unsigned int W, unsigned int H, std::vector<Object>& objects
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindVertexArray(0);
 
+    // ------------------- horizon line (circle)
+
     unsigned int VBground, VAground;
     glGenVertexArrays(1, &VAground);
     glGenBuffers(1, &VBground);
 
     glBindVertexArray(VAground);
     glBindBuffer(GL_ARRAY_BUFFER, VBground);
-
-    // ------------------- horizon line (circle)
 
     vertices.clear(); // we can reuse the vector
     
@@ -255,11 +272,91 @@ void windowFunction(unsigned int W, unsigned int H, std::vector<Object>& objects
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindVertexArray(0);
 
+
+    // ------------------- cursor point (debugging)
+
+    unsigned int VBmouse, VAmouse;
+    glGenVertexArrays(1, &VAmouse);
+    glGenBuffers(1, &VBmouse);
+
+    glBindVertexArray(VAmouse);
+    glBindBuffer(GL_ARRAY_BUFFER, VBmouse);
+
+    vertices.clear(); // we can reuse the vector
+    
+    vertices.emplace_back(0.0f);
+    vertices.emplace_back(0.0f); // point location will get updated, so no need to work on this now
+    vertices.emplace_back(0.0f);
+    vertices.emplace_back(0.0f); //R
+    vertices.emplace_back(1.0f); //G
+    vertices.emplace_back(1.0f); //B
+    vertices.emplace_back(1.0f); //A
+    
+    glBufferData(GL_ARRAY_BUFFER, sizeof(float)*vertices.size(), &vertices[0], GL_DYNAMIC_DRAW);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 7 * sizeof(float), (void*)0); // coords layout
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 7 * sizeof(float), (void*)(3*sizeof(float))); // rgb channels layout
+    glEnableVertexAttribArray(1);
+    glVertexAttribPointer(2, 1, GL_FLOAT, GL_FALSE, 7 * sizeof(float), (void*)(6*sizeof(float))); // alpha channel layout
+    glEnableVertexAttribArray(2);
+
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glBindVertexArray(0);
+
+    // ------------------- X Y Z points (debugging)
+
+    unsigned int VBdirections, VAdirections;
+    glGenVertexArrays(1, &VAdirections);
+    glGenBuffers(1, &VBdirections);
+
+    glBindVertexArray(VAdirections);
+    glBindBuffer(GL_ARRAY_BUFFER, VBdirections);
+
+    vertices.clear(); // we can reuse the vector
+    
+    // X
+    vertices.emplace_back(1.0f);
+    vertices.emplace_back(0.0f); 
+    vertices.emplace_back(0.0f);
+    vertices.emplace_back(1.0f); //R
+    vertices.emplace_back(0.0f); //G
+    vertices.emplace_back(1.0f); //B
+    vertices.emplace_back(1.0f); //A
+    // Y
+    vertices.emplace_back(0.0f);
+    vertices.emplace_back(1.0f); 
+    vertices.emplace_back(0.0f);
+    vertices.emplace_back(0.0f); //R
+    vertices.emplace_back(1.0f); //G
+    vertices.emplace_back(0.0f); //B
+    vertices.emplace_back(1.0f); //A
+    // Z
+    vertices.emplace_back(0.0f);
+    vertices.emplace_back(0.0f); 
+    vertices.emplace_back(1.0f);
+    vertices.emplace_back(0.0f); //R
+    vertices.emplace_back(0.0f); //G
+    vertices.emplace_back(1.0f); //B
+    vertices.emplace_back(1.0f); //A
+    
+    glBufferData(GL_ARRAY_BUFFER, sizeof(float)*vertices.size(), &vertices[0], GL_DYNAMIC_DRAW);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 7 * sizeof(float), (void*)0); // coords layout
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 7 * sizeof(float), (void*)(3*sizeof(float))); // rgb channels layout
+    glEnableVertexAttribArray(1);
+    glVertexAttribPointer(2, 1, GL_FLOAT, GL_FALSE, 7 * sizeof(float), (void*)(6*sizeof(float))); // alpha channel layout
+    glEnableVertexAttribArray(2);
+
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glBindVertexArray(0);
+
     // -------------------- window
     glClearColor(0.f, 0.f, 0.f, 1.f);
     glPointSize(3.0f);
     const ImGuiViewport* main_viewport = ImGui::GetMainViewport();
     double mouse_xpos, mouse_ypos; // cursor positions
+    CoordinatesSkyLocal mouse_altaz;
+    CoordinatesSky mouse_radec;
     while(!glfwWindowShouldClose(window))
     {
         // clear
@@ -276,7 +373,10 @@ void windowFunction(unsigned int W, unsigned int H, std::vector<Object>& objects
         cam.refresh();
         program.setUniformMat4f("MVP", cam.getTransformation());
         glfwGetCursorPos(window, &mouse_xpos, &mouse_ypos);
-                
+        mouse_altaz = cam.screenToSkyLocal(mouse_xpos, mouse_ypos);
+        mouse_radec = cam.screenToSky(mouse_xpos, mouse_ypos, std::chrono::system_clock::to_time_t(std::chrono::system_clock::now()));
+        recalculateMouse(VBmouse, mouse_radec, cam);
+
         // draw objects
         glBindVertexArray(VAobjects);
         glDrawArrays(GL_POINTS, 0, objects.size());
@@ -284,6 +384,14 @@ void windowFunction(unsigned int W, unsigned int H, std::vector<Object>& objects
         // draw horizon line
         glBindVertexArray(VAground);
         glDrawArrays(GL_LINE_LOOP, 0, CIRCLE_POINTS);
+
+        // draw cursor
+        glBindVertexArray(VAmouse);
+        glDrawArrays(GL_POINTS, 0, 1);
+
+        // draw xyz directions
+        glBindVertexArray(VAdirections);
+        glDrawArrays(GL_POINTS, 0, 3);
         
         // draw imgui stuff
         ImGui::ShowDemoWindow();
@@ -300,6 +408,9 @@ void windowFunction(unsigned int W, unsigned int H, std::vector<Object>& objects
             glm::vec3 camOri = glm::eulerAngles(cam.getOrientation());
             ImGui::Text(fmt::format("Orientation:\n Roll: {:.2f}\n Pitch: {:.2f}\n Yaw: {:.2f}", glm::degrees(camOri[2]), glm::degrees(camOri[0]), glm::degrees(camOri[1])).c_str());
 
+            CoordinatesGeo pos = cam.getLocation();
+            ImGui::Text(fmt::format("WGS84 Location:\n Lat: {:.2f}\n Lon: {:.2f}", pos.lat, pos.lon).c_str());
+
             CoordinatesSkyLocal camLocal = cam.getRotation();
             ImGui::Text(fmt::format("Local position:\n Altitude: {:.2f}\n Azimuth: {:.2f}", camLocal.alt, camLocal.az).c_str());
 
@@ -310,13 +421,10 @@ void windowFunction(unsigned int W, unsigned int H, std::vector<Object>& objects
 
             ImGui::SeparatorText("Mouse");
 
-            static CoordinatesSkyLocal mouse_apparent_pos;
-            mouse_apparent_pos = cam.screenToSkyLocal(mouse_xpos, mouse_ypos);
-
             ImGui::Text("Positions:");
             ImGui::Text(fmt::format(" X = {:.2f}\n Y = {:.2f}", mouse_xpos, mouse_ypos).c_str());
-            ImGui::Text(fmt::format(" Alt = {:.2f}\n Az = {:.2f}", mouse_apparent_pos.alt, mouse_apparent_pos.az).c_str());
-            ImGui::Text(fmt::format(" Ra = {:.2f}\n Dec = {:.2f}", 0.f, 0.f).c_str());
+            ImGui::Text(fmt::format(" Alt = {:.2f}\n Az = {:.2f}", mouse_altaz.alt, mouse_altaz.az).c_str());
+            ImGui::Text(fmt::format(" Ra = {:.2f}\n Dec = {:.2f}", mouse_radec.ra, mouse_radec.dec).c_str());
 
             ImGui::End();
         }
@@ -394,11 +502,12 @@ void windowFunction(unsigned int W, unsigned int H, std::vector<Object>& objects
                     ImGui::TableNextColumn();
                     ImGui::Checkbox(fmt::format("##{}-2", i).c_str(), &selected_part);
 
-                    if (hidden[i] != hidden_part)
-                        recalculateVisibility(objects, VBobjects, hidden, max_magnitude, min_magnitude);
-                    
-                    hidden[i] = hidden_part;
                     selected[i] = selected_part;
+                    if (hidden[i] != hidden_part){
+                        hidden[i] = hidden_part;
+                        recalculateVisibility(objects, VBobjects, hidden, max_magnitude, min_magnitude);
+                    }
+                    
                 }
                 ImGui::EndTable();
             }
@@ -430,6 +539,10 @@ void windowFunction(unsigned int W, unsigned int H, std::vector<Object>& objects
     glDeleteVertexArrays(1, &VAobjects);
     glDeleteBuffers(1, &VBground);
     glDeleteVertexArrays(1, &VAground);
+    glDeleteBuffers(1, &VBmouse);
+    glDeleteVertexArrays(1, &VAmouse);
+    glDeleteBuffers(1, &VBdirections);
+    glDeleteVertexArrays(1, &VAdirections);
     glfwDestroyWindow(window);
     glfwTerminate();
 }

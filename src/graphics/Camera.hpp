@@ -52,6 +52,9 @@ public:
     // retrieve camera rotation
     const CoordinatesSkyLocal& getRotation() const { return rotation; }
 
+    // retrieve geographic location
+    const CoordinatesGeo& getLocation() const { return location; }
+
     // change aspect ratio
     void setWindowDimensions(float window_W, float window_H) { this->window_W = window_W; this->window_H = window_H; };
 
@@ -81,6 +84,6 @@ public:
     // calculates where the position on the screen is in the Alt/Az coordinates
     CoordinatesSkyLocal screenToSkyLocal(float X, float Y);
     // calculates where the position on the screen is in the Dec/Ra coordinates
-    CoordinatesSky screenToSky(float X, float Y) = delete; // unimplemented? not for long
+    CoordinatesSky screenToSky(float X, float Y, time_t time); // unimplemented? not for long
 
 };
