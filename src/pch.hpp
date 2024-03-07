@@ -37,6 +37,7 @@
 
 // external libs
 #include <fmt/core.h>
+#include <fmt/chrono.h>
 
 // custom
 #include "utils/Log.hpp"

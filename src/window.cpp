@@ -67,7 +67,7 @@ void updateInput(GLFWwindow* window, Camera& cam)
     if (glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS) panDown = true;
     if (glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS) panRight = true;
     if (panUp || panLeft || panDown || panRight)
-        cam.updateRotation({1.f*panRight - 1.f*panLeft, 1.f*panDown - 1.f*panUp});
+        cam.updateRotation({1.f*panRight - 1.f*panLeft, 1.f*panUp - 1.f*panDown});
 }
 
 void windowFunction(unsigned int W, unsigned int H, std::vector<Object>& objects, Observatory& observatory)
@@ -356,7 +356,8 @@ void windowFunction(unsigned int W, unsigned int H, std::vector<Object>& objects
     const ImGuiViewport* main_viewport = ImGui::GetMainViewport();
     double mouse_xpos, mouse_ypos; // cursor positions
     CoordinatesSkyLocal mouse_altaz;
-    CoordinatesSky mouse_radec;
+    CoordinatesSky mouse_radec, mouse_hadec;
+    time_t time_now = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now()); // current unix time
     while(!glfwWindowShouldClose(window))
     {
         // clear
@@ -372,9 +373,11 @@ void windowFunction(unsigned int W, unsigned int H, std::vector<Object>& objects
         updateInput(window, cam);
         cam.refresh();
         program.setUniformMat4f("MVP", cam.getTransformation());
-        glfwGetCursorPos(window, &mouse_xpos, &mouse_ypos);
+        glfwGetCursorPos(window, &mouse_xpos, &mouse_ypos); // update cursor position
+        time_now = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now()); // update unix time
         mouse_altaz = cam.screenToSkyLocal(mouse_xpos, mouse_ypos);
-        mouse_radec = cam.screenToSky(mouse_xpos, mouse_ypos, std::chrono::system_clock::to_time_t(std::chrono::system_clock::now()));
+        mouse_radec = cam.screenToSky(mouse_xpos, mouse_ypos, time_now);
+        mouse_hadec = cam.screenToSky_HA(mouse_xpos, mouse_ypos, time_now);
         recalculateMouse(VBmouse, mouse_radec, cam);
 
         // draw objects
@@ -408,12 +411,28 @@ void windowFunction(unsigned int W, unsigned int H, std::vector<Object>& objects
             glm::vec3 camOri = glm::eulerAngles(cam.getOrientation());
             ImGui::Text(fmt::format("Orientation:\n Roll: {:.2f}\n Pitch: {:.2f}\n Yaw: {:.2f}", glm::degrees(camOri[2]), glm::degrees(camOri[0]), glm::degrees(camOri[1])).c_str());
 
-            CoordinatesGeo pos = cam.getLocation();
-            ImGui::Text(fmt::format("WGS84 Location:\n Lat: {:.2f}\n Lon: {:.2f}", pos.lat, pos.lon).c_str());
-
             CoordinatesSkyLocal camLocal = cam.getRotation();
             ImGui::Text(fmt::format("Local position:\n Altitude: {:.2f}\n Azimuth: {:.2f}", camLocal.alt, camLocal.az).c_str());
 
+            CoordinatesGeo pos = cam.getLocation();
+            ImGui::Text(fmt::format("WGS84 Location:\n Lat: {:.2f}\n Lon: {:.2f}", pos.lat, pos.lon).c_str());
+
+            ImGui::SeparatorText("Time");
+
+            ImGui::Text(fmt::format("Unix seconds: {:d}", time_now).c_str());
+
+            ImGui::Text(fmt::format("UTC+0\n time: {0:%H:%M:%S}\n date: {0:%Y-%m-%d}", fmt::gmtime(time_now)).c_str());
+            
+            ImGui::Text(fmt::format("Local\n time: {0:%H:%M:%S}\n date: {0:%Y-%m-%d}", fmt::localtime(time_now)).c_str());
+
+            float the_gmst = glm::degrees((float)getGMST(time_now) / g_siderealDayLength * 2.f * (float)std::numbers::pi);
+            int gmst_h = the_gmst/24.f; int gmst_m = (the_gmst/24.f - gmst_h) * 60.f; int gmst_s = ((the_gmst/24.f - gmst_h) * 60.f - gmst_m) * 60.f;
+            ImGui::Text(fmt::format("GMST: {:0>2d}:{:0>2d}:{:0>2d}", gmst_h, gmst_m, gmst_s).c_str());
+
+            float the_lst = the_gmst + pos.lon;
+            int lst_h = the_lst/24.f; int lst_m = (the_lst/24.f - lst_h) * 60.f; int lst_s = ((the_lst/24.f - lst_h) * 60.f - lst_m) * 60.f;
+            ImGui::Text(fmt::format("LST: {:0>2d}:{:0>2d}:{:0>2d}", lst_h, lst_m, lst_s).c_str());
+            
             //static CoordinatesGeo testC = observatory.getCoords();
             //ImGui::SliderFloat("Slider lat", &testC.lat, -90.f, 90.f, "lat = %.1f");
             //ImGui::SliderFloat("Slider lon", &testC.lon, 0.f, 360.f, "lon = %.1f");
@@ -424,7 +443,7 @@ void windowFunction(unsigned int W, unsigned int H, std::vector<Object>& objects
             ImGui::Text("Positions:");
             ImGui::Text(fmt::format(" X = {:.2f}\n Y = {:.2f}", mouse_xpos, mouse_ypos).c_str());
             ImGui::Text(fmt::format(" Alt = {:.2f}\n Az = {:.2f}", mouse_altaz.alt, mouse_altaz.az).c_str());
-            ImGui::Text(fmt::format(" Ra = {:.2f}\n Dec = {:.2f}", mouse_radec.ra, mouse_radec.dec).c_str());
+            ImGui::Text(fmt::format(" Ra = {:.2f}\n Dec = {:.2f}\n Ha = {:.2f}", mouse_radec.ra, mouse_radec.dec, mouse_hadec.ra).c_str());
 
             ImGui::End();
         }
@@ -485,7 +504,7 @@ void windowFunction(unsigned int W, unsigned int H, std::vector<Object>& objects
                     ImGui::TableNextColumn();
                     ImGui::Text(fmt::format("{:.2f}", objects[i].getMagnitude()).c_str());
                     auto c = objects[i].getCoordsSky();
-                    auto c2 = cam.SkyToSkyLocal(c, std::chrono::system_clock::to_time_t(std::chrono::system_clock::now()));
+                    auto c2 = cam.SkyToSkyLocal(c, time_now);
                     ImGui::TableNextColumn();
                     ImGui::Text(fmt::format("{:.2f}", c.ra).c_str());
                     ImGui::TableNextColumn();

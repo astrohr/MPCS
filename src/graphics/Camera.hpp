@@ -84,6 +84,8 @@ public:
     // calculates where the position on the screen is in the Alt/Az coordinates
     CoordinatesSkyLocal screenToSkyLocal(float X, float Y);
     // calculates where the position on the screen is in the Dec/Ra coordinates
-    CoordinatesSky screenToSky(float X, float Y, time_t time); // unimplemented? not for long
+    CoordinatesSky screenToSky(float X, float Y, time_t time);
+    // calculates where the position on the screen is in the Dec/Ha coordinates
+    CoordinatesSky screenToSky_HA(float X, float Y, time_t time);
 
 };
