@@ -58,7 +58,7 @@ void Camera::setOrientation(CoordinatesGeo& coords, time_t time)
     // calculate the location of VE time is assumed to be in UTC0 (the function will recieve unix time so thats working ok)
     CoordinatesSkyLocal veLoc = SkyToSkyLocal({0.f, 0.f}, time);
     
-    // now using the coordinates, we have to move the camera in such a way, that to us, it looks like the vernal equinox is in the coordinates that we got
+    // now using the coordinates, we have to move the camera in such a way that, to us, it looks like the vernal equinox is in the coordinates that we got
     // so if alt is supposed to be 10°, we have to move the camera 80° down because currently VE is at an alt of 90°
     // the order of transformations is "alt first, az second" because if we rotate a point that is at alt 90° around the azimuth coordinates we will change nothing
     glm::quat veRotation = 
@@ -114,16 +114,23 @@ CoordinatesSkyLocal Camera::screenToSkyLocal(float X, float Y)
 {
     CoordinatesSkyLocal local;
 
-    // calculate local location
-    local.alt = (window_H/2.f - Y) / window_H * fov;
-    local.az = (X - window_W/2.f) / window_W * fov * (window_W / window_H);
+    // X and Y begin in the lower left corner, so lets just turn this into a cartesian coordinate system real quick
+    float x = X - window_W/2.f, y = window_H/2.f - Y;
 
-    // add camera values
-    local.alt += rotation.alt;
-    local.az += rotation.az;
+    // the apparent angle between the middle of the screen and the cursor
+    // glm::perspective fov angle is set in such a way that the angle is from the top to the bottom of the window (over the Y)
+    float angDist = std::sqrt(std::pow(x, 2) + std::pow(y, 2)) / (window_H/2.f) * (fov/2.f); 
+
+    // we can now split this distance over the x y components
+    float angX = angDist * std::sin(std::atan2(y,x));
+    float angY = angDist * std::cos(std::atan2(y,x));
+
+    // calculate local location and add camera values
+    local.alt = angX + rotation.alt;
+    local.az = angY + rotation.az;
 
     // normalize
-    local.alt = 90.f * std::sin(glm::radians(local.alt));
+    local.alt =  90.f * 2.f / std::numbers::pi * std::asin(std::sin(glm::radians(local.alt)));
     local.az = std::fmod(local.az, 360.f);
     if (local.az < 0) local.az += 360.f;
 
