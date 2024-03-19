@@ -4,6 +4,119 @@
 
 //----------------------------------------------------------
 
+
+// creates multiple points (dots) in the buffer and returns its data
+// points is a vec4 array where each element is the location of the point
+// colors is a vec4 array where each element is the color of the point
+// returns tuple with vertex array id and buffer id (in that order)
+std::tuple<unsigned int, unsigned int> createPointsBuffer(const std::vector<glm::vec4>& points, const std::vector<glm::vec4>& colors)
+{
+    // first we insert the coordinates into the buffer
+    std::vector<float> vertices;
+    for(auto point : points){
+        vertices.emplace_back(point[0]); // X
+        vertices.emplace_back(point[1]); // Y
+        vertices.emplace_back(point[2]); // Z
+    }
+    // then we insert the RGB
+    for(auto color : colors){
+        vertices.emplace_back(color[0]); //R
+        vertices.emplace_back(color[1]); //G
+        vertices.emplace_back(color[2]); //B
+    }
+    // and then we insert the alpha channel which is separated because it gets modified way more often
+    for(auto color : colors){
+        vertices.emplace_back(color[3]); //A
+    }
+
+    unsigned int VAID, BID;
+
+    // create object IDs
+    glGenVertexArrays(1, &VAID);
+    glGenBuffers(1, &BID);
+
+    // bind
+    glBindVertexArray(VAID);
+    glBindBuffer(GL_ARRAY_BUFFER, BID);
+
+    // insert the data
+    glBufferData(GL_ARRAY_BUFFER, sizeof(float) * vertices.size(), vertices.data(), GL_DYNAMIC_DRAW);
+
+    // specify the layout
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0); // coords layout
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)(points.size()*3*sizeof(float))); // rgb channels layout
+    glEnableVertexAttribArray(1);
+    glVertexAttribPointer(2, 1, GL_FLOAT, GL_FALSE, sizeof(float), (void*)(points.size()*6*sizeof(float))); // alpha channel layout
+    glEnableVertexAttribArray(2);
+
+    // unbind
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glBindVertexArray(0);
+
+    return {VAID, BID};
+}
+
+// creates multiple points (dots) in the buffer and returns its data
+// points is an vec4 array where each element is the location of the point
+// color is the color of all points
+// returns tuple with vertex array id and buffer id (in that order)
+std::tuple<unsigned int, unsigned int> createPointsBuffer(const std::vector<glm::vec4>& points, const glm::vec4& color)
+{
+    std::vector<glm::vec4> colors(points.size(), color);
+    return createPointsBuffer(points, colors);
+}
+
+#define CIRCLE_RESOLUTION 64
+
+// creates a circle in the buffer and returns its data
+// location is the position in 3d space where the circle is located
+// rotation is the way a circle is rotated by default the circle is on the XZ plane
+// returns the data over a vector
+void calcCircleData(const glm::vec4& location, const glm::quat& rotation, const float& radius, std::vector<glm::vec4>& returnData)
+{
+    for(int i = 0; i < CIRCLE_RESOLUTION; i++){
+        returnData.emplace_back( 
+            // create the point of the unit circle
+            glm::vec4(
+                std::cos((float)std::numbers::pi * 2.f * (float)i / (float)CIRCLE_RESOLUTION), 0.f,
+                std::sin((float)std::numbers::pi * 2.f * (float)i / (float)CIRCLE_RESOLUTION), 0.f
+            )
+            // rotate, scale and translate
+            * glm::mat4(rotation) * radius + location
+        );
+    }
+}
+
+#define SPHERE_MERIDIAN_RESOLUTION 12
+#define SPHERE_PARALLEL_RESOLUTION (1+8*2)
+#define SPHERE_RESOLUTION SPHERE_MERIDIAN_RESOLUTION+SPHERE_PARALLEL_RESOLUTION
+
+// creates a wireframe sphere in the buffer and returns its data
+// location is the position in 3d space where the sphere is located
+// rotation is the way a sphere is rotated by default the circle is on the XZ plane
+// returns the data over a vector
+void calcSphereData(const glm::vec4& location, const glm::quat& rotation, const float& radius, std::vector<glm::vec4>& returnData)
+{
+    for(int i = 0; i < SPHERE_MERIDIAN_RESOLUTION; i++){
+        // "meridian" spheres
+        glm::quat sub_rotation = 
+            glm::quat(1.f, 0.f, 0.f, 0.f) 
+            * glm::angleAxis(glm::radians(180.f / (float)SPHERE_MERIDIAN_RESOLUTION * (float)i), glm::vec3(1.f, 0.f, 0.f)) 
+            * glm::angleAxis(glm::radians(90.f), glm::vec3(0.f, 0.f, 1.f))
+            * rotation
+        ;
+        calcCircleData(location, sub_rotation, radius, returnData);
+    }
+    for(int i = 0; i < SPHERE_PARALLEL_RESOLUTION; i++){
+        // "parallel" spheres
+        float h = radius * (float)std::sin(glm::radians(-90.f + (i+1) * 180.f / (SPHERE_PARALLEL_RESOLUTION+1)));
+        glm::vec4 sub_location = glm::vec4(0.f, h, 0.f, 0.f) * glm::mat4(rotation) + location;
+        float sub_radius = std::sqrt(radius*radius - h*h);
+        calcCircleData(sub_location, rotation, sub_radius, returnData);
+    }
+}
+
 // Helper to display a little (?) mark which shows a tooltip when hovered.
 static void HelpMarker(const char* desc)
 {
@@ -198,157 +311,71 @@ void windowFunction(unsigned int W, unsigned int H, std::vector<Object>& objects
 
     // ------------------- object data
 
-    unsigned int VBobjects, VAobjects;
-    glGenVertexArrays(1, &VAobjects);
-    glGenBuffers(1, &VBobjects);
-
-    glBindVertexArray(VAobjects);
-    glBindBuffer(GL_ARRAY_BUFFER, VBobjects);
-
-    // first we insert the coordinates into the buffer
-    std::vector<float> vertices;
+    std::vector<glm::vec4> vertices;
     for(auto obj : objects){
-        vertices.emplace_back(obj.getCoords3D().X);
-        vertices.emplace_back(obj.getCoords3D().Y);
-        vertices.emplace_back(obj.getCoords3D().Z);
-    }
-    // then we insert the RGB
-    for(auto obj : objects){
-        vertices.emplace_back(1.0f); //R
-        vertices.emplace_back(0.0f); //G
-        vertices.emplace_back(0.0f); //B
-    }
-    // and then we insert the alpha channel which is separated because it gets modified way more often
-    for(auto obj : objects){
-        vertices.emplace_back(1.0f); //A
+        vertices.emplace_back( glm::vec4(
+            obj.getCoords3D().X,
+            obj.getCoords3D().Y,
+            obj.getCoords3D().Z,
+            0.f
+        ));
     }
 
-    glBufferData(GL_ARRAY_BUFFER, sizeof(float)*vertices.size(), &vertices[0], GL_DYNAMIC_DRAW);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0); // coords layout
-    glEnableVertexAttribArray(0);
-    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)(objects.size()*3*sizeof(float))); // rgb channels layout
-    glEnableVertexAttribArray(1);
-    glVertexAttribPointer(2, 1, GL_FLOAT, GL_FALSE, sizeof(float), (void*)(objects.size()*6*sizeof(float))); // alpha channel layout
-    glEnableVertexAttribArray(2);
+    auto [VBobjects, VAobjects] = createPointsBuffer ( vertices, glm::vec4(1.f, 0.f, 0.f, 1.f));
 
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
-    glBindVertexArray(0);
+    // ------------------- horizon line
 
-    // ------------------- horizon line (circle)
+    std::vector<glm::vec4> points;
 
-    unsigned int VBground, VAground;
-    glGenVertexArrays(1, &VAground);
-    glGenBuffers(1, &VBground);
+    calcCircleData(
+        glm::vec4(0.f, 0.f, 0.f, 0.f), // location
+        cam.getOrientation(),          // rotation
+        0.99f,                         // radius (it is smaller than 1 so it doesnt collide with the alt/az grid)
+        points
+    );
 
-    glBindVertexArray(VAground);
-    glBindBuffer(GL_ARRAY_BUFFER, VBground);
+    auto [VAground, VBground] = createPointsBuffer(
+        points,
+        glm::vec4(0.f, 1.f, 0.f, 1.f)  // color
+    );
 
-    vertices.clear(); // we can reuse the vector
-    
-    // You might wonder, why is the amount of circle points this large when 3 points would be enough to render something that looks like a circle
-    // from the center of the sphere? With large FOVs, the lines from between points will be going through the camera FOV and when rotated horizontaly, 
-    // the line (circle) will appear to be dancing left right (try it)
-    const int CIRCLE_POINTS = 64;
-    for(int i = 0; i < CIRCLE_POINTS; i++){
-        double rad = 2.0*std::numbers::pi * i/CIRCLE_POINTS;
-        glm::vec4 circlePoint = glm::vec4(std::cos(rad), 0.0, std::sin(rad), 0.0) * glm::mat4(cam.getOrientation());
-        vertices.emplace_back(circlePoint[0]);
-        vertices.emplace_back(circlePoint[1]);
-        vertices.emplace_back(circlePoint[2]);
-        vertices.emplace_back(1.0f); //R
-        vertices.emplace_back(0.0f); //G
-        vertices.emplace_back(0.0f); //B
-        vertices.emplace_back(1.0f); //A
-    }
+    // ------------------- alt/az grid
 
-    glBufferData(GL_ARRAY_BUFFER, sizeof(float)*vertices.size(), &vertices[0], GL_DYNAMIC_DRAW);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 7 * sizeof(float), (void*)0); // coords layout
-    glEnableVertexAttribArray(0);
-    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 7 * sizeof(float), (void*)(3*sizeof(float))); // rgb channels layout
-    glEnableVertexAttribArray(1);
-    glVertexAttribPointer(2, 1, GL_FLOAT, GL_FALSE, 7 * sizeof(float), (void*)(6*sizeof(float))); // alpha channel layout
-    glEnableVertexAttribArray(2);
+    points.clear(); // we can reuse this
 
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
-    glBindVertexArray(0);
+    calcSphereData(
+        glm::vec4(0.f, 0.f, 0.f, 0.f),
+        cam.getOrientation(),
+        1.f,
+        points
+    );
 
+    auto [VAaltazGrid, VBaltazGrid] = createPointsBuffer(
+        points,
+        glm::vec4(0.75f, 0.f, 0.f, 1.f)
+    );
 
     // ------------------- cursor point (debugging)
 
-    unsigned int VBmouse, VAmouse;
-    glGenVertexArrays(1, &VAmouse);
-    glGenBuffers(1, &VBmouse);
-
-    glBindVertexArray(VAmouse);
-    glBindBuffer(GL_ARRAY_BUFFER, VBmouse);
-
-    vertices.clear(); // we can reuse the vector
-    
-    vertices.emplace_back(0.0f);
-    vertices.emplace_back(0.0f); // point location will get updated, so no need to work on this now
-    vertices.emplace_back(0.0f);
-    vertices.emplace_back(0.0f); //R
-    vertices.emplace_back(1.0f); //G
-    vertices.emplace_back(1.0f); //B
-    vertices.emplace_back(1.0f); //A
-    
-    glBufferData(GL_ARRAY_BUFFER, sizeof(float)*vertices.size(), &vertices[0], GL_DYNAMIC_DRAW);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 7 * sizeof(float), (void*)0); // coords layout
-    glEnableVertexAttribArray(0);
-    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 7 * sizeof(float), (void*)(3*sizeof(float))); // rgb channels layout
-    glEnableVertexAttribArray(1);
-    glVertexAttribPointer(2, 1, GL_FLOAT, GL_FALSE, 7 * sizeof(float), (void*)(6*sizeof(float))); // alpha channel layout
-    glEnableVertexAttribArray(2);
-
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
-    glBindVertexArray(0);
+    auto [VAmouse, VBmouse] = createPointsBuffer(
+        {glm::vec4(0.f, 0.f, 0.f, 0.f)}, // point location will get updated, so no need to specify it now
+        {glm::vec4(0.f, 1.f, 1.f, 1.f)}
+    );
 
     // ------------------- X Y Z points (debugging)
 
-    unsigned int VBdirections, VAdirections;
-    glGenVertexArrays(1, &VAdirections);
-    glGenBuffers(1, &VBdirections);
-
-    glBindVertexArray(VAdirections);
-    glBindBuffer(GL_ARRAY_BUFFER, VBdirections);
-
-    vertices.clear(); // we can reuse the vector
-    
-    // X
-    vertices.emplace_back(1.0f);
-    vertices.emplace_back(0.0f); 
-    vertices.emplace_back(0.0f);
-    vertices.emplace_back(1.0f); //R
-    vertices.emplace_back(0.0f); //G
-    vertices.emplace_back(1.0f); //B
-    vertices.emplace_back(1.0f); //A
-    // Y
-    vertices.emplace_back(0.0f);
-    vertices.emplace_back(1.0f); 
-    vertices.emplace_back(0.0f);
-    vertices.emplace_back(0.0f); //R
-    vertices.emplace_back(1.0f); //G
-    vertices.emplace_back(0.0f); //B
-    vertices.emplace_back(1.0f); //A
-    // Z
-    vertices.emplace_back(0.0f);
-    vertices.emplace_back(0.0f); 
-    vertices.emplace_back(1.0f);
-    vertices.emplace_back(0.0f); //R
-    vertices.emplace_back(0.0f); //G
-    vertices.emplace_back(1.0f); //B
-    vertices.emplace_back(1.0f); //A
-    
-    glBufferData(GL_ARRAY_BUFFER, sizeof(float)*vertices.size(), &vertices[0], GL_DYNAMIC_DRAW);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 7 * sizeof(float), (void*)0); // coords layout
-    glEnableVertexAttribArray(0);
-    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 7 * sizeof(float), (void*)(3*sizeof(float))); // rgb channels layout
-    glEnableVertexAttribArray(1);
-    glVertexAttribPointer(2, 1, GL_FLOAT, GL_FALSE, 7 * sizeof(float), (void*)(6*sizeof(float))); // alpha channel layout
-    glEnableVertexAttribArray(2);
-
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
-    glBindVertexArray(0);
+    auto [VAxyz, VBxyz] = createPointsBuffer(
+        {
+            glm::vec4(1.f, 0.f, 0.f, 0.f),
+            glm::vec4(0.f, 1.f, 0.f, 0.f),
+            glm::vec4(0.f, 0.f, 1.f, 0.f)
+        },
+        {
+            glm::vec4(1.f, 0.f, 1.f, 1.f),
+            glm::vec4(0.f, 1.f, 0.f, 1.f),
+            glm::vec4(0.f, 0.f, 1.f, 1.f)
+        }
+    );
 
     // -------------------- window
     glClearColor(0.f, 0.f, 0.f, 1.f);
@@ -383,19 +410,29 @@ void windowFunction(unsigned int W, unsigned int H, std::vector<Object>& objects
         // draw objects
         glBindVertexArray(VAobjects);
         glDrawArrays(GL_POINTS, 0, objects.size());
+
+        // draw alt/az grid
+        glBindVertexArray(VAaltazGrid);
+        GLint starts[SPHERE_RESOLUTION];
+        GLsizei sizes[SPHERE_RESOLUTION];
+        for(int i = 0; i < SPHERE_RESOLUTION; i++){
+            starts[i] = CIRCLE_RESOLUTION * i;
+            sizes[i] = CIRCLE_RESOLUTION;
+        }
+        glMultiDrawArrays(GL_LINE_LOOP, starts, sizes, SPHERE_RESOLUTION);
         
         // draw horizon line
         glBindVertexArray(VAground);
-        glDrawArrays(GL_LINE_LOOP, 0, CIRCLE_POINTS);
+        glDrawArrays(GL_LINE_LOOP, 0, CIRCLE_RESOLUTION);
 
         // draw cursor
         glBindVertexArray(VAmouse);
         glDrawArrays(GL_POINTS, 0, 1);
 
         // draw xyz directions
-        glBindVertexArray(VAdirections);
+        glBindVertexArray(VAxyz);
         glDrawArrays(GL_POINTS, 0, 3);
-        
+
         // draw imgui stuff
         ImGui::ShowDemoWindow();
         { // deugging
@@ -558,10 +595,12 @@ void windowFunction(unsigned int W, unsigned int H, std::vector<Object>& objects
     glDeleteVertexArrays(1, &VAobjects);
     glDeleteBuffers(1, &VBground);
     glDeleteVertexArrays(1, &VAground);
+    glDeleteBuffers(1, &VBaltazGrid);
+    glDeleteVertexArrays(1, &VAaltazGrid);
     glDeleteBuffers(1, &VBmouse);
     glDeleteVertexArrays(1, &VAmouse);
-    glDeleteBuffers(1, &VBdirections);
-    glDeleteVertexArrays(1, &VAdirections);
+    glDeleteBuffers(1, &VBxyz);
+    glDeleteVertexArrays(1, &VAxyz);
     glfwDestroyWindow(window);
     glfwTerminate();
 }
