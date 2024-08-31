@@ -172,7 +172,10 @@ void recalculateMouse(unsigned int& VBO, CoordinatesSky& sky, Camera& cam)
 void updateInput(GLFWwindow* window, Camera& cam)
 {
     if (glfwGetKey(window, GLFW_KEY_Q) == GLFW_PRESS) glfwSetWindowShouldClose(window, true);
-    if (glfwGetKey(window, GLFW_KEY_R) == GLFW_PRESS) cam.setRotation({0,0});
+    if (glfwGetKey(window, GLFW_KEY_R) == GLFW_PRESS){
+        cam.setRotation({0,0});
+        cam.setPosition(glm::vec3(0.f, 0.f, 0.f));
+    }
     
     bool panUp = false, panLeft = false, panDown = false, panRight = false;
     if (glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS) panUp = true;
@@ -181,6 +184,20 @@ void updateInput(GLFWwindow* window, Camera& cam)
     if (glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS) panRight = true;
     if (panUp || panLeft || panDown || panRight)
         cam.updateRotation({1.f*panRight - 1.f*panLeft, 1.f*panUp - 1.f*panDown});
+
+    /*
+    // Makeshift camera translations for debugging purposes
+    bool moveAhead = false, moveLeft = false, moveBack = false, moveRight = false, moveUp = false, moveDown = false;
+    if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) moveAhead = true;
+    if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) moveLeft = true;
+    if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) moveBack = true;
+    if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) moveRight = true;
+    if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS) moveUp = true;
+    if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS) moveDown = true;
+    if (moveAhead || moveLeft || moveBack || moveRight || moveUp || moveDown){
+        glm::vec3 pos = cam.getPosition();
+        cam.setPosition(glm::vec3(pos[0] + (moveBack-moveAhead) * 0.02f, pos[1] + (moveUp-moveDown) * 0.02f, pos[2] + (moveRight-moveLeft) * 0.02f));
+    }*/
 }
 
 void windowFunction(unsigned int W, unsigned int H, std::vector<Object>& objects, Observatory& observatory)
@@ -407,10 +424,12 @@ void windowFunction(unsigned int W, unsigned int H, std::vector<Object>& objects
         mouse_hadec = cam.screenToSky_HA(mouse_xpos, mouse_ypos, time_now);
         recalculateMouse(VBmouse, mouse_radec, cam);
 
+        /* 
         // draw objects
         glBindVertexArray(VAobjects);
         glDrawArrays(GL_POINTS, 0, objects.size());
-
+        */
+       
         // draw alt/az grid
         glBindVertexArray(VAaltazGrid);
         GLint starts[SPHERE_RESOLUTION];
@@ -421,9 +440,11 @@ void windowFunction(unsigned int W, unsigned int H, std::vector<Object>& objects
         }
         glMultiDrawArrays(GL_LINE_LOOP, starts, sizes, SPHERE_RESOLUTION);
         
+        /*
         // draw horizon line
         glBindVertexArray(VAground);
         glDrawArrays(GL_LINE_LOOP, 0, CIRCLE_RESOLUTION);
+        */
 
         // draw cursor
         glBindVertexArray(VAmouse);

@@ -4,6 +4,7 @@
 
 #include "pch.hpp"
 #include "utils/utils.hpp"
+#include "glm/gtx/polar_coordinates.hpp"
 
 //----------------------------------------------------------
 
@@ -55,6 +56,9 @@ public:
     // retrieve geographic location
     const CoordinatesGeo& getLocation() const { return location; }
 
+    // looks at a specific spot in the sky
+    const glm::vec3& getPosition() { return position; };
+    
     // change aspect ratio
     void setWindowDimensions(float window_W, float window_H) { this->window_W = window_W; this->window_H = window_H; };
 
@@ -65,9 +69,11 @@ public:
     // looks at a specific spot in the sky
     void setRotation(CoordinatesSkyLocal pos) { rotation = pos; };
 
-    // looks at a specific spot in the sky
+    // chnges the geographic location
     void setLocation(CoordinatesGeo loc) { location = loc; };
 
+    // moves the camera to a different position
+    void setPosition(const glm::vec3& pos) { position = pos; };
 
     // updates the camera position when informed many seconds had passed
     void updateOrientation(time_t deltatime) = delete;
