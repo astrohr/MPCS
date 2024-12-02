@@ -85,6 +85,8 @@ public:
     // \param[in] closer true if zoom in, false iz zoom out
     void zoom(bool closer);
 
+    // convert mouse X,Y to 3D space
+    glm::vec3 mouseTo3D(float X, float Y);
     // convert from alt/az to ra/dec
     CoordinatesSkyLocal SkyToSkyLocal(CoordinatesSky coords, time_t time);
     // calculates where the position on the screen is in the Alt/Az coordinates

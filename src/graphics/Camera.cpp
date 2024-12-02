@@ -16,16 +16,16 @@ void Camera::refresh()
 
     // turn the rotation into a quaternion
     glm::quat rotationQuat = 
-        glm::quat(glm::radians(rotation.alt) * glm::vec3(-1.f, 0.f, 0.f))
-        * glm::quat(1.f, 0.f, 0.f, 0.f) 
+        glm::quat(glm::radians(rotation.alt) * glm::vec3(-1.f, 0.f, 0.f)) 
         * glm::angleAxis(glm::radians(rotation.az), glm::vec3(0.f, 1.f, 0.f))
     ;
 
     // recalculate the transformation matrix
     matrix = 
-        glm::perspective(glm::radians(fov), window_W/window_H, 0.1f, 5.0f) 
-        * glm::toMat4(rotationQuat) * glm::toMat4(orientation) 
+        glm::perspective(glm::radians(fov), window_W/window_H, 0.1f, 5.0f)
+        * glm::toMat4(rotationQuat)
         * glm::translate(glm::mat4(1.0f), position)
+        * glm::toMat4(orientation) 
     ;
 }
 
@@ -76,7 +76,7 @@ void Camera::setOrientation(CoordinatesGeo& coords, time_t time)
     ;
 
     // and now we combine the 3 rotations
-    //orientation = geoRotation * veRotation * correctionRotation;
+    orientation = geoRotation * veRotation * correctionRotation;
 
     // set the camera geographic location for further calculations
     location = coords;
@@ -117,96 +117,42 @@ CoordinatesSkyLocal Camera::SkyToSkyLocal(CoordinatesSky coords, time_t time)
     //https://astrogreg.com/convert_ra_dec_to_alt_az.html
 }
 
+glm::vec3 Camera::mouseTo3D(float X, float Y)
+{
+    glm::quat rotationQuat = 
+        glm::quat(glm::radians(rotation.alt) * glm::vec3(-1.f, 0.f, 0.f)) 
+        * glm::angleAxis(glm::radians(rotation.az), glm::vec3(0.f, 1.f, 0.f));
+    glm::mat4 view_mat = glm::toMat4(rotationQuat)
+        * glm::translate(glm::mat4(1.0f), position)
+        * glm::toMat4(orientation);
+    glm::mat4 proj_mat = glm::perspective(glm::radians(fov), window_W/window_H, 0.1f, 5.0f);
+
+    glm::vec3 r_pos = glm::unProject(glm::vec3(X, window_H - Y, 0.1f), view_mat, proj_mat, glm::vec4(0.0f, 0.0f, window_W, window_H));
+
+    return r_pos;
+}
+
 CoordinatesSkyLocal Camera::screenToSkyLocal(float X, float Y)
 {
-    // Convert screen coordinates to normalized device coordinates (NDC)
-    glm::vec3 ndcCoords(
-        (2.0f * X) / window_W - 1.0f, 
-        1.0f - (2.0f * Y) / window_H, 
-        0.0f
-    );
-    glReadPixels(X, window_H - Y, 1, 1, GL_DEPTH_COMPONENT, GL_FLOAT, &ndcCoords[2]);
-
+    glm::vec3 orient_coords = mouseTo3D(X, Y);
+    
     glm::quat rotationQuat = 
-        glm::quat(glm::radians(rotation.alt) * glm::vec3(-1.f, 0.f, 0.f))
-        * glm::quat(1.f, 0.f, 0.f, 0.f) 
-        * glm::angleAxis(glm::radians(rotation.az), glm::vec3(0.f, 1.f, 0.f))
-    ;
+        glm::quat(glm::radians(rotation.alt) * glm::vec3(-1.f, 0.f, 0.f)) 
+        * glm::angleAxis(glm::radians(rotation.az), glm::vec3(0.f, 1.f, 0.f));
+    glm::mat4 view_mat = glm::toMat4(rotationQuat)
+        * glm::translate(glm::mat4(1.0f), position)
+        * glm::toMat4(orientation);
 
-    // this function will turn the position on screen into a vector where
-    // x = azimuth coordinates but in range [-0.1, 0.1] for some reason
-    // y = altitude coordinates in range [-0.1, 0.1]
-    glm::vec3 unproj = glm::unProject(
-        ndcCoords,                                              // position
-        glm::toMat4(rotationQuat) * glm::toMat4(this->orientation),         // view matrix
-        glm::perspective(glm::radians(fov), window_W/window_H, 0.1f, 5.0f), // perspective matrix
-        glm::vec4(0.f, 0.f, this->window_W, this->window_H)                 // viewport
-    );
+    glm::vec3 coords = glm::vec4(orient_coords, 1.f) * glm::inverse(view_mat);
 
-    fmt::println("{} {} {}", unproj[0] * 10.f, unproj[1] * 10.f, unproj[2]);
+    float r = sqrt(pow(coords[0], 2) + pow(coords[1], 2) + pow(coords[2], 2));
+    float az = atan2(coords[1], coords[0]);
+    float alt = acos(coords[2] / r);
 
-    return {0.f, 0.f};
+    if (az < 0) az += 2.f * std::numbers::pi;
+    alt = .5f * std::numbers::pi - alt;
 
-    /*
-    // X and Y begin in the lower left corner, so can turn this into a cartesian coordinate system like this:
-    float x = X - window_W/2.f, y = window_H/2.f - Y;
-
-    // calculate the vector that describes where the camera is looking at
-    // first get the rotation quaternion
-    glm::quat rotationQuat = 
-        glm::quat(glm::radians(rotation.alt) * glm::vec3(-1.f, 0.f, 0.f))
-        * glm::quat(1.f, 0.f, 0.f, 0.f) 
-        * glm::angleAxis(glm::radians(rotation.az), glm::vec3(0.f, 1.f, 0.f))
-    ;
-    // then apply it on the position where camera looks at with no rotations present
-    glm::vec4 cameraVec = glm::vec4(0.f, 0.f, -1.f, 0.f) * glm::mat4(rotationQuat * orientation);
-
-    // fmt::println("First =  {}  {}  {}  {}", cameraVec[0], cameraVec[1], cameraVec[2], cameraVec[3]);
-
-    // now we need to figure out where the cursor is pointing
-    // calculate the "angular distance" of the cursor from the middle of the screen
-
-    // we know that the FOV angle goes from the top of the camera field of view to the bottom, so along the Y axis
-    // using that, we can calculate the "distance in pixels" of the screen from the camera, lets call that value k
-    // (window_H/2) / k = tan(fov/2) is the main idea, we will calculate the constant k, and then when we get some cursor height value y
-    float k = (window_H/2.f) / std::tan(glm::radians(fov/2.f));
-
-    // X and Y begin in the lower left corner, so can turn this into a cartesian coordinate system like this:
-    float x = X - window_W/2.f, y = window_H/2.f - Y;
-
-    // now we should be able to calculate the angle using the formula y/k = tan(angle)
-    // and while that would work great in a 2D scenario, we are working in 3D so we need to think about the projection on the X axis too
-    // in other words if something is height y, its altitude can change depending on the x, because of the projection
-    // the solution to this is to imagine many concentric circles from the middle (0,0), on each of those, the angle from the middle is the same
-
-    // we calculate the middle from the distance in pixels
-    float midDist = std::sqrt(std::pow(x, 2) + std::pow(y, 2));
-
-    // now we can calculate the angular distance from the middle (0,0), and use it
-    float angDist = std::atan2(midDist, k);
-
-    // we can now split this distance over the x y components
-    float angX = angDist * std::sin(std::atan2(y,x));
-    float angY = angDist * std::cos(std::atan2(y,x));
-
-    // fmt::println("angs =  {}  {}", glm::degrees(angX), glm::degrees(angY));
-
-    // now that we split it, we can add those values to cameraVec to get a vector of where our cursor is pointing
-    glm::quat localRotationQuat = 
-        glm::quat(angX * glm::vec3(-1.f, 0.f, 0.f))
-        * glm::quat(1.f, 0.f, 0.f, 0.f) 
-        * glm::angleAxis(angY, glm::vec3(0.f, 1.f, 0.f))
-    ;
-    cameraVec = cameraVec * glm::mat4(localRotationQuat);
-
-    // fmt::println("Second =  {}  {}  {}  {}", cameraVec[0], cameraVec[1], cameraVec[2], cameraVec[3]);
-
-    // normalize the vector and convert its coordinates into polar coordinates
-    glm::vec3 polar = glm::polar(glm::vec3(glm::normalize(cameraVec)));
-
-    // according to the documentation x is the xz distance, y, the latitude and z the longitude
-    return {glm::degrees(polar[2]), glm::degrees(polar[1])};
-    */
+    return {glm::degrees(az), glm::degrees(alt)};
 }
 
 CoordinatesSky Camera::screenToSky(float X, float Y, time_t time)

@@ -153,14 +153,17 @@ void recalculateVisibility(std::vector<Object>& objects, unsigned int& VBO, std:
 }
 
 // this function recalculates mouse debug point position
-void recalculateMouse(unsigned int& VBO, CoordinatesSky& sky, Camera& cam)
+void recalculateMouse(unsigned int& VBO, glm::vec3 trid/*CoordinatesSky& sky*/, Camera& cam)
 {
-    Coordinates3D tridi = skyTo3D(sky);
+    //Coordinates3D tridi = skyTo3D(sky);
 
     std::vector<float> coords;
-    coords.emplace_back(tridi.X);
-    coords.emplace_back(tridi.Y);
-    coords.emplace_back(tridi.Z);
+    // coords.emplace_back(tridi.X);
+    // coords.emplace_back(tridi.Y);
+    // coords.emplace_back(tridi.Z);
+    coords.emplace_back(trid[0]);
+    coords.emplace_back(trid[1]);
+    coords.emplace_back(trid[2]);
 
     glBindBuffer(GL_ARRAY_BUFFER, VBO); // prepare the buffer
     void *ptr = glMapBufferRange(GL_ARRAY_BUFFER, 0, sizeof(float)*3, GL_MAP_WRITE_BIT); // get the pointer
@@ -422,7 +425,8 @@ void windowFunction(unsigned int W, unsigned int H, std::vector<Object>& objects
         mouse_altaz = cam.screenToSkyLocal(mouse_xpos, mouse_ypos);
         mouse_radec = cam.screenToSky(mouse_xpos, mouse_ypos, time_now);
         mouse_hadec = cam.screenToSky_HA(mouse_xpos, mouse_ypos, time_now);
-        recalculateMouse(VBmouse, mouse_radec, cam);
+        glm::vec3 mouse3D = cam.mouseTo3D(mouse_xpos, mouse_ypos);
+        recalculateMouse(VBmouse, mouse3D, cam);
 
         /* 
         // draw objects
