@@ -28,7 +28,7 @@ private:
 
     // Coordinates in 3D space where the sky sphere is a sphere with a center in 0,0,0
     // this exists to simplify computations
-    Coordinates3D coords3d;
+    glm::vec3 coords3d;
 
     float magnitude;
 
@@ -60,7 +60,7 @@ public:
     ~Object() = default;
 
     const std::string getName() const { return name; }
-    const Coordinates3D& getCoords3D() const { return coords3d; }
+    const glm::vec3& getCoords3D() const { return coords3d; }
     const CoordinatesSky& getCoordsSky()  const { return coords; }
     const float getMagnitude() const { return magnitude; }
 

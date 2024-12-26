@@ -2,6 +2,9 @@
 
 #pragma once
 
+// use std::min/max instead of min/max from a #define in minwindef.h
+#define NOMINMAX
+
 //----------------------------------------------------------
 
 // streams

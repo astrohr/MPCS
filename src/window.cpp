@@ -153,14 +153,9 @@ void recalculateVisibility(std::vector<Object>& objects, unsigned int& VBO, std:
 }
 
 // this function recalculates mouse debug point position
-void recalculateMouse(unsigned int& VBO, glm::vec3 trid/*CoordinatesSky& sky*/, Camera& cam)
+void recalculateMouse(unsigned int& VBO, glm::vec3 trid, Camera& cam)
 {
-    //Coordinates3D tridi = skyTo3D(sky);
-
     std::vector<float> coords;
-    // coords.emplace_back(tridi.X);
-    // coords.emplace_back(tridi.Y);
-    // coords.emplace_back(tridi.Z);
     coords.emplace_back(trid[0]);
     coords.emplace_back(trid[1]);
     coords.emplace_back(trid[2]);
@@ -332,14 +327,8 @@ void windowFunction(unsigned int W, unsigned int H, std::vector<Object>& objects
     // ------------------- object data
 
     std::vector<glm::vec4> vertices;
-    for(auto obj : objects){
-        vertices.emplace_back( glm::vec4(
-            obj.getCoords3D().X,
-            obj.getCoords3D().Y,
-            obj.getCoords3D().Z,
-            0.f
-        ));
-    }
+    for(auto obj : objects)
+        vertices.emplace_back(glm::vec4(obj.getCoords3D(), 0.f));
 
     auto [VBobjects, VAobjects] = createPointsBuffer ( vertices, glm::vec4(1.f, 0.f, 0.f, 1.f));
 

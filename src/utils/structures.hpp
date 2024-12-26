@@ -38,19 +38,9 @@ struct CoordinatesGeo{
     
 };
 
-
-// Coordinates of a 3D system
-struct Coordinates3D{
-    // axis position
-    float X, Y, Z;
-    
-};
-
-
 // coordinate conversion functions
 
-Coordinates3D skyTo3D(CoordinatesSky& sky);
-
+glm::vec3 skyTo3D(CoordinatesSky& sky);
 
 
 // NEO orbit types
