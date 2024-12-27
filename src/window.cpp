@@ -416,12 +416,10 @@ void windowFunction(unsigned int W, unsigned int H, std::vector<Object>& objects
         mouse_hadec = cam.screenToSky_HA(mouse_xpos, mouse_ypos, time_now);
         glm::vec3 mouse3D = cam.mouseTo3D(mouse_xpos, mouse_ypos);
         recalculateMouse(VBmouse, mouse3D, cam);
-
-        /* 
+ 
         // draw objects
         glBindVertexArray(VAobjects);
-        glDrawArrays(GL_POINTS, 0, objects.size());
-        */
+        glDrawArrays(GL_POINTS, 0, objects.size());        
        
         // draw alt/az grid
         glBindVertexArray(VAaltazGrid);

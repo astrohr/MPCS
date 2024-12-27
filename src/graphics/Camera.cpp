@@ -127,6 +127,7 @@ glm::vec3 Camera::mouseTo3D(float X, float Y)
         * glm::toMat4(orientation);
     glm::mat4 proj_mat = glm::perspective(glm::radians(fov), window_W/window_H, 0.1f, 5.0f);
 
+    // using the view and projection matrix, unproject the position of the cursor
     glm::vec3 r_pos = glm::unProject(glm::vec3(X, window_H - Y, 0.1f), view_mat, proj_mat, glm::vec4(0.0f, 0.0f, window_W, window_H));
 
     return r_pos;
@@ -136,25 +137,23 @@ CoordinatesSkyLocal Camera::screenToSkyLocal(float X, float Y)
 {
     glm::vec3 orient_coords = mouseTo3D(X, Y);
     
-    glm::quat rotationQuat = 
-        glm::quat(glm::radians(rotation.alt) * glm::vec3(-1.f, 0.f, 0.f)) 
-        * glm::angleAxis(glm::radians(rotation.az), glm::vec3(0.f, 1.f, 0.f));
-    glm::mat4 view_mat = glm::toMat4(rotationQuat)
-        * glm::translate(glm::mat4(1.0f), position)
-        * glm::toMat4(orientation);
+    // get the view matrix but without the local alt/az rotations, to unproject the orientation rotation
+    glm::mat4 norot_mat = glm::translate(glm::mat4(1.0f), position) * glm::toMat4(orientation); 
+    glm::vec3 coords = glm::vec4(orient_coords, 1.f) * glm::inverse(norot_mat);
 
-    glm::vec3 coords = glm::vec4(orient_coords, 1.f) * glm::inverse(view_mat);
+    // geometrical solution
+    float r = sqrt(pow(coords[0], 2) + pow(coords[1], 2) + pow(coords[2], 2)); // "distance" from 0,0,0
+    float az = atan2(coords[2], coords[0]) + fPi * 0.5f; // XZ plane is horizontal, but X is at azimuth 90°
+    float alt = acos(coords[1] / r); // Y is vertical
 
-    float r = sqrt(pow(coords[0], 2) + pow(coords[1], 2) + pow(coords[2], 2));
-    float az = atan2(coords[1], coords[0]);
-    float alt = acos(coords[2] / r);
-
+    // corrections
     if (az < 0) az += 2.f * fPi;
     alt = .5f * fPi - alt;
 
     return {glm::degrees(az), glm::degrees(alt)};
 }
 
+// gives incorrect results currently
 CoordinatesSky Camera::screenToSky(float X, float Y, time_t time)
 {
     // get local coordinates
@@ -181,6 +180,7 @@ CoordinatesSky Camera::screenToSky(float X, float Y, time_t time)
     // https://en.wikipedia.org/wiki/Hour_angle
 }
 
+// gives incorrect results currently
 CoordinatesSky Camera::screenToSky_HA(float X, float Y, time_t time)
 {
     // get local coordinates
