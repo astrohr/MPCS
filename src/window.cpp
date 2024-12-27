@@ -79,8 +79,8 @@ void calcCircleData(const glm::vec4& location, const glm::quat& rotation, const 
         returnData.emplace_back( 
             // create the point of the unit circle
             glm::vec4(
-                std::cos((float)std::numbers::pi * 2.f * (float)i / (float)CIRCLE_RESOLUTION), 0.f,
-                std::sin((float)std::numbers::pi * 2.f * (float)i / (float)CIRCLE_RESOLUTION), 0.f
+                std::cos(fPi * 2.f * (float)i / (float)CIRCLE_RESOLUTION), 0.f,
+                std::sin(fPi * 2.f * (float)i / (float)CIRCLE_RESOLUTION), 0.f
             )
             // rotate, scale and translate
             * glm::mat4(rotation) * radius + location
@@ -476,7 +476,7 @@ void windowFunction(unsigned int W, unsigned int H, std::vector<Object>& objects
             
             ImGui::Text(fmt::format("Local\n time: {0:%H:%M:%S}\n date: {0:%Y-%m-%d}", fmt::localtime(time_now)).c_str());
 
-            float the_gmst = glm::degrees((float)getGMST(time_now) / g_siderealDayLength * 2.f * (float)std::numbers::pi);
+            float the_gmst = glm::degrees((float)getGMST(time_now) / g_siderealDayLength * 2.f * fPi);
             int gmst_h = the_gmst/24.f; int gmst_m = (the_gmst/24.f - gmst_h) * 60.f; int gmst_s = ((the_gmst/24.f - gmst_h) * 60.f - gmst_m) * 60.f;
             ImGui::Text(fmt::format("GMST: {:0>2d}:{:0>2d}:{:0>2d}", gmst_h, gmst_m, gmst_s).c_str());
 

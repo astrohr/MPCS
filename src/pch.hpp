@@ -47,3 +47,5 @@
 extern Log logs;
 extern std::map<std::string, int> monthVals;
 extern std::string g_resourcesPath; // path to MPCS.ini
+#define Pi (std::numbers::pi)
+#define fPi ((float)Pi)

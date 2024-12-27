@@ -99,9 +99,9 @@ void Camera::zoom(bool closer)
 CoordinatesSkyLocal Camera::SkyToSkyLocal(CoordinatesSky coords, time_t time)
 {
     // calculate the local hour angle
-    float hourAngle = ((float)getGMST(time) / g_siderealDayLength * 2.f * (float)std::numbers::pi) + glm::radians(location.lon) - glm::radians(coords.ra);
-    if (hourAngle < 0) hourAngle += std::numbers::pi * 2;
-    if (hourAngle > 2.f * std::numbers::pi) hourAngle -= std::numbers::pi * 2;
+    float hourAngle = ((float)getGMST(time) / g_siderealDayLength * 2.f * fPi) + glm::radians(location.lon) - glm::radians(coords.ra);
+    if (hourAngle < 0) hourAngle += fPi * 2.f;
+    if (hourAngle > 2.f * fPi) hourAngle -= fPi * 2.f;
 
     return{
         glm::degrees(std::atan2(
@@ -149,8 +149,8 @@ CoordinatesSkyLocal Camera::screenToSkyLocal(float X, float Y)
     float az = atan2(coords[1], coords[0]);
     float alt = acos(coords[2] / r);
 
-    if (az < 0) az += 2.f * std::numbers::pi;
-    alt = .5f * std::numbers::pi - alt;
+    if (az < 0) az += 2.f * fPi;
+    alt = .5f * fPi - alt;
 
     return {glm::degrees(az), glm::degrees(alt)};
 }
@@ -165,10 +165,10 @@ CoordinatesSky Camera::screenToSky(float X, float Y, time_t time)
         - std::sin(glm::radians(local.az)), 
         std::tan(glm::radians(local.alt))*std::cos(glm::radians(location.lat)) - std::cos(glm::radians(local.az))*std::sin(glm::radians(location.lat))
     ); 
-    if (H < 0) H += 2.f * std::numbers::pi;
-    float ra = ((float)getGMST(time) / g_siderealDayLength * 2.f * (float)std::numbers::pi) + glm::radians(location.lon) - H;
-    if (ra < 0) ra += 2.f * std::numbers::pi;
-    if (ra > 2.f * std::numbers::pi) ra -= 2.f * std::numbers::pi;
+    if (H < 0) H += 2.f * fPi;
+    float ra = ((float)getGMST(time) / g_siderealDayLength * 2.f * fPi) + glm::radians(location.lon) - H;
+    if (ra < 0) ra += 2.f * fPi;
+    if (ra > 2.f * fPi) ra -= 2.f * fPi;
     return{
         glm::degrees(ra),
         glm::degrees(std::asin(
@@ -191,7 +191,7 @@ CoordinatesSky Camera::screenToSky_HA(float X, float Y, time_t time)
         - std::sin(glm::radians(local.az)),
         std::tan(glm::radians(local.alt))*std::cos(glm::radians(location.lat)) - std::cos(glm::radians(local.az))*std::sin(glm::radians(location.lat))
     ); 
-    if (H < 0) H += 2.f * std::numbers::pi;
+    if (H < 0) H += 2.f * fPi;
     return{
         glm::degrees(H),
         glm::degrees(std::asin(

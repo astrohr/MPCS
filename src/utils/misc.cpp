@@ -61,14 +61,14 @@ time_t getGMST(time_t time)
 
     //The IAU Resolutions on Astronomical Reference Systems, Time Scales, and Earth Rotation Models Explanation and Implementation (George H. Kaplan)
     //https://arxiv.org/pdf/astro-ph/0602086.pdf    
-    double era = std::fmod(std::numbers::pi * 2 * (0.7790572732640 + 0.00273781191135448 * (jd_ut1 - 2451545.0) + std::fmod(jd_ut1, 1.0)), std::numbers::pi * 2);
-    if (era < 0) era += std::numbers::pi * 2;
+    double era = std::fmod(Pi * 2 * (0.7790572732640 + 0.00273781191135448 * (jd_ut1 - 2451545.0) + std::fmod(jd_ut1, 1.0)), Pi * 2);
+    if (era < 0) era += Pi * 2;
     double t = (jd_ut1 - 2451545.f) / 36525.f;
-    double gmst = std::fmod(era + (0.014506 + 4612.15739966 * t + 1.39667721 * pow(t,2) - 0.00009344 * pow(t,3) + 0.00001882 * pow(t,4))/3600.0/180.0 * std::numbers::pi, std::numbers::pi * 2);
-    if(gmst < 0) gmst += std::numbers::pi * 2;
+    double gmst = std::fmod(era + (0.014506 + 4612.15739966 * t + 1.39667721 * pow(t,2) - 0.00009344 * pow(t,3) + 0.00001882 * pow(t,4))/3600.0/180.0 * Pi, Pi * 2);
+    if(gmst < 0) gmst += Pi * 2;
 
     // convert to miliseconds
-    time_t gmst_t = gmst / std::numbers::pi / 2.0 * g_siderealDayLength;
+    time_t gmst_t = gmst / Pi / 2.0 * g_siderealDayLength;
 
     return gmst_t;
     // more explanations can be found on
