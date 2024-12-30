@@ -29,6 +29,7 @@ void Camera::refresh()
     ;
 }
 
+// this function may be incorrect
 void Camera::setOrientation(CoordinatesGeo& coords, time_t time)
 {
     // by default the vernal equinox (ra, dec = 0, 0) will be 90° to the "left" of the X axis, and 90° to the right there will be the Z axis, Y axis will be in the zenith
@@ -67,7 +68,7 @@ void Camera::setOrientation(CoordinatesGeo& coords, time_t time)
         * glm::quat(glm::radians(90.f - veLoc.alt) * glm::vec3(1.f, 0.f, 0.f)) 
     ;
 
-    // veRotation will point the camera in the direction of the vernal equinox, but we will still be looking at it from the percpective of the 0, 0
+    // veRotation will point the camera in the direction of the vernal equinox, but we will still be looking at it from the perspective of the 0, 0
     // we must rotate the camera accordingly to the position on the planet
     glm::quat geoRotation = 
         glm::quat(glm::radians(coords.lat) * glm::vec3(-1.f, 0.f, 0.f)) 
@@ -108,7 +109,7 @@ CoordinatesSkyLocal Camera::SkyToSkyLocal(CoordinatesSky coords, time_t time)
             std::sin(hourAngle), 
              std::cos(hourAngle) * std::sin(glm::radians(location.lat)) 
              - std::tan(glm::radians(coords.dec)) * std::cos(glm::radians(location.lat))
-        )), // azimuth
+        ) + fPi), // azimuth
         glm::degrees(std::asin(
             std::sin(glm::radians(location.lat)) * std::sin(glm::radians(coords.dec)) 
             + std::cos(glm::radians(location.lat)) * std::cos(glm::radians(coords.dec)) * std::cos(hourAngle)
@@ -153,7 +154,6 @@ CoordinatesSkyLocal Camera::screenToSkyLocal(float X, float Y)
     return {glm::degrees(az), glm::degrees(alt)};
 }
 
-// gives incorrect results currently
 CoordinatesSky Camera::screenToSky(float X, float Y, time_t time)
 {
     // get local coordinates
@@ -180,7 +180,6 @@ CoordinatesSky Camera::screenToSky(float X, float Y, time_t time)
     // https://en.wikipedia.org/wiki/Hour_angle
 }
 
-// gives incorrect results currently
 CoordinatesSky Camera::screenToSky_HA(float X, float Y, time_t time)
 {
     // get local coordinates

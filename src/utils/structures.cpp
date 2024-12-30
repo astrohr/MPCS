@@ -4,6 +4,7 @@
 
 //----------------------------------------------------------
 
+// this function may be incorrect
 glm::vec3 skyTo3D(CoordinatesSky& sky)
 { 
     // north is in the direction of the Z axis from 0,0

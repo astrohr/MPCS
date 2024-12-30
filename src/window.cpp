@@ -414,7 +414,9 @@ void windowFunction(unsigned int W, unsigned int H, std::vector<Object>& objects
         mouse_altaz = cam.screenToSkyLocal(mouse_xpos, mouse_ypos);
         mouse_radec = cam.screenToSky(mouse_xpos, mouse_ypos, time_now);
         mouse_hadec = cam.screenToSky_HA(mouse_xpos, mouse_ypos, time_now);
-        glm::vec3 mouse3D = cam.mouseTo3D(mouse_xpos, mouse_ypos);
+        // glm::vec3 mouse3D = cam.mouseTo3D(mouse_xpos, mouse_ypos);
+        auto aat = cam.screenToSky(mouse_xpos, mouse_ypos, time_now);
+        glm::vec3 mouse3D = skyTo3D(aat);
         recalculateMouse(VBmouse, mouse3D, cam);
  
         // draw objects
