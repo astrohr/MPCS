@@ -119,6 +119,21 @@ if(NOT imgui-docking_POPULATED)
     FetchContent_Populate(imgui-docking)
 endif()
 
+# add sqlite3
+FetchContent_Declare(sqlite3
+    GIT_REPOSITORY https://github.com/SRombauts/SQLiteCpp
+    GIT_TAG 3.3.2
+)
+
+FetchContent_GetProperties(sqlite3)
+if(NOT sqlite3_POPULATED)
+    FetchContent_Populate(sqlite3)
+
+
+
+    add_subdirectory(${sqlite3_SOURCE_DIR} ${sqlite3_BINARY_DIR})
+endif()
+
 # -------------------- END OF DEPENDENCIES
 
 # create executable
@@ -127,7 +142,7 @@ add_executable(${PROJECT_NAME})
 # add code
 add_subdirectory("src")
 
-# add imgui code since they dont have their own cmake
+# add imgui and sqlite code since they dont have their own cmake (or useable cmake)
 target_sources(${PROJECT_NAME} PUBLIC
     "${PROJECT_BINARY_DIR}/_deps/imgui-docking-src/imgui.cpp"
     "${PROJECT_BINARY_DIR}/_deps/imgui-docking-src/imgui_draw.cpp"
@@ -150,11 +165,12 @@ target_include_directories(${PROJECT_NAME} PUBLIC
     "${PROJECT_BINARY_DIR}/_deps/cpr-src/include/"
     "${PROJECT_BINARY_DIR}/_deps/imgui-docking-src/"
     "${PROJECT_BINARY_DIR}/_deps/imgui-docking-src/backends/"
+    "${PROJECT_BINARY_DIR}/_deps/sqlite3-src/include/"
 )
 
 # link all libraries to the executable
 target_link_libraries(${PROJECT_NAME}
-    "cpr;glfw;libglew_static;fmt;glm;clip"
+    "cpr;glfw;libglew_static;fmt;glm;clip;sqlite3"
 )
 
 #copy the resources to the build folder

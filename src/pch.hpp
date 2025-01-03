@@ -41,6 +41,7 @@
 // external libs
 #include <fmt/core.h>
 #include <fmt/chrono.h>
+#include <SQLiteCpp/SQLiteCpp.h>
 
 // custom
 #include "utils/Log.hpp"
