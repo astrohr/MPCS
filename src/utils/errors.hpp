@@ -38,4 +38,11 @@ public:
     virtual ~InippError() {}
 };
 
+class DbError : public std::runtime_error
+{
+public:
+    DbError(const std::string& problem) : std::runtime_error(problem) {}
+    virtual ~DbError() {}
+};
+
 }

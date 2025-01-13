@@ -6,6 +6,7 @@ target_sources(${PROJECT_NAME} PUBLIC
     "Observatory.cpp"
     "Telescope.cpp"
     "VariantOrbit.cpp"
+    "Stars.cpp"
     "utils/net.cpp"
     "utils/Log.cpp"
     "utils/misc.cpp"

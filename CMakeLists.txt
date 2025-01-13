@@ -124,13 +124,12 @@ FetchContent_Declare(sqlite3
     GIT_REPOSITORY https://github.com/SRombauts/SQLiteCpp
     GIT_TAG 3.3.2
 )
-
+# fun fact: im not fetching the sqlite repository, im fetching the sqlitecpp repository (a cpp wrapper)
+# im doing this only because it provides cmake support and gets me a full sqlite installation
+# at no point am i using the cpp wrapper, and im not confident that it would even work with this setup
 FetchContent_GetProperties(sqlite3)
 if(NOT sqlite3_POPULATED)
     FetchContent_Populate(sqlite3)
-
-
-
     add_subdirectory(${sqlite3_SOURCE_DIR} ${sqlite3_BINARY_DIR})
 endif()
 
@@ -166,6 +165,7 @@ target_include_directories(${PROJECT_NAME} PUBLIC
     "${PROJECT_BINARY_DIR}/_deps/imgui-docking-src/"
     "${PROJECT_BINARY_DIR}/_deps/imgui-docking-src/backends/"
     "${PROJECT_BINARY_DIR}/_deps/sqlite3-src/include/"
+    "${PROJECT_BINARY_DIR}/_deps/sqlite3-src/"
 )
 
 # link all libraries to the executable

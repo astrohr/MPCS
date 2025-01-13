@@ -8,6 +8,7 @@
 
 #include "Observatory.hpp"
 #include "Object.hpp"
+#include "Stars.hpp"
 
 #include "window.hpp"
 
@@ -153,6 +154,7 @@ int main(int argc, char **argv)
     fmt::println("Info: GLFW version {}.{}.{}", GLFW_VERSION_MAJOR, GLFW_VERSION_MINOR, GLFW_VERSION_REVISION);
     fmt::println("Info: GLEW version {}.{}.{}", GLEW_VERSION_MAJOR, GLEW_VERSION_MINOR, GLEW_VERSION_MICRO);
     fmt::println("Info: GLM version {}.{}.{}.{}", GLM_VERSION_MAJOR, GLM_VERSION_MINOR, GLM_VERSION_PATCH, GLM_VERSION_REVISION);
+    fmt::println("Info: SQLite version {}", SQLITE_VERSION);
 
     // -------------------- find MPCS.ini
     fmt::println("Log: looking for the resources folder...");
@@ -163,6 +165,10 @@ int main(int argc, char **argv)
         fmt::print("Error: resources not found!\n\n");
         return 1;
     }
+
+    // -------------------- init star data
+    Stars stars("stars.db");
+    stars.fetchStarsbyMag(3.f);
 
     // -------------------- read MPCS.ini
     try{
@@ -199,8 +205,7 @@ int main(int argc, char **argv)
     }
 
     // -------------------- start the window
-    windowFunction(W, H, objects, observatory);
-
+    windowFunction(W, H, objects, stars, observatory);
 
     return 0;
 }

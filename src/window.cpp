@@ -6,10 +6,12 @@
 
 
 // creates multiple points (dots) in the buffer and returns its data
-// points is a vec4 array where each element is the location of the point
-// colors is a vec4 array where each element is the color of the point
+// points is an array where each element is the location of the point
+// colors is an array where each element is the color of the point
+// sizes is an array where each element is the size of the point
 // returns tuple with vertex array id and buffer id (in that order)
-std::tuple<unsigned int, unsigned int> createPointsBuffer(const std::vector<glm::vec4>& points, const std::vector<glm::vec4>& colors)
+std::tuple<unsigned int, unsigned int> createPointsBuffer(
+    const std::vector<glm::vec4>& points, const std::vector<glm::vec4>& colors, const std::vector<float>& sizes)
 {
     // first we insert the coordinates into the buffer
     std::vector<float> vertices;
@@ -24,9 +26,13 @@ std::tuple<unsigned int, unsigned int> createPointsBuffer(const std::vector<glm:
         vertices.emplace_back(color[1]); //G
         vertices.emplace_back(color[2]); //B
     }
-    // and then we insert the alpha channel which is separated because it gets modified way more often
+    // then we insert the alpha channel which is separated because it gets modified way more often
     for(auto color : colors){
         vertices.emplace_back(color[3]); //A
+    }
+    // and then the point size
+    for(auto size : sizes){
+        vertices.emplace_back(size);
     }
 
     unsigned int VAID, BID;
@@ -49,6 +55,8 @@ std::tuple<unsigned int, unsigned int> createPointsBuffer(const std::vector<glm:
     glEnableVertexAttribArray(1);
     glVertexAttribPointer(2, 1, GL_FLOAT, GL_FALSE, sizeof(float), (void*)(points.size()*6*sizeof(float))); // alpha channel layout
     glEnableVertexAttribArray(2);
+    glVertexAttribPointer(3, 1, GL_FLOAT, GL_FALSE, sizeof(float), (void*)(points.size()*7*sizeof(float))); // alpha channel layout
+    glEnableVertexAttribArray(2);
 
     // unbind
     glBindBuffer(GL_ARRAY_BUFFER, 0);
@@ -56,11 +64,16 @@ std::tuple<unsigned int, unsigned int> createPointsBuffer(const std::vector<glm:
 
     return {VAID, BID};
 }
-
-// creates multiple points (dots) in the buffer and returns its data
-// points is an vec4 array where each element is the location of the point
-// color is the color of all points
-// returns tuple with vertex array id and buffer id (in that order)
+std::tuple<unsigned int, unsigned int> createPointsBuffer(const std::vector<glm::vec4>& points, const glm::vec4& color, const std::vector<float>& sizes)
+{
+    std::vector<glm::vec4> colors(points.size(), color);
+    return createPointsBuffer(points, colors, sizes);
+}
+std::tuple<unsigned int, unsigned int> createPointsBuffer(const std::vector<glm::vec4>& points, const std::vector<glm::vec4>& colors)
+{
+    std::vector<float> sizes(points.size(), 1.f);
+    return createPointsBuffer(points, colors, sizes);
+}
 std::tuple<unsigned int, unsigned int> createPointsBuffer(const std::vector<glm::vec4>& points, const glm::vec4& color)
 {
     std::vector<glm::vec4> colors(points.size(), color);
@@ -182,23 +195,9 @@ void updateInput(GLFWwindow* window, Camera& cam)
     if (glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS) panRight = true;
     if (panUp || panLeft || panDown || panRight)
         cam.updateRotation({1.f*panRight - 1.f*panLeft, 1.f*panUp - 1.f*panDown});
-
-    /*
-    // Makeshift camera translations for debugging purposes
-    bool moveAhead = false, moveLeft = false, moveBack = false, moveRight = false, moveUp = false, moveDown = false;
-    if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) moveAhead = true;
-    if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) moveLeft = true;
-    if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) moveBack = true;
-    if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) moveRight = true;
-    if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS) moveUp = true;
-    if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS) moveDown = true;
-    if (moveAhead || moveLeft || moveBack || moveRight || moveUp || moveDown){
-        glm::vec3 pos = cam.getPosition();
-        cam.setPosition(glm::vec3(pos[0] + (moveBack-moveAhead) * 0.02f, pos[1] + (moveUp-moveDown) * 0.02f, pos[2] + (moveRight-moveLeft) * 0.02f));
-    }*/
 }
 
-void windowFunction(unsigned int W, unsigned int H, std::vector<Object>& objects, Observatory& observatory)
+void windowFunction(unsigned int W, unsigned int H, std::vector<Object>& objects, Stars& stars, Observatory& observatory)
 {
     // -------------------- init glfw
     if(!glfwInit()){
@@ -260,6 +259,7 @@ void windowFunction(unsigned int W, unsigned int H, std::vector<Object>& objects
     glFrontFace(GL_CCW); // front is where the points of a triangle are connected counterclockwise
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    glEnable(GL_POINT_SMOOTH); // make points look like points, instead of ugly 1x1 boxes
 
     // -------------------- init imgui
     IMGUI_CHECKVERSION(); // check that version is compatible with what its used for
@@ -281,17 +281,11 @@ void windowFunction(unsigned int W, unsigned int H, std::vector<Object>& objects
 
     // Setup Platform/Renderer backends
     ImGui_ImplGlfw_InitForOpenGL(window, true);
-    ImGui_ImplOpenGL3_Init("#version 410"); //glsl version
+    ImGui_ImplOpenGL3_Init("#version 450"); //glsl version
 
     // -------------------- camera
     Camera cam((float)W, (float)H, 100);
     cam.setOrientation(observatory.getCoords(), std::chrono::system_clock::to_time_t(std::chrono::system_clock::now()));
-
-    // some testing data
-    // CoordinatesGeo cs = {289.84443213466, -73.0670209146797}; 
-    // cam.setOrientation(cs, 1949616955);
-    // auto r = cam.SkyToSkyLocal({4.2167361*15.0, 159.4272905}, 1949616955);
-    // fmt::println("{} {}", r.az, r.alt);
 
     // -------------------- shader
     GLProgram program(g_resourcesPath+"/shaders/vertex.glsl", g_resourcesPath+"/shaders/fragment.glsl");
@@ -330,7 +324,18 @@ void windowFunction(unsigned int W, unsigned int H, std::vector<Object>& objects
     for(auto obj : objects)
         vertices.emplace_back(glm::vec4(obj.getCoords3D(), 0.f));
 
-    auto [VBobjects, VAobjects] = createPointsBuffer ( vertices, glm::vec4(1.f, 0.f, 0.f, 1.f));
+    auto [VBobjects, VAobjects] = createPointsBuffer(vertices, glm::vec4(1.f, 0.f, 0.f, 1.f));
+
+    // ------------------- star data
+
+    std::vector<glm::vec4> starVertices;
+    std::vector<float> sizes;
+    for(auto star : stars.getStars()){
+        CoordinatesSky st = {star.ra, star.dec};
+        starVertices.emplace_back(glm::vec4(skyTo3D(st), 0.f));
+        sizes.emplace_back(3 * std::pow(2.512, 3-star.mag) * 0.1);
+    }
+    auto [VBstars, VAstars] = createPointsBuffer(starVertices, glm::vec4(1.f, 1.f, 1.f, 1.f), sizes);
 
     // ------------------- horizon line
 
@@ -418,11 +423,13 @@ void windowFunction(unsigned int W, unsigned int H, std::vector<Object>& objects
         auto aat = cam.screenToSky(mouse_xpos, mouse_ypos, time_now);
         glm::vec3 mouse3D = skyTo3D(aat);
         recalculateMouse(VBmouse, mouse3D, cam);
- 
+
+        /*
         // draw objects
         glBindVertexArray(VAobjects);
         glDrawArrays(GL_POINTS, 0, objects.size());        
-       
+        */
+
         // draw alt/az grid
         glBindVertexArray(VAaltazGrid);
         GLint starts[SPHERE_RESOLUTION];
@@ -438,6 +445,10 @@ void windowFunction(unsigned int W, unsigned int H, std::vector<Object>& objects
         glBindVertexArray(VAground);
         glDrawArrays(GL_LINE_LOOP, 0, CIRCLE_RESOLUTION);
         */
+
+        // draw stars
+        glBindVertexArray(VAstars);
+        glDrawArrays(GL_POINTS, 0, stars.getStars().size());
 
         // draw cursor
         glBindVertexArray(VAmouse);
@@ -611,6 +622,8 @@ void windowFunction(unsigned int W, unsigned int H, std::vector<Object>& objects
     glDeleteVertexArrays(1, &VAground);
     glDeleteBuffers(1, &VBaltazGrid);
     glDeleteVertexArrays(1, &VAaltazGrid);
+    glDeleteBuffers(1, &VBstars);
+    glDeleteVertexArrays(1, &VAstars);
     glDeleteBuffers(1, &VBmouse);
     glDeleteVertexArrays(1, &VAmouse);
     glDeleteBuffers(1, &VBxyz);
