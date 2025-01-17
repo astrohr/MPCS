@@ -13,6 +13,9 @@ target_sources(${PROJECT_NAME} PUBLIC
     "utils/structures.cpp"
     "graphics/GLProgram.cpp"
     "graphics/Camera.cpp"
+    "graphics/Grid.cpp"
+    "graphics/Circle.cpp"
+    "graphics/PointCluster.cpp"
 )
 target_precompile_headers(${PROJECT_NAME} PRIVATE "pch.hpp")
 

@@ -44,8 +44,8 @@
 #include <sqlite3/sqlite3.h>
 
 // custom
-#include "utils/Log.hpp"
-extern Log logs;
+// #include "utils/Log.hpp"
+// extern Log logs;
 extern std::map<std::string, int> monthVals;
 extern std::string g_resourcesPath; // path to MPCS.ini
 #define Pi (std::numbers::pi)
