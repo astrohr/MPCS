@@ -6,17 +6,17 @@
 
 //----------------------------------------------------------
 
-Circle::Circle(const glm::vec4& position, const glm::quat& rotation, const glm::vec4& rgba, const float radius, const int resolution/*=64*/)
-: position(position), rotation(rotation), rgba(rgba), radius(radius), resolution(resolution)
+Circle::Circle(const glm::vec4& position, const glm::quat& rotation, const glm::vec4& rgba, const float radius)
+: position(position), rotation(rotation), rgba(rgba), radius(radius), resolution(64)
 {
     createCircleVertices(vertices, position, rotation, radius, resolution);
     std::tie(VA, VB) = PointCluster::createPointsBuffer(vertices, rgba);
 }
-Circle::Circle(const glm::vec4& position, const glm::vec4& normal, const glm::vec4& rgba, const float radius, const int resolution/*=64*/)
-: position(position), rgba(rgba), radius(radius), resolution(resolution)
+Circle::Circle(const glm::vec4& position, const glm::vec4& normal, const glm::vec4& rgba, const float radius)
+: position(position), rgba(rgba), radius(radius), resolution(64)
 {
     glm::quat r = glm::rotation(glm::vec3(position), glm::vec3(0.f, 1.f, 0.f));
-    Circle(position, r, rgba, radius, resolution);
+    Circle(position, r, rgba, radius);
 }
 
 Circle::~Circle()

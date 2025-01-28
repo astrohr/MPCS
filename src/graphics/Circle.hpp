@@ -22,9 +22,11 @@ private:
     unsigned int VA, VB;
 
 public:
-    Circle(const glm::vec4& position, const glm::quat& rotation, const glm::vec4& rgba, const float radius, const int resolution = 64);
-    Circle(const glm::vec4& position, const glm::vec4& normal, const glm::vec4& rgba, const float radius, const int resolution = 64);
+    Circle(const glm::vec4& position, const glm::quat& rotation, const glm::vec4& rgba, const float radius);
+    Circle(const glm::vec4& position, const glm::vec4& normal, const glm::vec4& rgba, const float radius);
     ~Circle();
+
+    inline void setResolution(const int res) { resolution = res; }
 
     void draw() const;
 

@@ -76,4 +76,4 @@ void Log::err(const std::string &message, bool hide /*=false*/)
     }
 };
 
-Log logs;
+//Log logs;
